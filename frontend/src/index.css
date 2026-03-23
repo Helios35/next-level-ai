@@ -23,7 +23,16 @@
   --color-input: hsl(240 5.9% 90%);
   --color-ring: hsl(240 5.9% 10%);
 
-  --color-sidebar-background: hsl(0 0% 98%);
+  /* Mode accent colors — desaturated */
+  --color-mode-sell: hsl(172 35% 45%);
+  --color-mode-buy: hsl(262 30% 55%);
+  --color-mode-strategy: hsl(38 50% 50%);
+
+  /* Surface — shared bg for nav header, sidebar, chat panel */
+  --color-surface: hsl(0 0% 96.1%);           /* #F5F5F5 */
+  --color-surface-foreground: hsl(240 5.3% 26.1%);
+
+  --color-sidebar-background: hsl(0 0% 96.1%); /* #F5F5F5 */
   --color-sidebar-foreground: hsl(240 5.3% 26.1%);
   --color-sidebar-primary: hsl(240 5.9% 10%);
   --color-sidebar-primary-foreground: hsl(0 0% 98%);
@@ -31,6 +40,9 @@
   --color-sidebar-accent-foreground: hsl(240 5.9% 10%);
   --color-sidebar-border: hsl(220 13% 91%);
   --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
+
+  /* Tile hover color for background grid */
+  --tile: hsl(0 0% 90%);
 
   --radius: 0.625rem;
 
@@ -62,7 +74,18 @@
   --color-input: hsl(240 3.7% 15.9%);
   --color-ring: hsl(240 4.9% 83.9%);
 
-  --color-sidebar-background: hsl(240 5.9% 10%);
+  --tile: hsl(240 4% 16%);
+
+  /* Mode accent colors — desaturated, slightly lifted for dark */
+  --color-mode-sell: hsl(172 30% 50%);
+  --color-mode-buy: hsl(262 28% 60%);
+  --color-mode-strategy: hsl(38 45% 55%);
+
+  /* Surface — dark equivalent */
+  --color-surface: hsl(240 6% 10%);
+  --color-surface-foreground: hsl(240 4.8% 95.9%);
+
+  --color-sidebar-background: hsl(240 6% 10%);
   --color-sidebar-foreground: hsl(240 4.8% 95.9%);
   --color-sidebar-primary: hsl(224.3 76.3% 48%);
   --color-sidebar-primary-foreground: hsl(0 0% 100%);

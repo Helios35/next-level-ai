@@ -21,7 +21,12 @@ import {
   Plus,
   ChevronDown,
   ArrowUp,
+  Tag,
+  ShoppingCart,
+  Target,
 } from 'lucide-react'
+import { ExpandableTabs } from '@/components/ui/expandable-tabs'
+import { Tiles } from '@/components/ui/tiles'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -37,9 +42,9 @@ interface NavItem {
 const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: string; accentBorder: string; navItems: NavItem[]; contextLabel: string }> = {
   sell: {
     label: 'Sell',
-    accent: 'text-teal-500',
-    accentBg: 'bg-teal-500/10',
-    accentBorder: 'border-teal-500',
+    accent: 'text-mode-sell',
+    accentBg: 'bg-mode-sell/10',
+    accentBorder: 'border-mode-sell',
     navItems: [
       { icon: LayoutGrid, label: 'Your Listings' },
       { icon: PlusCircle, label: 'Create Listing' },
@@ -49,9 +54,9 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
   },
   buy: {
     label: 'Buy',
-    accent: 'text-violet-500',
-    accentBg: 'bg-violet-500/10',
-    accentBorder: 'border-violet-500',
+    accent: 'text-mode-buy',
+    accentBg: 'bg-mode-buy/10',
+    accentBorder: 'border-mode-buy',
     navItems: [
       { icon: LayoutGrid, label: 'Your Deals' },
       { icon: Compass, label: 'Discover Deals' },
@@ -61,9 +66,9 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
   },
   strategy: {
     label: 'Strategy',
-    accent: 'text-amber-500',
-    accentBg: 'bg-amber-500/10',
-    accentBorder: 'border-amber-500',
+    accent: 'text-mode-strategy',
+    accentBg: 'bg-mode-strategy/10',
+    accentBorder: 'border-mode-strategy',
     navItems: [
       { icon: LayoutGrid, label: 'Your Strategies' },
       { icon: PlusCircle, label: 'Create Strategy' },
@@ -74,6 +79,12 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
 }
 
 const MODES: Mode[] = ['sell', 'buy', 'strategy']
+
+const MODE_TABS = [
+  { title: 'Sell', icon: Tag },
+  { title: 'Buy', icon: ShoppingCart },
+  { title: 'Strategy', icon: Target },
+] as const
 
 const CHAT_MESSAGES = [
   {
@@ -163,17 +174,14 @@ export default function AppShell({ children }: { children?: ReactNode }) {
     document.body.style.userSelect = 'none'
   }, [])
 
-  // ── Pill accent colors (inline style for mode-specific colors) ──────────
+  // ── Mode tab change handler ────────────────────────────────────────────
 
-  const pillActiveStyle = (m: Mode): React.CSSProperties => {
-    const colors: Record<Mode, string> = {
-      sell: '#0D9488',
-      buy: '#7C3AED',
-      strategy: '#D97706',
+  const modeIndex = MODES.indexOf(mode)
+
+  const handleModeTabChange = (index: number | null) => {
+    if (index !== null && index >= 0 && index < MODES.length) {
+      setMode(MODES[index])
     }
-    return mode === m
-      ? { backgroundColor: colors[m], color: '#fff' }
-      : {}
   }
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -194,26 +202,13 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </div>
 
         {/* Center — mode switcher */}
-        <div className="flex items-center rounded-full bg-muted p-1">
-          {MODES.map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              style={pillActiveStyle(m)}
-              className={cn(
-                'relative rounded-full px-5 py-1.5 text-sm font-medium transition-all',
-                mode === m ? 'shadow-sm' : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {MODE_CONFIG[m].label}
-              {m === 'buy' && (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  2
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <ExpandableTabs
+          tabs={MODE_TABS as unknown as import('@/components/ui/expandable-tabs').TabItem[]}
+          activeIndex={modeIndex}
+          onChange={handleModeTabChange}
+          activeColor={MODE_CONFIG[mode].accent}
+          className=""
+        />
 
         {/* Right cluster */}
         <div className="flex items-center gap-1">
@@ -326,10 +321,25 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         <aside
           style={{ width: effectiveChatW }}
           className={cn(
-            'flex flex-col border-l border-border bg-card transition-[width] duration-200 ease-in-out',
+            'relative flex flex-col overflow-hidden border-l border-border bg-surface transition-[width] duration-200 ease-in-out',
             !chatOpen && 'items-center',
           )}
         >
+          {/* Background tile grid */}
+          {chatOpen && (
+            <div
+              className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-70"
+              style={{
+                maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to bottom, black 0%, black 75%, transparent 100%)',
+                maskComposite: 'intersect',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to bottom, black 0%, black 75%, transparent 100%)',
+                WebkitMaskComposite: 'source-in',
+              }}
+            >
+              <Tiles rows={30} cols={40} tileSize="sm" className="min-w-full" />
+            </div>
+          )}
+
           {/* Collapsed state */}
           {!chatOpen && (
             <button
@@ -342,7 +352,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
 
           {/* Expanded state */}
           {chatOpen && (
-            <>
+            <div className="relative z-10 flex flex-1 flex-col">
               {/* Panel header */}
               <div className="flex h-10 items-center justify-between border-b border-border px-3">
                 <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
@@ -427,7 +437,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </aside>
       </div>
