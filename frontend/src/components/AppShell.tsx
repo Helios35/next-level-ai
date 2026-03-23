@@ -18,6 +18,9 @@ import {
   RefreshCw,
   Send,
   FileText,
+  Plus,
+  ChevronDown,
+  ArrowUp,
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -31,7 +34,7 @@ interface NavItem {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: string; accentBorder: string; navItems: NavItem[]; contextChip: string }> = {
+const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: string; accentBorder: string; navItems: NavItem[]; contextLabel: string }> = {
   sell: {
     label: 'Sell',
     accent: 'text-teal-500',
@@ -42,7 +45,7 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
       { icon: PlusCircle, label: 'Create Listing' },
       { icon: PenLine, label: 'Drafts' },
     ],
-    contextChip: '\u{1F4CB} Listings',
+    contextLabel: 'Listings',
   },
   buy: {
     label: 'Buy',
@@ -54,7 +57,7 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
       { icon: Compass, label: 'Discover Deals' },
       { icon: Clock, label: 'Access Requested' },
     ],
-    contextChip: '\u{1F3E2} Deals',
+    contextLabel: 'Deals',
   },
   strategy: {
     label: 'Strategy',
@@ -66,7 +69,7 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
       { icon: PlusCircle, label: 'Create Strategy' },
       { icon: PenLine, label: 'Drafts' },
     ],
-    contextChip: '\u{1F3AF} Strategies',
+    contextLabel: 'Strategies',
   },
 }
 
@@ -181,9 +184,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
       <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-card px-3">
         {/* Left cluster */}
         <div className="flex items-center gap-1">
-          <button className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <Settings size={18} />
-          </button>
+          <span className="px-2 text-base font-bold tracking-tight text-foreground">NextLevel</span>
           <button className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
             <ArrowLeft size={18} />
           </button>
@@ -244,7 +245,10 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           {/* Toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-10 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            className={cn(
+              'flex h-10 items-center text-muted-foreground hover:text-foreground transition-colors',
+              sidebarOpen ? 'justify-end pr-3' : 'justify-center',
+            )}
           >
             {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
           </button>
@@ -394,24 +398,33 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                 ))}
               </div>
 
-              {/* Chat input */}
-              <div className="border-t border-border p-3">
-                {/* Context chip */}
-                <div className="mb-2">
-                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] text-muted-foreground">
-                    {config.contextChip}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
-                  <input
-                    type="text"
-                    placeholder="Ask NextLevel AI anything..."
-                    className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
-                    readOnly
-                  />
-                  <button className="rounded-md p-1 text-muted-foreground hover:text-foreground transition-colors">
-                    <Send size={16} />
-                  </button>
+              {/* Chat input — elevated card */}
+              <div className="p-3">
+                <div className="rounded-2xl border border-border bg-background shadow-lg shadow-black/5 dark:shadow-black/20">
+                  {/* Text input area */}
+                  <div className="px-4 pt-4 pb-2">
+                    <textarea
+                      placeholder="Type your message here."
+                      rows={2}
+                      className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
+                      readOnly
+                    />
+                  </div>
+                  {/* Bottom bar: plus, context dropdown, send */}
+                  <div className="flex items-center justify-between px-3 pb-3">
+                    <div className="flex items-center gap-2">
+                      <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                        <Plus size={18} />
+                      </button>
+                      <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                        <span>{config.contextLabel}</span>
+                        <ChevronDown size={12} />
+                      </button>
+                    </div>
+                    <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background hover:bg-foreground/80 transition-colors">
+                      <ArrowUp size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </>
