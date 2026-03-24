@@ -24,6 +24,8 @@ import {
   Tag,
   ShoppingCart,
   Target,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { Tiles } from '@/components/ui/tiles'
@@ -237,19 +239,8 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           style={{ width: sidebarW }}
           className="flex flex-col border-r border-border bg-card transition-[width] duration-200 ease-in-out"
         >
-          {/* Toggle */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={cn(
-              'flex h-10 items-center text-muted-foreground hover:text-foreground transition-colors',
-              sidebarOpen ? 'justify-end pr-3' : 'justify-center',
-            )}
-          >
-            {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-          </button>
-
           {/* Mode nav items */}
-          <div className="flex flex-1 flex-col gap-0.5 px-1.5">
+          <div className="flex flex-1 flex-col gap-0.5 px-1.5 pt-2">
             {config.navItems.map((item, i) => {
               const Icon = item.icon
               const isActive = i === activeNav
@@ -297,15 +288,24 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         </nav>
 
         {/* ═══ CONTENT AREA ═══ */}
-        <main className="flex-1 overflow-y-auto">
-          {children ?? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-              <FileText size={48} strokeWidth={1} className="opacity-30" />
-              <p className="text-sm">No content yet.</p>
-              <p className="text-xs opacity-60">This area will render the active page.</p>
-            </div>
-          )}
-        </main>
+        <div className="relative flex flex-1 overflow-hidden">
+          {/* Sidebar toggle — outside the nav panel */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
+          </button>
+          <main className="flex-1 overflow-y-auto">
+            {children ?? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                <FileText size={48} strokeWidth={1} className="opacity-30" />
+                <p className="text-sm">No content yet.</p>
+                <p className="text-xs opacity-60">This area will render the active page.</p>
+              </div>
+            )}
+          </main>
+        </div>
 
         {/* ═══ RESIZE HANDLE ═══ */}
         {chatOpen && (
