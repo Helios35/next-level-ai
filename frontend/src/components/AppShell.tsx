@@ -28,7 +28,7 @@ import {
   PanelLeftClose,
 } from 'lucide-react'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
-import { Tiles } from '@/components/ui/tiles'
+import { DotGrid } from '@/components/ui/dot-grid'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -325,20 +325,8 @@ export default function AppShell({ children }: { children?: ReactNode }) {
             !chatOpen && 'items-center',
           )}
         >
-          {/* Background tile grid */}
-          {chatOpen && (
-            <div
-              className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-70"
-              style={{
-                maskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to bottom, black 0%, black 75%, transparent 100%)',
-                maskComposite: 'intersect',
-                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%), linear-gradient(to bottom, black 0%, black 75%, transparent 100%)',
-                WebkitMaskComposite: 'source-in',
-              }}
-            >
-              <Tiles rows={30} cols={40} tileSize="sm" className="min-w-full" />
-            </div>
-          )}
+          {/* Background dot grid */}
+          {chatOpen && <DotGrid gap={14} dotSize={1} />}
 
           {/* Collapsed state */}
           {!chatOpen && (
@@ -354,7 +342,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           {chatOpen && (
             <div className="relative z-10 flex flex-1 flex-col">
               {/* Panel header */}
-              <div className="flex h-10 items-center justify-between border-b border-border px-3">
+              <div className="flex h-10 items-center justify-between border-b border-border bg-surface px-3">
                 <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
                   NextLevel AI
                 </span>
@@ -375,7 +363,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                         'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
                         msg.role === 'user'
                           ? 'bg-foreground text-background rounded-br-sm'
-                          : 'text-foreground',
+                          : 'bg-background/80 text-foreground border border-border/50 rounded-bl-sm backdrop-blur-sm',
                       )}
                     >
                       {msg.text}
