@@ -9,6 +9,7 @@ import StatusBadge from '@/components/StatusBadge'
 import MatchScoreRing from '@/components/MatchScoreRing'
 import StageProgressBar, { STAGE_LABELS } from '@/components/StageProgressBar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 import type { DealRoomStage } from '@shared/types/enums'
 
 const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === 'dr_001')!
@@ -220,31 +221,19 @@ function DocumentsTab() {
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Required Documents
         </h3>
-        <div className="rounded-lg border border-border divide-y divide-border">
+        <DocumentListGroup>
           {REQUIRED_DOCS.map((doc, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-green-500/10 text-green-400">
-                  <Check size={15} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">{doc.file} &middot; Uploaded {doc.date}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <Eye size={12} />
-                  View
-                </button>
-                <button className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                  <RefreshCw size={12} />
-                  Replace
-                </button>
-              </div>
-            </div>
+            <DocumentListItem
+              key={i}
+              variant="uploaded"
+              icon={Check}
+              title={doc.name}
+              description={`${doc.file} \u00B7 Uploaded ${doc.date}`}
+              primaryAction={{ label: 'View', icon: Eye }}
+              secondaryAction={{ label: 'Replace', icon: RefreshCw }}
+            />
           ))}
-        </div>
+        </DocumentListGroup>
       </div>
 
       {/* Optional Documents */}
@@ -252,22 +241,17 @@ function DocumentsTab() {
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Optional Documents
         </h3>
-        <div className="rounded-lg border border-border divide-y divide-border">
+        <DocumentListGroup>
           {OPTIONAL_DOCS.map((name, i) => (
-            <div key={i} className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <FileText size={15} />
-                </div>
-                <p className="text-sm font-medium text-foreground">{name}</p>
-              </div>
-              <button className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                <Upload size={12} />
-                Upload Document
-              </button>
-            </div>
+            <DocumentListItem
+              key={i}
+              variant="pending"
+              icon={FileText}
+              title={name}
+              primaryAction={{ label: 'Upload Document', icon: Upload }}
+            />
           ))}
-        </div>
+        </DocumentListGroup>
       </div>
 
       <p className="text-xs italic text-muted-foreground">
