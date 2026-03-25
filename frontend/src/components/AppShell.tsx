@@ -120,7 +120,43 @@ const CHAT_COLLAPSED_W = 32
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function AppShell({ children }: { children?: ReactNode }) {
+export type { Mode }
+
+export interface ChatContext {
+  messages: { role: 'ai' | 'user'; text: string; time: string }[]
+  contextLabel: string
+  skills?: string[]
+}
+
+interface AppShellProps {
+  children?: ReactNode
+  /** Called when mode tab (Sell/Buy/Strategy) changes */
+  onModeChange?: (mode: Mode) => void
+  /** Called when a sidebar nav item is clicked */
+  onNavChange?: (index: number, label: string) => void
+  /** Called when back arrow is clicked */
+  onBack?: () => void
+  /** Called when forward arrow is clicked */
+  onForward?: () => void
+  /** Whether back navigation is available (dims the arrow) */
+  canGoBack?: boolean
+  /** Whether forward navigation is available (dims the arrow) */
+  canGoForward?: boolean
+  /** Override chat panel content (messages, context label, skills) */
+  chatContext?: ChatContext
+}
+
+export default function AppShell({
+  children,
+  onModeChange,
+  onNavChange,
+  onBack,
+  onForward,
+  canGoBack = false,
+  canGoForward = false,
+  chatContext,
+  activeMode,
+}: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
@@ -140,6 +176,13 @@ export default function AppShell({ children }: { children?: ReactNode }) {
   useEffect(() => {
     setChatWidth(Math.max(CHAT_MIN_W, Math.round(window.innerWidth * 0.3)))
   }, [])
+
+  // Sync controlled mode from parent (e.g. back/forward navigation)
+  useEffect(() => {
+    if (activeMode && activeMode !== mode) {
+      setMode(activeMode)
+    }
+  }, [activeMode])
 
   // Reset active nav when mode changes
   useEffect(() => {
@@ -182,7 +225,9 @@ export default function AppShell({ children }: { children?: ReactNode }) {
 
   const handleModeTabChange = (index: number | null) => {
     if (index !== null && index >= 0 && index < MODES.length) {
-      setMode(MODES[index])
+      const newMode = MODES[index]
+      setMode(newMode)
+      onModeChange?.(newMode)
     }
   }
 
@@ -195,10 +240,28 @@ export default function AppShell({ children }: { children?: ReactNode }) {
         {/* Left cluster */}
         <div className="flex items-center gap-1">
           <span className="px-2 text-base font-bold tracking-tight text-foreground">NextLevel</span>
-          <button className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button
+            onClick={onBack}
+            disabled={!canGoBack}
+            className={cn(
+              'rounded-md p-2 transition-colors',
+              canGoBack
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+          >
             <ArrowLeft size={18} />
           </button>
-          <button className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button
+            onClick={onForward}
+            disabled={!canGoForward}
+            className={cn(
+              'rounded-md p-2 transition-colors',
+              canGoForward
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+          >
             <ArrowRight size={18} />
           </button>
         </div>
@@ -247,7 +310,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
               return (
                 <button
                   key={item.label}
-                  onClick={() => setActiveNav(i)}
+                  onClick={() => { setActiveNav(i); onNavChange?.(i, item.label) }}
                   className={cn(
                     'group relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
                     isActive
@@ -296,7 +359,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
           >
             {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
           </button>
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto pt-10">
             {children ?? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
                 <FileText size={48} strokeWidth={1} className="opacity-30" />
@@ -356,7 +419,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
 
               {/* Chat messages */}
               <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-                {CHAT_MESSAGES.map((msg, i) => (
+                {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
                   <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
                     <div
                       className={cn(
@@ -386,7 +449,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
 
               {/* Skills bar */}
               <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
-                {SKILLS.map((skill) => (
+                {(chatContext?.skills ?? SKILLS).map((skill) => (
                   <button
                     key={skill}
                     className="shrink-0 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -415,7 +478,7 @@ export default function AppShell({ children }: { children?: ReactNode }) {
                         <Plus size={18} />
                       </button>
                       <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                        <span>{config.contextLabel}</span>
+                        <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
                         <ChevronDown size={12} />
                       </button>
                     </div>
