@@ -26,6 +26,8 @@ import {
   Target,
   PanelLeftOpen,
   PanelLeftClose,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
@@ -41,12 +43,22 @@ interface NavItem {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: string; accentBorder: string; navItems: NavItem[]; contextLabel: string }> = {
+const MODE_CONFIG: Record<Mode, {
+  label: string; accent: string; accentBg: string; accentBorder: string;
+  chatBubble: string; chatBubbleBorder: string; chatHover: string;
+  chatSkill: string; chatSend: string;
+  navItems: NavItem[]; contextLabel: string;
+}> = {
   sell: {
     label: 'Sell',
     accent: 'text-mode-sell',
     accentBg: 'bg-mode-sell/10',
     accentBorder: 'border-mode-sell',
+    chatBubble: 'bg-mode-sell text-white',
+    chatBubbleBorder: 'border-mode-sell/30',
+    chatHover: 'hover:text-mode-sell',
+    chatSkill: 'border-mode-sell/20 hover:bg-mode-sell/10 hover:text-mode-sell',
+    chatSend: 'bg-mode-sell hover:bg-mode-sell/80',
     navItems: [
       { icon: LayoutGrid, label: 'Your Listings' },
       { icon: PlusCircle, label: 'Create Listing' },
@@ -59,6 +71,11 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
     accent: 'text-mode-buy',
     accentBg: 'bg-mode-buy/10',
     accentBorder: 'border-mode-buy',
+    chatBubble: 'bg-mode-buy text-white',
+    chatBubbleBorder: 'border-mode-buy/30',
+    chatHover: 'hover:text-mode-buy',
+    chatSkill: 'border-mode-buy/20 hover:bg-mode-buy/10 hover:text-mode-buy',
+    chatSend: 'bg-mode-buy hover:bg-mode-buy/80',
     navItems: [
       { icon: LayoutGrid, label: 'Your Deals' },
       { icon: Compass, label: 'Discover Deals' },
@@ -71,6 +88,11 @@ const MODE_CONFIG: Record<Mode, { label: string; accent: string; accentBg: strin
     accent: 'text-mode-strategy',
     accentBg: 'bg-mode-strategy/10',
     accentBorder: 'border-mode-strategy',
+    chatBubble: 'bg-mode-strategy text-white',
+    chatBubbleBorder: 'border-mode-strategy/30',
+    chatHover: 'hover:text-mode-strategy',
+    chatSkill: 'border-mode-strategy/20 hover:bg-mode-strategy/10 hover:text-mode-strategy',
+    chatSend: 'bg-mode-strategy hover:bg-mode-strategy/80',
     navItems: [
       { icon: LayoutGrid, label: 'Your Strategies' },
       { icon: PlusCircle, label: 'Create Strategy' },
@@ -160,6 +182,7 @@ export default function AppShell({
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
+  const [chatFullscreen, setChatFullscreen] = useState(false)
   const [dark, setDark] = useState(true)
   const [activeNav, setActiveNav] = useState(0)
   const [chatWidth, setChatWidth] = useState(0)
@@ -351,7 +374,13 @@ export default function AppShell({
         </nav>
 
         {/* ═══ CONTENT AREA ═══ */}
-        <div className="relative flex flex-1 overflow-hidden">
+        <div
+          className="relative flex overflow-hidden transition-[flex,opacity] duration-300 ease-in-out"
+          style={{
+            flex: chatFullscreen ? '0 0 0px' : '1 1 0%',
+            opacity: chatFullscreen ? 0 : 1,
+          }}
+        >
           {/* Sidebar toggle — outside the nav panel */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -371,7 +400,7 @@ export default function AppShell({
         </div>
 
         {/* ═══ RESIZE HANDLE ═══ */}
-        {chatOpen && (
+        {chatOpen && !chatFullscreen && (
           <div
             onMouseDown={onMouseDown}
             className="group flex w-1 cursor-col-resize items-center justify-center hover:bg-border transition-colors"
@@ -382,9 +411,9 @@ export default function AppShell({
 
         {/* ═══ AI CHAT PANEL ═══ */}
         <aside
-          style={{ width: effectiveChatW }}
+          style={chatFullscreen ? { flex: '1 1 0%' } : { width: effectiveChatW }}
           className={cn(
-            'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width] duration-200 ease-in-out',
+            'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width,flex] duration-300 ease-in-out',
             !chatOpen && 'items-center',
           )}
         >
@@ -406,85 +435,100 @@ export default function AppShell({
             <div className="relative z-10 flex flex-1 flex-col">
               {/* Panel header */}
               <div className="flex h-10 items-center justify-between border-b border-border bg-background px-3">
-                <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+                <span className={cn('text-xs font-semibold tracking-wide uppercase', config.accent)}>
                   NextLevel AI
                 </span>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  <ChevronRight size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setChatFullscreen(!chatFullscreen)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    {chatFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  </button>
+                  {!chatFullscreen && (
+                    <button
+                      onClick={() => setChatOpen(false)}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-                {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
-                  <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
-                    <div
-                      className={cn(
-                        'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
-                        msg.role === 'user'
-                          ? 'bg-foreground text-background rounded-br-sm'
-                          : 'bg-background/80 text-foreground border border-border/50 rounded-bl-sm backdrop-blur-sm',
-                      )}
-                    >
-                      {msg.text}
-                    </div>
-                    {/* Action icons for AI messages */}
-                    {msg.role === 'ai' && (
-                      <div className="mt-1 flex items-center gap-2 px-1">
-                        <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                          <Copy size={12} />
-                        </button>
-                        <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                          <RefreshCw size={12} />
+              {/* Chat body — centered in fullscreen */}
+              <div className="flex flex-1 flex-col overflow-hidden">
+                <div className={cn('flex flex-1 flex-col overflow-hidden', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
+                  {/* Chat messages */}
+                  <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                    {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
+                      <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
+                        <div
+                          className={cn(
+                            'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
+                            msg.role === 'user'
+                              ? cn(config.chatBubble, 'rounded-br-sm')
+                              : cn('bg-background/80 text-foreground border rounded-bl-sm backdrop-blur-sm', config.chatBubbleBorder),
+                          )}
+                        >
+                          {msg.text}
+                        </div>
+                        {/* Action icons for AI messages */}
+                        {msg.role === 'ai' && (
+                          <div className="mt-1 flex items-center gap-2 px-1">
+                            <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
+                              <Copy size={12} />
+                            </button>
+                            <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
+                              <RefreshCw size={12} />
+                            </button>
+                          </div>
+                        )}
+                        <span className="mt-0.5 px-1 text-[10px] text-muted-foreground/50">{msg.time}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Skills bar */}
+                  <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
+                    {(chatContext?.skills ?? SKILLS).map((skill) => (
+                      <button
+                        key={skill}
+                        className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
+                      >
+                        {skill}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Chat input — elevated card */}
+                  <div className="p-3">
+                    <div className="rounded-2xl border border-border bg-background shadow-lg shadow-black/5 dark:shadow-black/20">
+                      {/* Text input area */}
+                      <div className="px-4 pt-4 pb-2">
+                        <textarea
+                          placeholder="Type your message here."
+                          rows={2}
+                          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
+                          readOnly
+                        />
+                      </div>
+                      {/* Bottom bar: plus, context dropdown, send */}
+                      <div className="flex items-center justify-between px-3 pb-3">
+                        <div className="flex items-center gap-2">
+                          <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                            <Plus size={18} />
+                          </button>
+                          <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                            <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
+                        <button className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors', config.chatSend)}>
+                          <ArrowUp size={16} />
                         </button>
                       </div>
-                    )}
-                    <span className="mt-0.5 px-1 text-[10px] text-muted-foreground/50">{msg.time}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Skills bar */}
-              <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
-                {(chatContext?.skills ?? SKILLS).map((skill) => (
-                  <button
-                    key={skill}
-                    className="shrink-0 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  >
-                    {skill}
-                  </button>
-                ))}
-              </div>
-
-              {/* Chat input — elevated card */}
-              <div className="p-3">
-                <div className="rounded-2xl border border-border bg-background shadow-lg shadow-black/5 dark:shadow-black/20">
-                  {/* Text input area */}
-                  <div className="px-4 pt-4 pb-2">
-                    <textarea
-                      placeholder="Type your message here."
-                      rows={2}
-                      className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
-                      readOnly
-                    />
-                  </div>
-                  {/* Bottom bar: plus, context dropdown, send */}
-                  <div className="flex items-center justify-between px-3 pb-3">
-                    <div className="flex items-center gap-2">
-                      <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                        <Plus size={18} />
-                      </button>
-                      <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                        <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
-                        <ChevronDown size={12} />
-                      </button>
                     </div>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background hover:bg-foreground/80 transition-colors">
-                      <ArrowUp size={16} />
-                    </button>
                   </div>
                 </div>
               </div>
