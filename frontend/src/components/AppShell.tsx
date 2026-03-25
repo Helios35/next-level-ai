@@ -26,6 +26,8 @@ import {
   Target,
   PanelLeftOpen,
   PanelLeftClose,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
@@ -180,6 +182,7 @@ export default function AppShell({
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
+  const [chatFullscreen, setChatFullscreen] = useState(false)
   const [dark, setDark] = useState(true)
   const [activeNav, setActiveNav] = useState(0)
   const [chatWidth, setChatWidth] = useState(0)
@@ -371,7 +374,13 @@ export default function AppShell({
         </nav>
 
         {/* ═══ CONTENT AREA ═══ */}
-        <div className="relative flex flex-1 overflow-hidden">
+        <div
+          className="relative flex overflow-hidden transition-[flex,opacity] duration-300 ease-in-out"
+          style={{
+            flex: chatFullscreen ? '0 0 0px' : '1 1 0%',
+            opacity: chatFullscreen ? 0 : 1,
+          }}
+        >
           {/* Sidebar toggle — outside the nav panel */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -391,7 +400,7 @@ export default function AppShell({
         </div>
 
         {/* ═══ RESIZE HANDLE ═══ */}
-        {chatOpen && (
+        {chatOpen && !chatFullscreen && (
           <div
             onMouseDown={onMouseDown}
             className="group flex w-1 cursor-col-resize items-center justify-center hover:bg-border transition-colors"
@@ -402,9 +411,9 @@ export default function AppShell({
 
         {/* ═══ AI CHAT PANEL ═══ */}
         <aside
-          style={{ width: effectiveChatW }}
+          style={chatFullscreen ? { flex: '1 1 0%' } : { width: effectiveChatW }}
           className={cn(
-            'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width] duration-200 ease-in-out',
+            'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width,flex] duration-300 ease-in-out',
             !chatOpen && 'items-center',
           )}
         >
@@ -429,82 +438,97 @@ export default function AppShell({
                 <span className={cn('text-xs font-semibold tracking-wide uppercase', config.accent)}>
                   NextLevel AI
                 </span>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  <ChevronRight size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setChatFullscreen(!chatFullscreen)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    {chatFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  </button>
+                  {!chatFullscreen && (
+                    <button
+                      onClick={() => setChatOpen(false)}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Chat messages */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-                {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
-                  <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
-                    <div
-                      className={cn(
-                        'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
-                        msg.role === 'user'
-                          ? cn(config.chatBubble, 'rounded-br-sm')
-                          : cn('bg-background/80 text-foreground border rounded-bl-sm backdrop-blur-sm', config.chatBubbleBorder),
-                      )}
-                    >
-                      {msg.text}
-                    </div>
-                    {/* Action icons for AI messages */}
-                    {msg.role === 'ai' && (
-                      <div className="mt-1 flex items-center gap-2 px-1">
-                        <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
-                          <Copy size={12} />
-                        </button>
-                        <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
-                          <RefreshCw size={12} />
+              {/* Chat body — centered in fullscreen */}
+              <div className="flex flex-1 flex-col overflow-hidden">
+                <div className={cn('flex flex-1 flex-col overflow-hidden', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
+                  {/* Chat messages */}
+                  <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                    {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
+                      <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
+                        <div
+                          className={cn(
+                            'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
+                            msg.role === 'user'
+                              ? cn(config.chatBubble, 'rounded-br-sm')
+                              : cn('bg-background/80 text-foreground border rounded-bl-sm backdrop-blur-sm', config.chatBubbleBorder),
+                          )}
+                        >
+                          {msg.text}
+                        </div>
+                        {/* Action icons for AI messages */}
+                        {msg.role === 'ai' && (
+                          <div className="mt-1 flex items-center gap-2 px-1">
+                            <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
+                              <Copy size={12} />
+                            </button>
+                            <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
+                              <RefreshCw size={12} />
+                            </button>
+                          </div>
+                        )}
+                        <span className="mt-0.5 px-1 text-[10px] text-muted-foreground/50">{msg.time}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Skills bar */}
+                  <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
+                    {(chatContext?.skills ?? SKILLS).map((skill) => (
+                      <button
+                        key={skill}
+                        className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
+                      >
+                        {skill}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Chat input — elevated card */}
+                  <div className="p-3">
+                    <div className="rounded-2xl border border-border bg-background shadow-lg shadow-black/5 dark:shadow-black/20">
+                      {/* Text input area */}
+                      <div className="px-4 pt-4 pb-2">
+                        <textarea
+                          placeholder="Type your message here."
+                          rows={2}
+                          className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
+                          readOnly
+                        />
+                      </div>
+                      {/* Bottom bar: plus, context dropdown, send */}
+                      <div className="flex items-center justify-between px-3 pb-3">
+                        <div className="flex items-center gap-2">
+                          <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                            <Plus size={18} />
+                          </button>
+                          <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                            <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
+                            <ChevronDown size={12} />
+                          </button>
+                        </div>
+                        <button className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors', config.chatSend)}>
+                          <ArrowUp size={16} />
                         </button>
                       </div>
-                    )}
-                    <span className="mt-0.5 px-1 text-[10px] text-muted-foreground/50">{msg.time}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Skills bar */}
-              <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
-                {(chatContext?.skills ?? SKILLS).map((skill) => (
-                  <button
-                    key={skill}
-                    className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
-                  >
-                    {skill}
-                  </button>
-                ))}
-              </div>
-
-              {/* Chat input — elevated card */}
-              <div className="p-3">
-                <div className="rounded-2xl border border-border bg-background shadow-lg shadow-black/5 dark:shadow-black/20">
-                  {/* Text input area */}
-                  <div className="px-4 pt-4 pb-2">
-                    <textarea
-                      placeholder="Type your message here."
-                      rows={2}
-                      className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
-                      readOnly
-                    />
-                  </div>
-                  {/* Bottom bar: plus, context dropdown, send */}
-                  <div className="flex items-center justify-between px-3 pb-3">
-                    <div className="flex items-center gap-2">
-                      <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                        <Plus size={18} />
-                      </button>
-                      <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                        <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
-                        <ChevronDown size={12} />
-                      </button>
                     </div>
-                    <button className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors', config.chatSend)}>
-                      <ArrowUp size={16} />
-                    </button>
                   </div>
                 </div>
               </div>
