@@ -2,7 +2,7 @@ import { cn } from '@/utils/cn'
 import {
   FileText, Users, BarChart2, Milestone,
   Upload, Check, Eye, RefreshCw, Lock, Circle,
-  ArrowLeft,
+  ArrowLeft, Info,
 } from 'lucide-react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import StatusBadge from '@/components/StatusBadge'
@@ -10,6 +10,14 @@ import MatchScoreRing from '@/components/MatchScoreRing'
 import StageProgressBar, { STAGE_LABELS } from '@/components/StageProgressBar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
+import {
+  Item,
+  ItemMedia,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemActions,
+} from '@/components/ui/item'
 import type { DealRoomStage } from '@shared/types/enums'
 
 const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === 'dr_001')!
@@ -128,7 +136,7 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
   return (
     <div className="flex h-full flex-col">
       {/* ═══ DEAL HEADER ═══ */}
-      <div className="shrink-0 border-b border-border bg-card px-6 py-4">
+      <div className="shrink-0 border-b border-border bg-background px-6 pt-5 pb-4">
         {/* Back link */}
         {onBack && (
           <button
@@ -144,7 +152,7 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
           {/* Left side */}
           <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-foreground truncate">{deal.name}</h1>
+              <h1 className="text-lg font-semibold tracking-tight text-foreground truncate">{deal.name}</h1>
               <StatusBadge status={deal.status} />
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -152,16 +160,18 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
             </p>
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-6 shrink-0">
-            <div className="w-48">
+          {/* Right side — metrics card */}
+          <div className="flex items-center gap-4 shrink-0 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+            <div className="w-44">
               <StageProgressBar currentStage={deal.currentStage} />
             </div>
-            <MatchScoreRing score={deal.matchScore} size={48} />
+            <div className="h-8 w-px bg-border" />
+            <MatchScoreRing score={deal.matchScore} size={44} />
+            <div className="h-8 w-px bg-border" />
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Users size={15} />
-              <span className="font-medium text-foreground">{deal.matchedBuyerCount}</span>
-              Buyers Matched
+              <span className="font-semibold text-foreground">{deal.matchedBuyerCount}</span>
+              Buyers
             </div>
           </div>
         </div>
@@ -169,7 +179,7 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
 
       {/* ═══ TABS ═══ */}
       <Tabs defaultValue="documents" className="flex flex-1 flex-col overflow-hidden">
-        <TabsList className="shrink-0 border-b border-border bg-card px-6 py-1">
+        <TabsList className="shrink-0 border-b border-border bg-background px-6 py-1.5">
           <TabsTrigger value="documents">
             <FileText size={16} />
             Documents
@@ -211,7 +221,7 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
 
 function DocumentsTab() {
   return (
-    <div className="px-6 py-5 space-y-6">
+    <div className="px-6 py-6 space-y-6">
       <h2 className="text-sm font-semibold text-foreground">
         Document Package — Magnolia Farms BFR
       </h2>
@@ -265,7 +275,7 @@ function DocumentsTab() {
 
 function BuyerPoolTab() {
   return (
-    <div className="px-6 py-5 space-y-6">
+    <div className="px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <h2 className="text-sm font-semibold text-foreground">Buyer Pool</h2>
@@ -275,45 +285,42 @@ function BuyerPoolTab() {
       </div>
 
       {/* Seated buyers */}
-      <div className="space-y-3">
+      <div className="flex flex-col gap-2">
         {SEATED_BUYERS.map((buyer) => (
-          <div
-            key={buyer.label}
-            className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3"
-          >
-            {/* Rank */}
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
-              #{buyer.rank}
-            </span>
+          <Item key={buyer.label} variant="outline" className="flex-nowrap px-4 py-3">
+            <ItemMedia variant="icon">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
+                #{buyer.rank}
+              </span>
+            </ItemMedia>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{buyer.label}</span>
+            <ItemContent className="min-w-0">
+              <ItemTitle className="w-auto">
+                {buyer.label}
                 <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-medium text-green-400">
                   Qualified
                 </span>
                 <span className="rounded-full bg-mode-sell/15 px-2 py-0.5 text-[10px] font-medium text-mode-sell">
                   Seated
                 </span>
-              </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">{buyer.activity}</p>
-            </div>
+              </ItemTitle>
+              <ItemDescription>{buyer.activity}</ItemDescription>
+            </ItemContent>
 
-            {/* Match + Equity */}
-            <div className="flex items-center gap-4 shrink-0">
+            <ItemActions className="shrink-0 gap-4">
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Equity</p>
                 <p className="text-xs font-medium text-foreground">{buyer.equity}</p>
               </div>
               <MatchScoreRing score={buyer.score} size={36} strokeWidth={2.5} />
-            </div>
-          </div>
+            </ItemActions>
+          </Item>
         ))}
       </div>
 
       {/* Info block */}
-      <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
+      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+        <Info size={14} className="shrink-0 mt-0.5 text-muted-foreground/60" />
         <p className="text-xs text-muted-foreground leading-relaxed">
           Seat allocation is managed by your Disposition Specialist. Buyers are seated based on match quality, qualification status, and DS judgment. Maximum 3 concurrent seats.
         </p>
@@ -324,24 +331,25 @@ function BuyerPoolTab() {
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Wait Queue — 2 buyers waiting
         </h3>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {WAIT_QUEUE.map((buyer) => (
-            <div
-              key={buyer.label}
-              className="flex items-center gap-3 rounded-lg border border-border px-4 py-2.5"
-            >
-              <span className="text-sm text-foreground">{buyer.label}</span>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-[10px] font-medium',
-                  buyer.qualified
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-amber-500/20 text-amber-400',
-                )}
-              >
-                {buyer.qualified ? 'Qualified' : 'Unqualified'}
-              </span>
-            </div>
+            <Item key={buyer.label} variant="muted" className="px-4 py-2.5">
+              <ItemContent>
+                <ItemTitle>
+                  {buyer.label}
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      buyer.qualified
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-amber-500/20 text-amber-400',
+                    )}
+                  >
+                    {buyer.qualified ? 'Qualified' : 'Unqualified'}
+                  </span>
+                </ItemTitle>
+              </ItemContent>
+            </Item>
           ))}
         </div>
       </div>
@@ -353,41 +361,43 @@ function BuyerPoolTab() {
 
 function MarketIntelligenceTab() {
   return (
-    <div className="px-6 py-5 space-y-6">
+    <div className="px-6 py-6 space-y-6">
+      <h2 className="text-sm font-semibold text-foreground">Market Intelligence</h2>
+
       {/* Stat tiles */}
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {MARKET_STATS.map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col gap-0.5 rounded-lg border border-border bg-card px-4 py-3"
+            className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-4 py-3"
           >
-            <span className="text-xl font-bold text-foreground">{stat.value}</span>
-            <span className="text-xs text-muted-foreground">{stat.label}</span>
+            <span className="text-2xl font-bold text-foreground tabular-nums">{stat.value}</span>
+            <span className="text-xs text-muted-foreground leading-snug">{stat.label}</span>
           </div>
         ))}
       </div>
 
       {/* Pass Reason Breakdown */}
-      <div className="space-y-3">
+      <div className="rounded-xl border border-border bg-background p-5 space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Pass Reason Breakdown</h3>
         <div className="space-y-2.5">
           {PASS_REASONS.map((item) => (
             <div key={item.reason} className="flex items-center gap-3">
-              <span className="w-36 shrink-0 text-xs text-muted-foreground">{item.reason}</span>
-              <div className="flex-1 h-5 rounded-full bg-muted overflow-hidden">
+              <span className="w-36 shrink-0 text-xs text-muted-foreground truncate">{item.reason}</span>
+              <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-mode-sell/60"
+                  className="h-full rounded-full bg-mode-sell/70 transition-all"
                   style={{ width: `${item.pct}%` }}
                 />
               </div>
-              <span className="w-6 shrink-0 text-xs font-medium text-foreground text-right">{item.count}</span>
+              <span className="w-6 shrink-0 text-xs font-medium text-foreground text-right tabular-nums">{item.count}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Market Intelligence Summary */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="rounded-xl border border-border bg-background p-5 space-y-3">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">Market Intelligence Summary</h3>
           <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -406,77 +416,87 @@ function MarketIntelligenceTab() {
 
 function MilestonesTab() {
   return (
-    <div className="px-6 py-5 space-y-8">
+    <div className="px-6 py-6 space-y-6">
+      <h2 className="text-sm font-semibold text-foreground">Deal Milestones</h2>
+
       {/* 9-stage timeline */}
-      <div className="relative ml-3">
-        {/* Vertical line — centered on the icon column */}
-        <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+      <div className="rounded-xl border border-border bg-background p-5">
+        <div className="relative">
+          {/* Vertical line — centered on 24px icons */}
+          <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
 
-        <div className="space-y-0">
-          {MILESTONE_DATA.map((ms) => (
-            <div key={ms.stage} className="flex items-start gap-3 pb-6">
-              {/* Circle indicator — inline, not absolute */}
-              <div className="relative z-10 shrink-0">
-                {ms.status === 'complete' && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-mode-sell text-white">
-                    <Check size={13} />
-                  </div>
+          <div className="space-y-0">
+            {MILESTONE_DATA.map((ms, i) => (
+              <div
+                key={ms.stage}
+                className={cn(
+                  'flex items-start gap-3',
+                  i === MILESTONE_DATA.length - 1 ? 'pb-0' : ms.status === 'current' ? 'pb-7' : 'pb-4',
                 )}
-                {ms.status === 'current' && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-mode-sell bg-mode-sell/10">
-                    <div className="h-2 w-2 rounded-full bg-mode-sell animate-pulse" />
-                  </div>
-                )}
-                {ms.status === 'upcoming' && (
-                  <div className="flex h-6 w-6 items-center justify-center">
-                    <Circle size={18} className="text-muted-foreground/40" />
-                  </div>
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pt-0.5">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'text-sm',
-                      ms.status === 'current'
-                        ? 'font-semibold text-foreground'
-                        : ms.status === 'complete'
-                          ? 'text-muted-foreground'
-                          : 'text-muted-foreground/60',
-                    )}
-                  >
-                    Stage {ms.stage} — {STAGE_LABELS[ms.stage]}
-                  </span>
+              >
+                {/* Circle indicator */}
+                <div className="relative z-10 shrink-0">
+                  {ms.status === 'complete' && (
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-mode-sell text-white">
+                      <Check size={13} />
+                    </div>
+                  )}
                   {ms.status === 'current' && (
-                    <span className="rounded-full bg-mode-sell/15 px-2 py-0.5 text-[10px] font-medium text-mode-sell">
-                      In Progress
-                    </span>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-mode-sell bg-mode-sell/10">
+                      <div className="h-2 w-2 rounded-full bg-mode-sell animate-pulse" />
+                    </div>
+                  )}
+                  {ms.status === 'upcoming' && (
+                    <div className="flex h-6 w-6 items-center justify-center">
+                      <Circle size={18} className="text-muted-foreground/40" />
+                    </div>
                   )}
                 </div>
-                {ms.date && (
-                  <p className="mt-0.5 text-xs text-muted-foreground/60">{ms.date}</p>
-                )}
+
+                {/* Content */}
+                <div className="flex-1 pt-0.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-sm',
+                        ms.status === 'current'
+                          ? 'font-semibold text-foreground'
+                          : ms.status === 'complete'
+                            ? 'text-muted-foreground'
+                            : 'text-muted-foreground/60',
+                      )}
+                    >
+                      Stage {ms.stage} — {STAGE_LABELS[ms.stage]}
+                    </span>
+                    {ms.status === 'current' && (
+                      <span className="rounded-full bg-mode-sell/15 px-2 py-0.5 text-[10px] font-medium text-mode-sell">
+                        In Progress
+                      </span>
+                    )}
+                  </div>
+                  {ms.date && (
+                    <p className="mt-0.5 text-xs text-muted-foreground/60">{ms.date}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Post-acceptance milestones (locked) */}
-      <div className="space-y-3">
+      <div className="rounded-xl border border-border bg-background p-5 space-y-3">
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           Post-Acceptance Milestones
         </h3>
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {POST_ACCEPTANCE.map((milestone) => (
             <div
               key={milestone}
-              className="flex items-center gap-3 rounded-lg bg-muted/30 px-4 py-2.5"
+              className="flex items-center gap-3 rounded-lg bg-muted/20 px-4 py-2"
             >
-              <Lock size={13} className="text-muted-foreground/40" />
-              <span className="text-xs text-muted-foreground/50">{milestone}</span>
+              <Lock size={13} className="text-muted-foreground/30" />
+              <span className="text-xs text-muted-foreground/40">{milestone}</span>
             </div>
           ))}
         </div>

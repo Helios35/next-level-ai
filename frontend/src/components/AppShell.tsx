@@ -236,7 +236,7 @@ export default function AppShell({
   return (
     <div ref={shellRef} className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
       {/* ═══ TOP BAR ═══ */}
-      <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-card px-3">
+      <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-background px-3">
         {/* Left cluster */}
         <div className="flex items-center gap-1">
           <span className="px-2 text-base font-bold tracking-tight text-foreground">NextLevel</span>
@@ -300,7 +300,7 @@ export default function AppShell({
         {/* ═══ LEFT SIDEBAR ═══ */}
         <nav
           style={{ width: sidebarW }}
-          className="flex flex-col border-r border-border bg-card transition-[width] duration-200 ease-in-out"
+          className="flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
         >
           {/* Mode nav items */}
           <div className="flex flex-1 flex-col gap-0.5 px-1.5 pt-2">
@@ -384,7 +384,7 @@ export default function AppShell({
         <aside
           style={{ width: effectiveChatW }}
           className={cn(
-            'relative flex flex-col overflow-hidden border-l border-border bg-surface transition-[width] duration-200 ease-in-out',
+            'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width] duration-200 ease-in-out',
             !chatOpen && 'items-center',
           )}
         >
@@ -405,7 +405,7 @@ export default function AppShell({
           {chatOpen && (
             <div className="relative z-10 flex flex-1 flex-col">
               {/* Panel header */}
-              <div className="flex h-10 items-center justify-between border-b border-border bg-surface px-3">
+              <div className="flex h-10 items-center justify-between border-b border-border bg-background px-3">
                 <span className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
                   NextLevel AI
                 </span>
