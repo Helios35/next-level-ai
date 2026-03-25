@@ -41,7 +41,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
           {STATS.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-col gap-0.5 rounded-lg bg-card border border-border px-4 py-3 min-w-0"
+              className="flex flex-col gap-0.5 rounded-lg bg-muted/30 border border-border px-4 py-3 min-w-0"
             >
               <span className="text-xl font-bold text-foreground">{stat.value}</span>
               <span className="text-xs text-muted-foreground">{stat.label}</span>
