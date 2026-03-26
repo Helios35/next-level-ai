@@ -1,10 +1,10 @@
 import { cn } from '@/utils/cn'
-import { Building2, Home, MapPin, DollarSign, HardHat, Users } from 'lucide-react'
+import { Building2, Home, DollarSign, HardHat, MapPin } from 'lucide-react'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { AssetSubType, DealStage } from '@shared/types/enums'
 import StatusBadge from './StatusBadge'
-import MatchScoreRing from './MatchScoreRing'
-import StageProgressBar from './StageProgressBar'
+import DealMetricsBar from './DealMetricsBar'
+import { InfoPopover } from './ui/info-popover'
 
 const ASSET_SUBTYPE_LABELS: Record<AssetSubType, string> = {
   build_for_rent: 'Build-for-Rent',
@@ -67,52 +67,70 @@ export default function DealCard({
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-start gap-2.5 min-w-0">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             <AssetIcon size={16} />
           </div>
-          <h3 className="text-sm font-semibold text-foreground leading-snug">{deal.name}</h3>
+          <div className="flex flex-col min-w-0">
+            <h3 className="text-sm font-semibold text-foreground leading-snug">{deal.name}</h3>
+            <InfoPopover
+              label="Location (MSA)"
+              value={deal.shared.geography.msa}
+              icon={<MapPin size={12} />}
+            >
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">
+                {deal.shared.geography.msa.split(',')[0]}
+              </p>
+            </InfoPopover>
+          </div>
         </div>
         <StatusBadge status={deal.status} className="shrink-0" />
       </div>
 
-      {/* Asset sub-type line */}
-      <p className="mt-2 text-xs text-muted-foreground">
-        {subtypeLabel}
-        {unitCount ? ` \u00B7 ${unitCount} units` : ''}
-      </p>
-
       {/* Metadata row */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <MapPin size={12} className="shrink-0" />
-          <span className="truncate max-w-[120px]">{deal.shared.geography.msa.split(',')[0]}</span>
-        </span>
-        <span className="flex items-center gap-1">
+      <div className="mt-4 flex items-center gap-3 sm:gap-4 rounded-lg border border-border bg-muted/30 px-3 sm:px-4 py-2.5 text-xs text-muted-foreground">
+        <InfoPopover
+          label="Property Type"
+          value={`${subtypeLabel}${unitCount ? ` · ${unitCount} units` : ''}`}
+          icon={<Building2 size={12} />}
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
+        >
+          <Building2 size={12} className="shrink-0" />
+          <span className="truncate">{subtypeLabel}{unitCount ? ` · ${unitCount}` : ''}</span>
+        </InfoPopover>
+        <div className="h-8 w-px bg-border shrink-0" />
+        <InfoPopover
+          label="Price"
+          value={formatPrice(deal)}
+          icon={<DollarSign size={12} />}
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
+        >
           <DollarSign size={12} className="shrink-0" />
-          {formatPrice(deal)}
-        </span>
-        <span className="flex items-center gap-1">
+          <span className="truncate">{formatPrice(deal)}</span>
+        </InfoPopover>
+        <div className="h-8 w-px bg-border shrink-0" />
+        <InfoPopover
+          label="Deal Stage"
+          value={stageLabel}
+          icon={<HardHat size={12} />}
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
+        >
           <HardHat size={12} className="shrink-0" />
-          {stageLabel}
-        </span>
+          <span className="truncate">{stageLabel}</span>
+        </InfoPopover>
       </div>
 
-      {/* Stage progress */}
-      <div className="mt-4">
-        <StageProgressBar currentStage={deal.currentStage} />
-      </div>
+      {/* Deal metrics */}
+      <DealMetricsBar
+        currentStage={deal.currentStage}
+        matchScore={deal.matchScore}
+        matchedBuyerCount={deal.matchedBuyerCount}
+        showMatchScore={false}
+        size="sm"
+        className="mt-5"
+      />
 
-      {/* Match score + buyer count */}
-      <div className="mt-4 flex items-center gap-4">
-        <MatchScoreRing score={deal.matchScore} size={40} strokeWidth={3} />
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Users size={13} />
-          {deal.matchedBuyerCount} matched buyers
-        </span>
-      </div>
-
-      {/* Footer buttons */}
+      {/* Action buttons */}
       <div className="mt-5 flex gap-2">
         <button
           onClick={onViewDetails}

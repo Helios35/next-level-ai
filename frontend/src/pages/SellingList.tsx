@@ -24,7 +24,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   return (
-    <div className="px-6 py-5 space-y-5">
+    <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
       {/* Breadcrumb — below the sidebar toggle icon */}
       <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Home size={13} className="text-muted-foreground" />
@@ -37,7 +37,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       {/* Page header + stats */}
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground">Your Listings</h1>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {STATS.map((stat) => (
             <div
               key={stat.label}
@@ -51,10 +51,10 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       </div>
 
       {/* Search + filter bar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {/* Search input */}
-          <div className="relative w-64">
+          <div className="relative flex-1 sm:flex-none sm:w-64">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -99,7 +99,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       </div>
 
       {/* Deal card grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {LISTED_DEALS.map((deal) => (
           <DealCard
             key={deal.id}
@@ -114,7 +114,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
         <span className="text-xs text-muted-foreground">
           Showing 1–3 of 3
         </span>
