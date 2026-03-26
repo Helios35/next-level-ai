@@ -267,7 +267,7 @@ export default function AppShell({
             onClick={onBack}
             disabled={!canGoBack}
             className={cn(
-              'rounded-md p-2 transition-colors',
+              'hidden sm:flex rounded-md p-2 transition-colors',
               canGoBack
                 ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 : 'text-muted-foreground/30 cursor-default',
@@ -279,7 +279,7 @@ export default function AppShell({
             onClick={onForward}
             disabled={!canGoForward}
             className={cn(
-              'rounded-md p-2 transition-colors',
+              'hidden sm:flex rounded-md p-2 transition-colors',
               canGoForward
                 ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 : 'text-muted-foreground/30 cursor-default',
@@ -310,7 +310,7 @@ export default function AppShell({
             <div className="flex h-5 w-5 items-center justify-center rounded bg-amber-500/20 text-amber-500">
               <span className="text-[10px] font-bold">C</span>
             </div>
-            <span>400 Credits</span>
+            <span className="hidden sm:inline">400 Credits</span>
           </button>
           <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground hover:ring-2 hover:ring-border transition-all">
             JD
@@ -323,7 +323,7 @@ export default function AppShell({
         {/* ═══ LEFT SIDEBAR ═══ */}
         <nav
           style={{ width: sidebarW }}
-          className="flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
+          className="hidden sm:flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
         >
           {/* Mode nav items */}
           <div className="flex flex-1 flex-col gap-0.5 px-1.5 pt-2">
@@ -384,11 +384,11 @@ export default function AppShell({
           {/* Sidebar toggle — outside the nav panel */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="absolute left-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="hidden sm:flex absolute left-2 top-2 z-10 h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
           </button>
-          <main className="flex-1 overflow-y-auto pt-10">
+          <main className="flex-1 overflow-y-auto pt-2 sm:pt-10">
             {children ?? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
                 <FileText size={48} strokeWidth={1} className="opacity-30" />
@@ -403,7 +403,7 @@ export default function AppShell({
         {chatOpen && !chatFullscreen && (
           <div
             onMouseDown={onMouseDown}
-            className="group flex w-1 cursor-col-resize items-center justify-center hover:bg-border transition-colors"
+            className="hidden sm:flex group w-1 cursor-col-resize items-center justify-center hover:bg-border transition-colors"
           >
             <div className="h-8 w-0.5 rounded-full bg-border group-hover:bg-muted-foreground transition-colors" />
           </div>
@@ -415,6 +415,8 @@ export default function AppShell({
           className={cn(
             'relative flex flex-col overflow-hidden border-l border-border bg-background transition-[width,flex] duration-300 ease-in-out',
             !chatOpen && 'items-center',
+            !chatOpen && 'max-sm:hidden',
+            chatOpen && 'max-sm:absolute max-sm:inset-y-0 max-sm:right-0 max-sm:z-30 max-sm:!w-full max-sm:border-l-0',
           )}
         >
           {/* Background dot grid */}

@@ -8,6 +8,7 @@ import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import StatusBadge from '@/components/StatusBadge'
 import MatchScoreRing from '@/components/MatchScoreRing'
 import StageProgressBar, { STAGE_LABELS } from '@/components/StageProgressBar'
+import DealMetricsBar from '@/components/DealMetricsBar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 import {
@@ -161,19 +162,12 @@ export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) 
           </div>
 
           {/* Right side — metrics card */}
-          <div className="flex items-center gap-4 shrink-0 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
-            <div className="w-44">
-              <StageProgressBar currentStage={deal.currentStage} />
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <MatchScoreRing score={deal.matchScore} size={44} />
-            <div className="h-8 w-px bg-border" />
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Users size={15} />
-              <span className="font-semibold text-foreground">{deal.matchedBuyerCount}</span>
-              Buyers
-            </div>
-          </div>
+          <DealMetricsBar
+            currentStage={deal.currentStage}
+            matchScore={deal.matchScore}
+            matchedBuyerCount={deal.matchedBuyerCount}
+            className="shrink-0"
+          />
         </div>
       </div>
 
