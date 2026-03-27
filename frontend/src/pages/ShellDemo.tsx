@@ -7,7 +7,7 @@ import SellerDealRoomView, { DEAL_ROOM_CHAT_MESSAGES } from '@/pages/SellerDealR
 
 type Page =
   | { mode: 'sell'; view: 'listings' }
-  | { mode: 'sell'; view: 'dealRoom' }
+  | { mode: 'sell'; view: 'dealRoom'; dealId: string }
   | { mode: 'buy'; view: 'landing' }
   | { mode: 'strategy'; view: 'landing' }
 
@@ -94,10 +94,10 @@ export default function ShellDemo() {
       chatContext={chatContext}
     >
       {page.mode === 'sell' && page.view === 'listings' && (
-        <SellingList onOpenDealRoom={() => navigateTo({ mode: 'sell', view: 'dealRoom' })} />
+        <SellingList onOpenDealRoom={(deal) => navigateTo({ mode: 'sell', view: 'dealRoom', dealId: deal.id })} />
       )}
       {page.mode === 'sell' && page.view === 'dealRoom' && (
-        <SellerDealRoomView onBack={() => navigateTo({ mode: 'sell', view: 'listings' })} />
+        <SellerDealRoomView dealId={page.dealId} onBack={() => navigateTo({ mode: 'sell', view: 'listings' })} />
       )}
       {page.mode === 'buy' && (
         <PlaceholderPage mode="buy" title="Your Deals" description="Buy mode pages are coming soon." />

@@ -5,6 +5,7 @@ import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
+import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
 
 // Only show dr_001, dr_002, dr_005 (exclude dr_006 dormant)
 const LISTED_DEALS = MOCK_SELLER_DEAL_ROOMS.filter((d) => d.id !== 'dr_006')
@@ -37,17 +38,11 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       {/* Page header + stats */}
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground">Your Listings</h1>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatTileGrid className="sm:grid-cols-4">
           {STATS.map((stat) => (
-            <div
-              key={stat.label}
-              className="flex flex-col gap-0.5 rounded-lg bg-muted/30 border border-border px-4 py-3 min-w-0"
-            >
-              <span className="text-xl font-bold text-foreground">{stat.value}</span>
-              <span className="text-xs text-muted-foreground">{stat.label}</span>
-            </div>
+            <StatTile key={stat.label} value={stat.value} label={stat.label} />
           ))}
-        </div>
+        </StatTileGrid>
       </div>
 
       {/* Search + filter bar */}
@@ -105,7 +100,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
             key={deal.id}
             deal={deal}
             onOpenDealRoom={
-              deal.id === 'dr_001' && onOpenDealRoom
+              onOpenDealRoom
                 ? () => onOpenDealRoom(deal)
                 : undefined
             }
