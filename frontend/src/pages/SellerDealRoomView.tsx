@@ -1,27 +1,31 @@
 import { cn } from '@/utils/cn'
 import {
   FileText, Users, BarChart2, Milestone,
-  Upload, Check, Eye, RefreshCw, Lock, Circle,
-  ArrowLeft, Info,
+  Upload, Check, Eye, RefreshCw, Lock,
+
 } from 'lucide-react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
-import StatusBadge from '@/components/StatusBadge'
-import MatchScoreRing from '@/components/MatchScoreRing'
-import StageProgressBar, { STAGE_LABELS } from '@/components/StageProgressBar'
-import DealMetricsBar from '@/components/DealMetricsBar'
+import DealRoomHeader from '@/components/DealRoomHeader'
+import MilestoneTimeline from '@/components/MilestoneTimeline'
+import SeatedBuyerItem from '@/components/SeatedBuyerItem'
+import SummaryCard from '@/components/SummaryCard'
+
+
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 import {
   Item,
-  ItemMedia,
   ItemContent,
   ItemTitle,
-  ItemDescription,
-  ItemActions,
 } from '@/components/ui/item'
+import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
+import { Badge } from '@/components/ui/badge'
+import { InfoCallout } from '@/components/ui/info-callout'
+import { BarChartRow } from '@/components/ui/bar-chart-row'
 import type { DealRoomStage } from '@shared/types/enums'
 
-const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === 'dr_001')!
+const DEFAULT_DEAL = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === 'dr_001')!
 
 // ── Tab definitions ─────────────────────────────────────────────────────────
 
@@ -130,46 +134,18 @@ const POST_ACCEPTANCE = [
 // ── Component ───────────────────────────────────────────────────────────────
 
 interface SellerDealRoomViewProps {
+  dealId?: string
   onBack?: () => void
 }
 
-export default function SellerDealRoomView({ onBack }: SellerDealRoomViewProps) {
+export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomViewProps) {
+  const deal = dealId
+    ? MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId) ?? DEFAULT_DEAL
+    : DEFAULT_DEAL
   return (
     <div className="flex h-full flex-col">
       {/* ═══ DEAL HEADER ═══ */}
-      <div className="shrink-0 border-b border-border bg-background px-6 pt-5 pb-4">
-        {/* Back link */}
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={13} />
-            Back to Your Listings
-          </button>
-        )}
-
-        <div className="flex items-start justify-between gap-6">
-          {/* Left side */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold tracking-tight text-foreground truncate">{deal.name}</h1>
-              <StatusBadge status={deal.status} />
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Build-for-Rent &middot; 72 units &middot; Cabarrus County, NC
-            </p>
-          </div>
-
-          {/* Right side — metrics card */}
-          <DealMetricsBar
-            currentStage={deal.currentStage}
-            matchScore={deal.matchScore}
-            matchedBuyerCount={deal.matchedBuyerCount}
-            className="shrink-0"
-          />
-        </div>
-      </div>
+      <DealRoomHeader deal={deal} onBack={onBack} />
 
       {/* ═══ TABS ═══ */}
       <Tabs defaultValue="documents" className="flex flex-1 flex-col overflow-hidden">
@@ -273,52 +249,30 @@ function BuyerPoolTab() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <h2 className="text-sm font-semibold text-foreground">Buyer Pool</h2>
-        <span className="rounded-full bg-mode-sell/15 px-2.5 py-0.5 text-xs font-medium text-mode-sell">
+        <Badge size="sm" className="border-transparent bg-mode-sell/15 text-mode-sell">
           3 of 3 Seats Filled
-        </span>
+        </Badge>
       </div>
 
       {/* Seated buyers */}
       <div className="flex flex-col gap-2">
         {SEATED_BUYERS.map((buyer) => (
-          <Item key={buyer.label} variant="outline" className="flex-nowrap px-4 py-3">
-            <ItemMedia variant="icon">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
-                #{buyer.rank}
-              </span>
-            </ItemMedia>
-
-            <ItemContent className="min-w-0">
-              <ItemTitle className="w-auto">
-                {buyer.label}
-                <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-[10px] font-medium text-green-400">
-                  Qualified
-                </span>
-                <span className="rounded-full bg-mode-sell/15 px-2 py-0.5 text-[10px] font-medium text-mode-sell">
-                  Seated
-                </span>
-              </ItemTitle>
-              <ItemDescription>{buyer.activity}</ItemDescription>
-            </ItemContent>
-
-            <ItemActions className="shrink-0 gap-4">
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Equity</p>
-                <p className="text-xs font-medium text-foreground">{buyer.equity}</p>
-              </div>
-              <MatchScoreRing score={buyer.score} size={36} strokeWidth={2.5} />
-            </ItemActions>
-          </Item>
+          <SeatedBuyerItem
+            key={buyer.label}
+            label={buyer.label}
+            rank={buyer.rank}
+            qualified={buyer.qualified}
+            score={buyer.score}
+            equity={buyer.equity}
+            activity={buyer.activity}
+          />
         ))}
       </div>
 
       {/* Info block */}
-      <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-        <Info size={14} className="shrink-0 mt-0.5 text-muted-foreground/60" />
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Seat allocation is managed by your Disposition Specialist. Buyers are seated based on match quality, qualification status, and DS judgment. Maximum 3 concurrent seats.
-        </p>
-      </div>
+      <InfoCallout>
+        Seat allocation is managed by your Disposition Specialist. Buyers are seated based on match quality, qualification status, and DS judgment. Maximum 3 concurrent seats.
+      </InfoCallout>
 
       {/* Wait Queue */}
       <div className="space-y-3">
@@ -331,16 +285,17 @@ function BuyerPoolTab() {
               <ItemContent>
                 <ItemTitle>
                   {buyer.label}
-                  <span
+                  <Badge
+                    size="sm"
                     className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'border-transparent',
                       buyer.qualified
                         ? 'bg-green-500/20 text-green-400'
                         : 'bg-amber-500/20 text-amber-400',
                     )}
                   >
                     {buyer.qualified ? 'Qualified' : 'Unqualified'}
-                  </span>
+                  </Badge>
                 </ItemTitle>
               </ItemContent>
             </Item>
@@ -359,49 +314,32 @@ function MarketIntelligenceTab() {
       <h2 className="text-sm font-semibold text-foreground">Market Intelligence</h2>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <StatTileGrid className="sm:grid-cols-3 lg:grid-cols-5">
         {MARKET_STATS.map((stat) => (
-          <div
-            key={stat.label}
-            className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-4 py-3"
-          >
-            <span className="text-2xl font-bold text-foreground tabular-nums">{stat.value}</span>
-            <span className="text-xs text-muted-foreground leading-snug">{stat.label}</span>
-          </div>
+          <StatTile key={stat.label} value={stat.value} label={stat.label} />
         ))}
-      </div>
+      </StatTileGrid>
 
       {/* Pass Reason Breakdown */}
-      <div className="rounded-xl border border-border bg-background p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Pass Reason Breakdown</h3>
+      <SummaryCard title="Pass Reason Breakdown">
         <div className="space-y-2.5">
           {PASS_REASONS.map((item) => (
-            <div key={item.reason} className="flex items-center gap-3">
-              <span className="w-36 shrink-0 text-xs text-muted-foreground truncate">{item.reason}</span>
-              <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-mode-sell/70 transition-all"
-                  style={{ width: `${item.pct}%` }}
-                />
-              </div>
-              <span className="w-6 shrink-0 text-xs font-medium text-foreground text-right tabular-nums">{item.count}</span>
-            </div>
+            <BarChartRow
+              key={item.reason}
+              label={item.reason}
+              value={item.count}
+              percentage={item.pct}
+            />
           ))}
         </div>
-      </div>
+      </SummaryCard>
 
       {/* Market Intelligence Summary */}
-      <div className="rounded-xl border border-border bg-background p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Market Intelligence Summary</h3>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            DS Authored
-          </span>
-        </div>
+      <SummaryCard title="Market Intelligence Summary" badge="DS Authored">
         <p className="text-sm leading-relaxed text-muted-foreground">
           Early buyer activity is positive. 3 of 14 invited buyers converted to seated — a healthy conversion rate for this price range. The primary friction point is pricing: 3 of 8 pass reasons cited pricing as the barrier. DS note: The $14M–$18M range may be slightly above where initial demand is concentrating. Recommend holding current range through the first offer round before advising seller on adjustment.
         </p>
-      </div>
+      </SummaryCard>
     </div>
   )
 }
@@ -415,67 +353,7 @@ function MilestonesTab() {
 
       {/* 9-stage timeline */}
       <div className="rounded-xl border border-border bg-background p-5">
-        <div className="relative">
-          {/* Vertical line — centered on 24px icons */}
-          <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
-
-          <div className="space-y-0">
-            {MILESTONE_DATA.map((ms, i) => (
-              <div
-                key={ms.stage}
-                className={cn(
-                  'flex items-start gap-3',
-                  i === MILESTONE_DATA.length - 1 ? 'pb-0' : ms.status === 'current' ? 'pb-7' : 'pb-4',
-                )}
-              >
-                {/* Circle indicator */}
-                <div className="relative z-10 shrink-0">
-                  {ms.status === 'complete' && (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-mode-sell text-white">
-                      <Check size={13} />
-                    </div>
-                  )}
-                  {ms.status === 'current' && (
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-mode-sell bg-mode-sell/10">
-                      <div className="h-2 w-2 rounded-full bg-mode-sell animate-pulse" />
-                    </div>
-                  )}
-                  {ms.status === 'upcoming' && (
-                    <div className="flex h-6 w-6 items-center justify-center">
-                      <Circle size={18} className="text-muted-foreground/40" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 pt-0.5">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'text-sm',
-                        ms.status === 'current'
-                          ? 'font-semibold text-foreground'
-                          : ms.status === 'complete'
-                            ? 'text-muted-foreground'
-                            : 'text-muted-foreground/60',
-                      )}
-                    >
-                      Stage {ms.stage} — {STAGE_LABELS[ms.stage]}
-                    </span>
-                    {ms.status === 'current' && (
-                      <span className="rounded-full bg-mode-sell/15 px-2 py-0.5 text-[10px] font-medium text-mode-sell">
-                        In Progress
-                      </span>
-                    )}
-                  </div>
-                  {ms.date && (
-                    <p className="mt-0.5 text-xs text-muted-foreground/60">{ms.date}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <MilestoneTimeline items={MILESTONE_DATA} />
       </div>
 
       {/* Post-acceptance milestones (locked) */}

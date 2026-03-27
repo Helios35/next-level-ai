@@ -434,7 +434,7 @@ export default function AppShell({
 
           {/* Expanded state */}
           {chatOpen && (
-            <div className="relative z-10 flex flex-1 flex-col">
+            <div className="relative z-10 flex flex-1 flex-col min-h-0">
               {/* Panel header */}
               <div className="flex h-10 items-center justify-between border-b border-border bg-background px-3">
                 <span className={cn('text-xs font-semibold tracking-wide uppercase', config.accent)}>
@@ -459,8 +459,8 @@ export default function AppShell({
               </div>
 
               {/* Chat body — centered in fullscreen */}
-              <div className="flex flex-1 flex-col overflow-hidden">
-                <div className={cn('flex flex-1 flex-col overflow-hidden', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
+              <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+                <div className={cn('flex flex-1 flex-col overflow-hidden min-h-0', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
                   {/* Chat messages */}
                   <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
                     {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
