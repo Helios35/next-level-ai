@@ -6,6 +6,7 @@ import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
 import DealCardList from '@/components/DealCardList'
+import DealPreviewModal from '@/components/DealPreviewModal'
 import SellerListingsEmpty from '@/components/SellerListingsEmpty'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
 import FilterModal, {
@@ -109,6 +110,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<FilterState>(EMPTY_FILTERS)
+  const [previewDeal, setPreviewDeal] = useState<DealRoom | null>(null)
 
   const hasFilters = !isFiltersEmpty(activeFilters)
   const chips = hasFilters ? getActiveChips(activeFilters) : []
@@ -264,6 +266,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
               <DealCard
                 key={deal.id}
                 deal={deal}
+                onViewDetails={() => setPreviewDeal(deal)}
                 onOpenDealRoom={
                   onOpenDealRoom
                     ? () => onOpenDealRoom(deal)
@@ -279,6 +282,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
                 <DealCardList
                   key={deal.id}
                   deal={deal}
+                  onViewDetails={() => setPreviewDeal(deal)}
                   onOpenDealRoom={
                     onOpenDealRoom
                       ? () => onOpenDealRoom(deal)
@@ -314,6 +318,18 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
           ))}
         </div>
       </div>
+
+      {/* Deal Preview Modal */}
+      <DealPreviewModal
+        deal={previewDeal}
+        open={previewDeal !== null}
+        onOpenChange={(open) => { if (!open) setPreviewDeal(null) }}
+        onOpenDealRoom={(dealId) => {
+          setPreviewDeal(null)
+          const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId)
+          if (deal && onOpenDealRoom) onOpenDealRoom(deal)
+        }}
+      />
 
       {/* Filter Sheet */}
       <FilterModal
