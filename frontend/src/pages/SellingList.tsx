@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Home, Search, SlidersHorizontal, LayoutGrid, List } from 'lucide-react'
+import { Home, Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
@@ -7,9 +7,90 @@ import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
 import SellerListingsEmpty from '@/components/SellerListingsEmpty'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
+import FilterModal, {
+  type FilterState,
+  EMPTY_FILTERS,
+  isFiltersEmpty,
+} from '@/components/FilterModal'
 
-// Only show dr_001, dr_002, dr_005 (exclude dr_006 dormant)
-const LISTED_DEALS = MOCK_SELLER_DEAL_ROOMS.filter((d) => d.id !== 'dr_006')
+const LOCATION_OPTIONS = [
+  { value: 'Charlotte-Concord-Gastonia, NC-SC', label: 'Charlotte-Concord-Gastonia, NC-SC' },
+  { value: 'Raleigh-Cary, NC', label: 'Raleigh-Cary, NC' },
+  { value: 'Nashville-Davidson-Murfreesboro-Franklin, TN', label: 'Nashville, TN' },
+  { value: 'Austin-Round Rock-Georgetown, TX', label: 'Austin, TX' },
+]
+
+const LOCATION_LABEL_MAP = Object.fromEntries(
+  LOCATION_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+const PRICE_RANGE_CONFIG = {
+  min: 4_000_000,
+  max: 25_000_000,
+  step: 500_000,
+  formatLabel: (v: number) => `$${(v / 1_000_000).toFixed(1)}M`,
+}
+
+const STAGE_OPTIONS = Array.from({ length: 9 }, (_, i) => ({
+  value: String(i + 1),
+  label: `Stage ${i + 1}`,
+}))
+
+const FILTER_LABEL_MAP: Record<string, string> = {
+  active: 'Active',
+  market_tested: 'Market Tested',
+  dormant: 'Dormant',
+  closed: 'Closed',
+  withdrawn: 'Withdrawn',
+  build_for_rent: 'BFR',
+  sfr_portfolio: 'SFR Portfolio',
+  multifamily: 'Multifamily',
+  land: 'Land',
+  pre_development: 'Pre-Development',
+  in_development: 'In Development',
+  delivered_vacant: 'Delivered Vacant',
+  lease_up: 'Lease-Up',
+  stabilized: 'Stabilized',
+  ...LOCATION_LABEL_MAP,
+}
+
+function getChipLabel(value: string | number): string {
+  if (typeof value === 'number') return `Stage ${value}`
+  return FILTER_LABEL_MAP[value] ?? value
+}
+
+function getActiveChips(filters: FilterState): { key: keyof FilterState; value: string | number; label: string }[] {
+  const chips: { key: keyof FilterState; value: string | number; label: string }[] = []
+  for (const key of ['location', 'status', 'assetType', 'dealStage', 'stage'] as const) {
+    for (const value of filters[key]) {
+      chips.push({ key, value, label: getChipLabel(value) })
+    }
+  }
+  if (filters.priceRange) {
+    const fmt = PRICE_RANGE_CONFIG.formatLabel
+    chips.push({
+      key: 'priceRange',
+      value: 'range',
+      label: `${fmt(filters.priceRange[0])} – ${fmt(filters.priceRange[1])}`,
+    })
+  }
+  return chips
+}
+
+function matchesFilters(deal: DealRoom, filters: FilterState): boolean {
+  if (filters.location.length > 0 && !filters.location.includes(deal.shared.geography.msa)) return false
+  if (filters.status.length > 0 && !filters.status.includes(deal.status)) return false
+  if (filters.assetType.length > 0 && !filters.assetType.includes(deal.assetSubType)) return false
+  if (filters.priceRange) {
+    const [minFilter, maxFilter] = filters.priceRange
+    const dealMin = deal.shared.priceRange?.min ?? deal.shared.exactPrice ?? 0
+    const dealMax = deal.shared.priceRange?.max ?? deal.shared.exactPrice ?? 0
+    if (dealMax < minFilter || dealMin > maxFilter) return false
+  }
+  if (filters.dealStage.length > 0 && !filters.dealStage.includes(deal.shared.dealStage)) return false
+  if (filters.stage.length > 0 && !filters.stage.includes(deal.currentStage)) return false
+  return true
+}
 
 const STATS = [
   { label: 'Deal Rooms Open', value: MOCK_SELLER_PERFORMANCE.dealRoomsOpen },
@@ -25,17 +106,45 @@ interface SellingListProps {
 export default function SellingList({ onOpenDealRoom }: SellingListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [activeFilters, setActiveFilters] = useState<FilterState>(EMPTY_FILTERS)
 
-  const filteredDeals = searchQuery.trim()
-    ? LISTED_DEALS.filter((deal) => {
-        const q = searchQuery.toLowerCase()
-        const name = deal.name.toLowerCase()
-        const msa = deal.shared.geography.msa.toLowerCase()
-        const cities = (deal.shared.geography.cities ?? []).map((c) => c.toLowerCase()).join(' ')
-        const subtype = deal.assetSubType.toLowerCase()
-        return name.includes(q) || msa.includes(q) || cities.includes(q) || subtype.includes(q)
-      })
-    : LISTED_DEALS
+  const hasFilters = !isFiltersEmpty(activeFilters)
+  const chips = hasFilters ? getActiveChips(activeFilters) : []
+
+  const filteredDeals = MOCK_SELLER_DEAL_ROOMS.filter((deal) => {
+    // Filter match
+    if (!matchesFilters(deal, activeFilters)) return false
+
+    // Search match
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const name = deal.name.toLowerCase()
+      const msa = deal.shared.geography.msa.toLowerCase()
+      const cities = (deal.shared.geography.cities ?? []).map((c) => c.toLowerCase()).join(' ')
+      const subtype = deal.assetSubType.toLowerCase()
+      if (!name.includes(q) && !msa.includes(q) && !cities.includes(q) && !subtype.includes(q)) {
+        return false
+      }
+    }
+
+    return true
+  })
+
+  function removeChip(key: keyof FilterState, value: string | number) {
+    if (key === 'priceRange') {
+      setActiveFilters((prev) => ({ ...prev, priceRange: null }))
+      return
+    }
+    setActiveFilters((prev) => ({
+      ...prev,
+      [key]: (prev[key] as (string | number)[]).filter((v) => v !== value),
+    }))
+  }
+
+  function clearAllFilters() {
+    setActiveFilters(EMPTY_FILTERS)
+  }
 
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
@@ -74,9 +183,22 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
           </div>
 
           {/* Filters button */}
-          <button className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors',
+              hasFilters
+                ? 'border-mode-sell/50 text-mode-sell bg-mode-sell/5'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
             <SlidersHorizontal size={15} />
             Filters
+            {hasFilters && (
+              <span className="ml-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-mode-sell text-[10px] font-semibold text-white">
+                {chips.length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -107,6 +229,32 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
         </div>
       </div>
 
+      {/* Filter chips */}
+      {hasFilters && (
+        <div className="flex flex-wrap items-center gap-2">
+          {chips.map((chip) => (
+            <span
+              key={`${chip.key}-${chip.value}`}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground"
+            >
+              {chip.label}
+              <button
+                onClick={() => removeChip(chip.key, chip.value)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+          <button
+            onClick={clearAllFilters}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
+
       {/* Deal card grid */}
       {filteredDeals.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -122,14 +270,14 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
             />
           ))}
         </div>
-      ) : searchQuery.trim() ? (
+      ) : searchQuery.trim() || hasFilters ? (
         <SellerListingsEmpty variant="no-results" />
       ) : null}
 
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
         <span className="text-xs text-muted-foreground">
-          Showing 1–3 of 3
+          Showing 1–{filteredDeals.length} of {filteredDeals.length}
         </span>
         <div className="flex items-center gap-1">
           {[1, 2, 3].map((page) => (
@@ -147,6 +295,24 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
           ))}
         </div>
       </div>
+
+      {/* Filter Sheet */}
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        filters={activeFilters}
+        onApply={(filters) => {
+          setActiveFilters(filters)
+          setIsFilterOpen(false)
+        }}
+        onClear={() => {
+          clearAllFilters()
+          setIsFilterOpen(false)
+        }}
+        locationOptions={LOCATION_OPTIONS}
+        stageOptions={STAGE_OPTIONS}
+        priceRangeConfig={PRICE_RANGE_CONFIG}
+      />
     </div>
   )
 }
