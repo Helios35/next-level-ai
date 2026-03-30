@@ -1,38 +1,10 @@
 import { cn } from '@/utils/cn'
+import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import { Building2, Home, DollarSign, HardHat, MapPin } from 'lucide-react'
 import type { DealRoom } from '@shared/types/dealRoom'
-import type { AssetSubType, DealStage } from '@shared/types/enums'
 import StatusBadge from './StatusBadge'
 import DealMetricsBar from './DealMetricsBar'
 import { InfoPopover } from './ui/info-popover'
-
-const ASSET_SUBTYPE_LABELS: Record<AssetSubType, string> = {
-  build_for_rent: 'Build-for-Rent',
-  sfr_portfolio: 'SFR Portfolio',
-  multifamily: 'Multifamily',
-  land: 'Land',
-}
-
-const DEAL_STAGE_LABELS: Record<DealStage, string> = {
-  pre_development: 'Pre-Development',
-  in_development: 'In Development',
-  delivered_vacant: 'Delivered Vacant',
-  lease_up: 'Lease-Up',
-  stabilized: 'Stabilized',
-}
-
-function formatPrice(deal: DealRoom): string {
-  const fmt = (n: number) =>
-    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${n.toLocaleString()}`
-
-  if (deal.shared.pricingPosture === 'exact_price' && deal.shared.exactPrice) {
-    return fmt(deal.shared.exactPrice)
-  }
-  if (deal.shared.priceRange) {
-    return `${fmt(deal.shared.priceRange.min)}–${fmt(deal.shared.priceRange.max)}`
-  }
-  return 'Price TBD'
-}
 
 function getUnitCount(deal: DealRoom): number | undefined {
   if (!deal.unique) return undefined
