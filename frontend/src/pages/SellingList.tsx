@@ -5,6 +5,7 @@ import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
+import SellerListingsEmpty from '@/components/SellerListingsEmpty'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
 
 // Only show dr_001, dr_002, dr_005 (exclude dr_006 dormant)
@@ -23,6 +24,18 @@ interface SellingListProps {
 
 export default function SellingList({ onOpenDealRoom }: SellingListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredDeals = searchQuery.trim()
+    ? LISTED_DEALS.filter((deal) => {
+        const q = searchQuery.toLowerCase()
+        const name = deal.name.toLowerCase()
+        const msa = deal.shared.geography.msa.toLowerCase()
+        const cities = (deal.shared.geography.cities ?? []).map((c) => c.toLowerCase()).join(' ')
+        const subtype = deal.assetSubType.toLowerCase()
+        return name.includes(q) || msa.includes(q) || cities.includes(q) || subtype.includes(q)
+      })
+    : LISTED_DEALS
 
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
@@ -55,7 +68,8 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
               type="text"
               placeholder="Search your listings..."
               className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-mode-sell/50 transition-colors"
-              readOnly
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
@@ -94,19 +108,23 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       </div>
 
       {/* Deal card grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {LISTED_DEALS.map((deal) => (
-          <DealCard
-            key={deal.id}
-            deal={deal}
-            onOpenDealRoom={
-              onOpenDealRoom
-                ? () => onOpenDealRoom(deal)
-                : undefined
-            }
-          />
-        ))}
-      </div>
+      {filteredDeals.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredDeals.map((deal) => (
+            <DealCard
+              key={deal.id}
+              deal={deal}
+              onOpenDealRoom={
+                onOpenDealRoom
+                  ? () => onOpenDealRoom(deal)
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      ) : searchQuery.trim() ? (
+        <SellerListingsEmpty variant="no-results" />
+      ) : null}
 
       {/* Pagination */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
