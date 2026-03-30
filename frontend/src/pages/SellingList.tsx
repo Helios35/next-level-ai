@@ -5,6 +5,7 @@ import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
+import DealCardList from '@/components/DealCardList'
 import SellerListingsEmpty from '@/components/SellerListingsEmpty'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
 import FilterModal, {
@@ -38,7 +39,7 @@ const STAGE_OPTIONS = Array.from({ length: 9 }, (_, i) => ({
 
 const FILTER_LABEL_MAP: Record<string, string> = {
   active: 'Active',
-  market_tested: 'Market Tested',
+  market_tested: 'Tested',
   dormant: 'Dormant',
   closed: 'Closed',
   withdrawn: 'Withdrawn',
@@ -255,21 +256,39 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
         </div>
       )}
 
-      {/* Deal card grid */}
+      {/* Deal cards */}
       {filteredDeals.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredDeals.map((deal) => (
-            <DealCard
-              key={deal.id}
-              deal={deal}
-              onOpenDealRoom={
-                onOpenDealRoom
-                  ? () => onOpenDealRoom(deal)
-                  : undefined
-              }
-            />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredDeals.map((deal) => (
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                onOpenDealRoom={
+                  onOpenDealRoom
+                    ? () => onOpenDealRoom(deal)
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="flex flex-col gap-2 min-w-fit">
+              {filteredDeals.map((deal) => (
+                <DealCardList
+                  key={deal.id}
+                  deal={deal}
+                  onOpenDealRoom={
+                    onOpenDealRoom
+                      ? () => onOpenDealRoom(deal)
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        )
       ) : searchQuery.trim() || hasFilters ? (
         <SellerListingsEmpty variant="no-results" />
       ) : null}
