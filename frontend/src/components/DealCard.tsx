@@ -14,7 +14,7 @@ function getUnitCount(deal: DealRoom): number | undefined {
 
 interface DealCardProps {
   deal: DealRoom
-  onViewDetails?: () => void
+  onViewDetails?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onOpenDealRoom?: () => void
   className?: string
 }

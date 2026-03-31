@@ -7,7 +7,7 @@ import StageProgressBar from './StageProgressBar'
 
 interface DealCardListProps {
   deal: DealRoom
-  onViewDetails?: () => void
+  onViewDetails?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onOpenDealRoom?: () => void
   className?: string
 }
