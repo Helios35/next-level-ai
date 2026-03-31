@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Home, Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import type { DealRoom } from '@shared/types/dealRoom'
@@ -111,6 +111,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<FilterState>(EMPTY_FILTERS)
   const [previewDeal, setPreviewDeal] = useState<DealRoom | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
 
   const hasFilters = !isFiltersEmpty(activeFilters)
   const chips = hasFilters ? getActiveChips(activeFilters) : []
@@ -266,7 +267,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
               <DealCard
                 key={deal.id}
                 deal={deal}
-                onViewDetails={() => setPreviewDeal(deal)}
+                onViewDetails={(e) => { triggerRef.current = e.currentTarget as HTMLButtonElement; setPreviewDeal(deal) }}
                 onOpenDealRoom={
                   onOpenDealRoom
                     ? () => onOpenDealRoom(deal)
@@ -282,7 +283,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
                 <DealCardList
                   key={deal.id}
                   deal={deal}
-                  onViewDetails={() => setPreviewDeal(deal)}
+                  onViewDetails={(e) => { triggerRef.current = e.currentTarget as HTMLButtonElement; setPreviewDeal(deal) }}
                   onOpenDealRoom={
                     onOpenDealRoom
                       ? () => onOpenDealRoom(deal)
@@ -323,7 +324,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       <DealPreviewModal
         deal={previewDeal}
         open={previewDeal !== null}
-        onOpenChange={(open) => { if (!open) setPreviewDeal(null) }}
+        onOpenChange={(open) => { if (!open) { setPreviewDeal(null); triggerRef.current?.focus() } }}
         onOpenDealRoom={(dealId) => {
           setPreviewDeal(null)
           const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId)
