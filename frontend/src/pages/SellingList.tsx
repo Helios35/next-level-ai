@@ -40,7 +40,7 @@ const STAGE_OPTIONS = Array.from({ length: 9 }, (_, i) => ({
 
 const FILTER_LABEL_MAP: Record<string, string> = {
   active: 'Active',
-  market_tested: 'Tested',
+  market_tested: 'Market Tested',
   dormant: 'Dormant',
   closed: 'Closed',
   withdrawn: 'Withdrawn',

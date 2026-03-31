@@ -53,7 +53,7 @@ const FILTER_SECTIONS: FilterSection[] = [
     label: 'Status',
     options: [
       { value: 'active', label: 'Active' },
-      { value: 'market_tested', label: 'Tested' },
+      { value: 'market_tested', label: 'Market Tested' },
       { value: 'dormant', label: 'Dormant' },
       { value: 'closed', label: 'Closed' },
       { value: 'withdrawn', label: 'Withdrawn' },
