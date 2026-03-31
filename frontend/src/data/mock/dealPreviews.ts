@@ -1,4 +1,5 @@
 import type { DocumentType } from '@shared/types/document'
+import type { AssetSubType, DealStage, PricingPosture, PriceRange } from '@shared/types/enums'
 
 export interface BuyerActivitySnapshot {
   totalViews: number
@@ -14,6 +15,17 @@ export interface DocumentUploadItem {
   status: 'not_started' | 'uploaded' | 'under_review' | 'approved' | 'flagged'
   fileName?: string
   uploadedAt?: string
+}
+
+export interface DealPreviewBuyer {
+  assetSubType: AssetSubType
+  geography: string
+  dealStage: DealStage
+  matchScore: number
+  pricingPosture: PricingPosture
+  priceRange?: PriceRange
+  seatStatus: string
+  accessRequestedAt?: string
 }
 
 export interface DealPreviewSeller {
@@ -56,7 +68,7 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
     buyerActivity: {
       totalViews: 62,
       ndaSigned: 3,
-      offersReceived: 2,
+      offersReceived: 0,
       lastActivityAt: '2026-03-29T16:45:00Z',
     },
     documents: [
@@ -79,5 +91,39 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
       { type: 'property_spreadsheet', label: 'Property Spreadsheet', required: true, status: 'not_started' },
       { type: 'pro_forma', label: 'Pro Forma', required: false, status: 'not_started' },
     ],
+  },
+}
+
+// ── Buyer-side deal previews ───────────────────────────────────────────────
+// Price is always blurred in buyer view; seatStatus reflects buyer's position
+
+export const MOCK_DEAL_PREVIEW_BUYER: Record<string, DealPreviewBuyer> = {
+  dr_001: {
+    assetSubType: 'build_for_rent',
+    geography: 'Charlotte-Concord-Gastonia, NC-SC',
+    dealStage: 'lease_up',
+    matchScore: 91,
+    pricingPosture: 'price_range',
+    priceRange: { min: 14000000, max: 18000000 },
+    seatStatus: 'seated',
+    accessRequestedAt: '2026-02-01T09:00:00Z',
+  },
+  dr_002: {
+    assetSubType: 'sfr_portfolio',
+    geography: 'Raleigh-Cary, NC',
+    dealStage: 'stabilized',
+    matchScore: 78,
+    pricingPosture: 'price_range',
+    priceRange: { min: 6500000, max: 9000000 },
+    seatStatus: 'access_requested',
+    accessRequestedAt: '2026-02-20T14:00:00Z',
+  },
+  dr_005: {
+    assetSubType: 'multifamily',
+    geography: 'Nashville-Davidson-Murfreesboro-Franklin, TN',
+    dealStage: 'stabilized',
+    matchScore: 68,
+    pricingPosture: 'exact_price',
+    seatStatus: 'passed',
   },
 }

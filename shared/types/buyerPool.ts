@@ -15,6 +15,6 @@ export interface BuyerPoolEntry {
   seatedAt?: string
   passedAt?: string
   passReason?: string
-  aiRankPosition: number
+  aiRankPosition?: number
   dsOverrideRank?: number
 }

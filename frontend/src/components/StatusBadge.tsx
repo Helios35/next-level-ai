@@ -7,7 +7,7 @@ const STATUS_CONFIG: Record<DealRoomStatus, { label: string; className: string }
     className: 'bg-green-500/20 text-green-400',
   },
   market_tested: {
-    label: 'Tested',
+    label: 'Market Tested',
     className: 'bg-amber-500/20 text-amber-400',
   },
   dormant: {
