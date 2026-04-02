@@ -27,6 +27,7 @@ export type DealRoomStatus =
   | 'dormant'
   | 'closed'
   | 'withdrawn'
+  | 'draft'
 
 export type StrategyStatus = 'broadcasting' | 'paused' | 'draft'
 

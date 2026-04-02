@@ -22,6 +22,10 @@ const STATUS_CONFIG: Record<DealRoomStatus, { label: string; className: string }
     label: 'Withdrawn',
     className: 'bg-red-500/20 text-red-400',
   },
+  draft: {
+    label: 'Draft',
+    className: 'bg-slate-500/20 text-slate-400',
+  },
 }
 
 interface StatusBadgeProps {

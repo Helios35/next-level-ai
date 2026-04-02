@@ -166,6 +166,10 @@ interface AppShellProps {
   canGoForward?: boolean
   /** Override chat panel content (messages, context label, skills) */
   chatContext?: ChatContext
+  /** When provided, makes the chat textarea interactive and calls this on send */
+  onSendMessage?: (text: string) => void
+  /** Controlled active sidebar nav index — syncs highlight on programmatic navigation */
+  activeNavIndex?: number
 }
 
 export default function AppShell({
@@ -178,6 +182,8 @@ export default function AppShell({
   canGoForward = false,
   chatContext,
   activeMode,
+  activeNavIndex,
+  onSendMessage,
 }: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -186,9 +192,11 @@ export default function AppShell({
   const [dark, setDark] = useState(true)
   const [activeNav, setActiveNav] = useState(0)
   const [chatWidth, setChatWidth] = useState(0)
+  const [chatInput, setChatInput] = useState('')
 
   const shellRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
 
   // Apply dark class to html
   useEffect(() => {
@@ -211,6 +219,25 @@ export default function AppShell({
   useEffect(() => {
     setActiveNav(0)
   }, [mode])
+
+  // Sync controlled nav index from parent (programmatic navigation)
+  useEffect(() => {
+    if (activeNavIndex !== undefined) {
+      setActiveNav(activeNavIndex)
+    }
+  }, [activeNavIndex])
+
+  // Clear chat input when onSendMessage is removed
+  useEffect(() => {
+    if (!onSendMessage) setChatInput('')
+  }, [onSendMessage])
+
+  // Auto-scroll chat to bottom on new messages
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
+    }
+  }, [chatContext?.messages?.length])
 
   const config = MODE_CONFIG[mode]
   const sidebarW = sidebarOpen ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W
@@ -462,7 +489,7 @@ export default function AppShell({
               <div className="flex flex-1 flex-col overflow-hidden min-h-0">
                 <div className={cn('flex flex-1 flex-col overflow-hidden min-h-0', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
                   {/* Chat messages */}
-                  <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                  <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
                     {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
                       <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
                         <div
@@ -492,16 +519,18 @@ export default function AppShell({
                   </div>
 
                   {/* Skills bar */}
-                  <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
-                    {(chatContext?.skills ?? SKILLS).map((skill) => (
-                      <button
-                        key={skill}
-                        className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
-                      >
-                        {skill}
-                      </button>
-                    ))}
-                  </div>
+                  {(chatContext?.skills ?? SKILLS).length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
+                      {(chatContext?.skills ?? SKILLS).map((skill) => (
+                        <button
+                          key={skill}
+                          className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
+                        >
+                          {skill}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Chat input — elevated card */}
                   <div className="p-3">
@@ -512,7 +541,18 @@ export default function AppShell({
                           placeholder="Type your message here."
                           rows={2}
                           className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 outline-none"
-                          readOnly
+                          readOnly={!onSendMessage}
+                          value={onSendMessage ? chatInput : ''}
+                          onChange={onSendMessage ? (e) => setChatInput(e.target.value) : undefined}
+                          onKeyDown={onSendMessage ? (e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              if (chatInput.trim()) {
+                                onSendMessage(chatInput.trim())
+                                setChatInput('')
+                              }
+                            }
+                          } : undefined}
                         />
                       </div>
                       {/* Bottom bar: plus, context dropdown, send */}
@@ -526,7 +566,15 @@ export default function AppShell({
                             <ChevronDown size={12} />
                           </button>
                         </div>
-                        <button className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors', config.chatSend)}>
+                        <button
+                          onClick={() => {
+                            if (onSendMessage && chatInput.trim()) {
+                              onSendMessage(chatInput.trim())
+                              setChatInput('')
+                            }
+                          }}
+                          className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-white transition-colors', config.chatSend)}
+                        >
                           <ArrowUp size={16} />
                         </button>
                       </div>
