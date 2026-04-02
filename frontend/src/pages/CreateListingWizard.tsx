@@ -1,18 +1,32 @@
-import { useState, useEffect } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+import { Separator } from '@/components/ui/separator'
+import { SectionCard } from '@/components/ui/section-card'
+import { ReviewRow } from '@/components/ui/review-row'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import {
-  PlusCircle,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Building2,
   Layers,
   Scale,
   FileText,
   ClipboardCheck,
-  Upload,
   CheckCircle2,
+  Upload,
+  RefreshCw,
 } from 'lucide-react'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -107,18 +121,9 @@ const STAGE_LABELS: Record<number, string> = {
   9: 'Post-Close',
 }
 
-// ── Shared styles ───────────────────────────────────────────────────────────
+// ── Section keys ────────────────────────────────────────────────────────────
 
-const inputClass =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring/50 transition-colors'
-
-// ── Animation variants ──────────────────────────────────────────────────────
-
-const sectionVariants = {
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.2 } },
-}
+type SectionKey = 'dealOverview' | 'assetSpecs' | 'saleTerms' | 'documents' | 'review'
 
 // ── Exported types for draft state ──────────────────────────────────────────
 
@@ -157,9 +162,11 @@ interface CreateListingWizardProps {
   onSubmit: () => void
   onSaveAsDraft?: (snapshot: WizardFormState, currentStep: number) => void
   initialState?: Partial<WizardFormState>
+  documents?: { name: string; status: string; fileName?: string }[]
+  onDocumentUpload?: (docName: string, fileName: string) => void
 }
 
-export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, initialState }: CreateListingWizardProps) {
+export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, initialState, documents: externalDocuments, onDocumentUpload }: CreateListingWizardProps) {
   // ── Step 1: Deal Overview (Tier 1 — DealRoomSharedCriteria) ─────────────
   const [propertyName, setPropertyName] = useState(initialState?.propertyName ?? '')
   const [assetClass, setAssetClass] = useState(initialState?.assetClass ?? '')
@@ -184,7 +191,63 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
   const [stageNumber, setStageNumber] = useState(initialState?.stageNumber ?? 1)
 
   // ── Step 4: Documents ───────────────────────────────────────────────────
-  const [documents, setDocuments] = useState<{ name: string; status: string }[]>(initialState?.documents ?? [])
+  const [internalDocuments, setInternalDocuments] = useState<{ name: string; status: string }[]>(initialState?.documents ?? [])
+  const documents = externalDocuments ?? internalDocuments
+
+  // File picker for wizard-side uploads
+  const wizardFileInputRef = useRef<HTMLInputElement>(null)
+  const pendingDocLabelRef = useRef('')
+
+  const openWizardFilePicker = useCallback((docLabel: string) => {
+    pendingDocLabelRef.current = docLabel
+    wizardFileInputRef.current?.click()
+  }, [])
+
+  const handleWizardFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && pendingDocLabelRef.current) {
+      if (onDocumentUpload) {
+        onDocumentUpload(pendingDocLabelRef.current, file.name)
+      } else {
+        // Fallback: update internal state if no external handler
+        setInternalDocuments((prev) =>
+          prev.map((d) => (d.name === pendingDocLabelRef.current ? { ...d, status: 'uploaded' } : d)),
+        )
+      }
+    }
+    e.target.value = ''
+    pendingDocLabelRef.current = ''
+  }, [onDocumentUpload])
+
+  // ── Section collapse state ──────────────────────────────────────────────
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
+    dealOverview: false,
+    assetSpecs: false,
+    saleTerms: false,
+    documents: false,
+    review: false,
+  })
+
+  const toggleSection = useCallback((key: SectionKey) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
+
+  // Auto-expand sections when the AI advances the step
+  useEffect(() => {
+    if (step >= 1) setOpenSections((prev) => prev.dealOverview ? prev : { ...prev, dealOverview: true })
+  }, [step >= 1]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (step >= 2) setOpenSections((prev) => prev.assetSpecs ? prev : { ...prev, assetSpecs: true })
+  }, [step >= 2]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (step >= 3) setOpenSections((prev) => prev.saleTerms ? prev : { ...prev, saleTerms: true })
+  }, [step >= 3]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (step >= 4) setOpenSections((prev) => prev.documents ? prev : { ...prev, documents: true })
+  }, [step >= 4]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (step >= 5) setOpenSections((prev) => prev.review ? prev : { ...prev, review: true })
+  }, [step >= 5]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Asset Class → SubType dependency ────────────────────────────────────
   const handleAssetClassChange = (newClass: string) => {
@@ -225,14 +288,14 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
   }, [step, stageNumber])
 
   useEffect(() => {
-    if (step >= 4 && documents.length === 0) {
-      setDocuments([
+    if (!externalDocuments && step >= 4 && internalDocuments.length === 0) {
+      setInternalDocuments([
         { name: 'Purchase & Sale Agreement', status: 'pending' },
         { name: 'Survey / Site Plan', status: 'pending' },
         { name: 'Pro Forma', status: 'pending' },
       ])
     }
-  }, [step, documents.length])
+  }, [step, internalDocuments.length, externalDocuments])
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   const formatCurrency = (val: number | '') => {
@@ -262,7 +325,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <div className="mx-auto w-full max-w-3xl px-6 py-6 space-y-6">
+      <div className="mx-auto w-full max-w-3xl px-6 py-6 flex flex-col gap-4">
         {/* ── Progress indicator ────────────────────────────────────── */}
         <div className="flex gap-3">
           {WIZARD_STEPS.map((label, i) => (
@@ -292,407 +355,367 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               variant="outline"
               onClick={() => onSaveAsDraft(getFormSnapshot(), step)}
             >
-              <FileText size={16} />
+              <FileText data-icon="inline-start" />
               Save as Draft
             </Button>
           </div>
         )}
 
-        {/* ── Empty state ──────────────────────────────────────────── */}
-        {step === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3"
-          >
-            <PlusCircle size={48} strokeWidth={1} className="opacity-30" />
-            <p className="text-sm">Tell the AI about your property to get started.</p>
-          </motion.div>
-        )}
-
         {/* ── Step 1: Deal Overview (Tier 1 — Shared Criteria) ─────── */}
-        <AnimatePresence>
-          {step >= 1 && (
-            <motion.div key="deal-overview" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-              <SectionCard icon={Building2} title="Deal Overview">
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldGroup label="Property Name" span={2}>
-                    <input
-                      type="text"
-                      value={propertyName}
-                      onChange={(e) => setPropertyName(e.target.value)}
-                      className={inputClass}
-                    />
-                  </FieldGroup>
-                  <FieldGroup label="Asset Class">
-                    <select
-                      value={assetClass}
-                      onChange={(e) => handleAssetClassChange(e.target.value)}
-                      className={inputClass}
-                    >
-                      {ASSET_CLASS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Asset Type">
-                    <select
-                      value={assetSubType}
-                      onChange={(e) => setAssetSubType(e.target.value)}
-                      disabled={isLand}
-                      className={cn(inputClass, isLand && 'opacity-60')}
-                    >
-                      {subtypeOptions.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Geography (MSA)">
-                    <input
-                      type="text"
-                      value={locationMsa}
-                      onChange={(e) => setLocationMsa(e.target.value)}
-                      className={inputClass}
-                    />
-                  </FieldGroup>
-                  <FieldGroup label="Deal Stage">
-                    <select
-                      value={dealStage}
-                      onChange={(e) => setDealStage(e.target.value)}
-                      className={inputClass}
-                    >
-                      {DEAL_STAGE_OPTIONS.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Pricing Posture">
-                    <div className="flex rounded-lg border border-border overflow-hidden">
-                      {PRICING_POSTURE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => setPricingPosture(opt.value)}
-                          className={cn(
-                            'flex-1 px-3 py-2 text-xs font-medium transition-colors',
-                            pricingPosture === opt.value
-                              ? 'bg-mode-sell text-white'
-                              : 'bg-background text-muted-foreground hover:bg-muted',
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </FieldGroup>
-                  {pricingPosture === 'exact_price' && (
-                    <FieldGroup label="Asking Price">
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                        <input
-                          type="text"
-                          value={formatCurrency(exactPrice)}
-                          onChange={(e) => setExactPrice(parseCurrency(e.target.value))}
-                          className={cn(inputClass, 'pl-7')}
-                        />
-                      </div>
-                    </FieldGroup>
-                  )}
-                  {pricingPosture === 'price_range' && (
-                    <>
-                      <FieldGroup label="Min Price">
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                          <input
-                            type="text"
-                            value={formatCurrency(priceRangeMin)}
-                            onChange={(e) => setPriceRangeMin(parseCurrency(e.target.value))}
-                            className={cn(inputClass, 'pl-7')}
-                          />
-                        </div>
-                      </FieldGroup>
-                      <FieldGroup label="Max Price">
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                          <input
-                            type="text"
-                            value={formatCurrency(priceRangeMax)}
-                            onChange={(e) => setPriceRangeMax(parseCurrency(e.target.value))}
-                            className={cn(inputClass, 'pl-7')}
-                          />
-                        </div>
-                      </FieldGroup>
-                    </>
-                  )}
+        <SectionCard
+          icon={Building2}
+          title="Deal Overview"
+          open={openSections.dealOverview}
+          onOpenChange={() => toggleSection('dealOverview')}
+        >
+          <FieldGroup className="grid grid-cols-2 gap-4">
+            <Field className="col-span-2">
+              <FieldLabel>Property Name</FieldLabel>
+              <Input
+                value={propertyName}
+                onChange={(e) => setPropertyName(e.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>Asset Class</FieldLabel>
+              <Select items={ASSET_CLASS_OPTIONS} value={assetClass} onValueChange={handleAssetClassChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {ASSET_CLASS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Asset Type</FieldLabel>
+              <Select items={subtypeOptions} value={assetSubType} onValueChange={setAssetSubType} disabled={isLand}>
+                <SelectTrigger className={cn('w-full', isLand && 'opacity-60')}>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {subtypeOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Geography (MSA)</FieldLabel>
+              <Input
+                value={locationMsa}
+                onChange={(e) => setLocationMsa(e.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>Deal Stage</FieldLabel>
+              <Select items={DEAL_STAGE_OPTIONS} value={dealStage} onValueChange={setDealStage}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {DEAL_STAGE_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Pricing Posture</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={pricingPosture}
+                onValueChange={(val) => { if (val) setPricingPosture(val) }}
+                className="w-full"
+              >
+                {PRICING_POSTURE_OPTIONS.map((opt) => (
+                  <ToggleGroupItem key={opt.value} value={opt.value} className="flex-1 text-xs">
+                    {opt.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Field>
+            {pricingPosture === 'exact_price' && (
+              <Field>
+                <FieldLabel>Asking Price</FieldLabel>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                  <Input
+                    value={formatCurrency(exactPrice)}
+                    onChange={(e) => setExactPrice(parseCurrency(e.target.value))}
+                    className="pl-7"
+                  />
                 </div>
-              </SectionCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </Field>
+            )}
+            {pricingPosture === 'price_range' && (
+              <>
+                <Field>
+                  <FieldLabel>Min Price</FieldLabel>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      value={formatCurrency(priceRangeMin)}
+                      onChange={(e) => setPriceRangeMin(parseCurrency(e.target.value))}
+                      className="pl-7"
+                    />
+                  </div>
+                </Field>
+                <Field>
+                  <FieldLabel>Max Price</FieldLabel>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      value={formatCurrency(priceRangeMax)}
+                      onChange={(e) => setPriceRangeMax(parseCurrency(e.target.value))}
+                      className="pl-7"
+                    />
+                  </div>
+                </Field>
+              </>
+            )}
+          </FieldGroup>
+        </SectionCard>
 
         {/* ── Step 2: Asset Specs (Tier 2 — UniqueCriteria) ────────── */}
-        <AnimatePresence>
-          {step >= 2 && (
-            <motion.div key="asset-specs" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-              <SectionCard icon={Layers} title={`Asset Specs \u2014 ${subtypeLabel}`}>
-                <div className="grid grid-cols-2 gap-4">
-                  <FieldGroup label="Product Type">
-                    <select
-                      value={productType}
-                      onChange={(e) => setProductType(e.target.value)}
-                      className={inputClass}
-                    >
-                      {BFR_PRODUCT_TYPES.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Development Status">
-                    <select
-                      value={currentDevelopmentStatus}
-                      onChange={(e) => setCurrentDevelopmentStatus(e.target.value)}
-                      className={inputClass}
-                    >
-                      {(() => {
-                        const groups = [...new Set(DEVELOPMENT_STATUS_OPTIONS.map((o) => o.group))]
-                        return groups.map((g) => (
-                          <optgroup key={g} label={g}>
-                            {DEVELOPMENT_STATUS_OPTIONS.filter((o) => o.group === g).map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </optgroup>
-                        ))
-                      })()}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Sale Stage Status">
-                    <select
-                      value={saleStageStatus}
-                      onChange={(e) => setSaleStageStatus(e.target.value)}
-                      className={inputClass}
-                    >
-                      {DEAL_STAGE_OPTIONS.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Sale Window">
-                    <select
-                      value={saleWindow}
-                      onChange={(e) => setSaleWindow(e.target.value)}
-                      className={inputClass}
-                    >
-                      {SALE_WINDOW_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </FieldGroup>
-                  <FieldGroup label="Unit Count">
-                    <input
-                      type="number"
-                      value={unitCount}
-                      onChange={(e) => setUnitCount(e.target.value ? Number(e.target.value) : '')}
-                      className={inputClass}
-                    />
-                  </FieldGroup>
-                  <div /> {/* empty cell for grid alignment */}
-                  <FieldGroup label="Phase Sale Allowed">
-                    <BooleanToggle value={phaseSaleAllowed} onChange={setPhaseSaleAllowed} />
-                  </FieldGroup>
-                  <FieldGroup label="Must Sell as Package">
-                    <BooleanToggle value={mustSellAsPackage} onChange={setMustSellAsPackage} />
-                  </FieldGroup>
-                </div>
-              </SectionCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <SectionCard
+          icon={Layers}
+          title={`Asset Specs \u2014 ${subtypeLabel}`}
+          open={openSections.assetSpecs}
+          onOpenChange={() => toggleSection('assetSpecs')}
+          disabled={step < 1}
+        >
+          <FieldGroup className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel>Product Type</FieldLabel>
+              <Select items={BFR_PRODUCT_TYPES} value={productType} onValueChange={setProductType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {BFR_PRODUCT_TYPES.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Development Status</FieldLabel>
+              <Select items={DEVELOPMENT_STATUS_OPTIONS} value={currentDevelopmentStatus} onValueChange={setCurrentDevelopmentStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const groups = [...new Set(DEVELOPMENT_STATUS_OPTIONS.map((o) => o.group))]
+                    return groups.map((g) => (
+                      <SelectGroup key={g}>
+                        <SelectLabel>{g}</SelectLabel>
+                        {DEVELOPMENT_STATUS_OPTIONS.filter((o) => o.group === g).map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))
+                  })()}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Sale Stage Status</FieldLabel>
+              <Select items={DEAL_STAGE_OPTIONS} value={saleStageStatus} onValueChange={setSaleStageStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {DEAL_STAGE_OPTIONS.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Sale Window</FieldLabel>
+              <Select items={SALE_WINDOW_OPTIONS} value={saleWindow} onValueChange={setSaleWindow}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select window" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {SALE_WINDOW_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel>Unit Count</FieldLabel>
+              <Input
+                type="number"
+                value={unitCount}
+                onChange={(e) => setUnitCount(e.target.value ? Number(e.target.value) : '')}
+              />
+            </Field>
+            <div /> {/* empty cell for grid alignment */}
+            <Field>
+              <FieldLabel>Phase Sale Allowed</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={phaseSaleAllowed ? 'yes' : 'no'}
+                onValueChange={(val) => { if (val) setPhaseSaleAllowed(val === 'yes') }}
+                className="w-full"
+              >
+                <ToggleGroupItem value="yes" className="flex-1">Yes</ToggleGroupItem>
+                <ToggleGroupItem value="no" className="flex-1">No</ToggleGroupItem>
+              </ToggleGroup>
+            </Field>
+            <Field>
+              <FieldLabel>Must Sell as Package</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={mustSellAsPackage ? 'yes' : 'no'}
+                onValueChange={(val) => { if (val) setMustSellAsPackage(val === 'yes') }}
+                className="w-full"
+              >
+                <ToggleGroupItem value="yes" className="flex-1">Yes</ToggleGroupItem>
+                <ToggleGroupItem value="no" className="flex-1">No</ToggleGroupItem>
+              </ToggleGroup>
+            </Field>
+          </FieldGroup>
+        </SectionCard>
 
-        {/* ── Step 3: Sale Terms ───────────────────────────────────── */}
-        <AnimatePresence>
-          {step >= 3 && (
-            <motion.div key="sale-terms" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-              <SectionCard icon={Scale} title="Sale Terms">
-                <div className="space-y-4">
-                  <FieldGroup label={`Deal Room Stage: ${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`}>
-                    <Slider
-                      value={[stageNumber]}
-                      onValueChange={(val: number[]) => setStageNumber(val[0])}
-                      min={1}
-                      max={9}
-                      step={1}
-                    />
-                  </FieldGroup>
-                </div>
-              </SectionCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── Step 3: Sale Terms (soft gate — no blocking) ─────────── */}
+        <SectionCard
+          icon={Scale}
+          title="Sale Terms"
+          open={openSections.saleTerms}
+          onOpenChange={() => toggleSection('saleTerms')}
+          disabled={step < 2}
+        >
+          <Field>
+            <FieldLabel>{`Deal Room Stage: ${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`}</FieldLabel>
+            <Slider
+              value={[stageNumber]}
+              onValueChange={(val: number[]) => setStageNumber(val[0])}
+              min={1}
+              max={9}
+              step={1}
+            />
+          </Field>
+        </SectionCard>
 
         {/* ── Step 4: Documents ─────────────────────────────────────── */}
-        <AnimatePresence>
-          {step >= 4 && (
-            <motion.div key="documents" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-              <SectionCard icon={FileText} title="Documents">
-                <div className="space-y-3">
-                  {documents.map((doc) => (
-                    <div
-                      key={doc.name}
-                      className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText size={16} className="text-muted-foreground" />
-                        <span className="text-sm font-medium">{doc.name}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="border-amber-500/30 text-amber-500 capitalize">
-                          {doc.status}
-                        </Badge>
-                        <button className="text-muted-foreground hover:text-foreground transition-colors">
-                          <Upload size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </SectionCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <input
+          ref={wizardFileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleWizardFileSelected}
+        />
+        <SectionCard
+          icon={FileText}
+          title="Documents"
+          open={openSections.documents}
+          onOpenChange={() => toggleSection('documents')}
+          disabled={step < 2}
+        >
+          <DocumentListGroup>
+            {documents.length > 0 ? (
+              documents.map((doc) => (
+                <DocumentListItem
+                  key={doc.name}
+                  variant={doc.status === 'uploaded' ? 'uploaded' : 'pending'}
+                  icon={doc.status === 'uploaded' ? CheckCircle2 : FileText}
+                  title={doc.name}
+                  description={doc.status === 'uploaded' && 'fileName' in doc ? (doc as { fileName?: string }).fileName : undefined}
+                  primaryAction={
+                    doc.status === 'uploaded'
+                      ? { label: 'Replace', icon: RefreshCw, onClick: () => openWizardFilePicker(doc.name) }
+                      : { label: 'Upload', icon: Upload, onClick: () => openWizardFilePicker(doc.name) }
+                  }
+                />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No documents yet.</p>
+            )}
+          </DocumentListGroup>
+        </SectionCard>
 
         {/* ── Step 5: Review & Submit ──────────────────────────────── */}
-        <AnimatePresence>
-          {step >= 4 && (
-            <motion.div key="review" variants={sectionVariants} initial="initial" animate="animate" exit="exit">
-              <SectionCard icon={ClipboardCheck} title="Review & Submit">
-                <div className="space-y-4">
-                  {/* Deal Overview */}
-                  <ReviewRow label="Property" value={propertyName} />
-                  <ReviewRow label="Asset Class" value={enumLabel(ASSET_CLASS_OPTIONS, assetClass)} />
-                  <ReviewRow label="Asset Type" value={subtypeLabel} />
-                  <ReviewRow label="Geography (MSA)" value={locationMsa} />
-                  <ReviewRow label="Deal Stage" value={enumLabel(DEAL_STAGE_OPTIONS, dealStage)} />
-                  <ReviewRow label="Pricing Posture" value={enumLabel(PRICING_POSTURE_OPTIONS, pricingPosture)} />
-                  {pricingPosture === 'exact_price' && (
-                    <ReviewRow label="Asking Price" value={`$${formatCurrency(exactPrice)}`} />
-                  )}
-                  {pricingPosture === 'price_range' && (
-                    <ReviewRow label="Price Range" value={`$${formatCurrency(priceRangeMin)} \u2013 $${formatCurrency(priceRangeMax)}`} />
-                  )}
-                  <div className="border-t border-border" />
-                  {/* Asset Specs */}
-                  <ReviewRow label="Product Type" value={enumLabel(BFR_PRODUCT_TYPES, productType)} />
-                  <ReviewRow label="Development Status" value={enumLabel(DEVELOPMENT_STATUS_OPTIONS, currentDevelopmentStatus)} />
-                  <ReviewRow label="Sale Stage Status" value={enumLabel(DEAL_STAGE_OPTIONS, saleStageStatus)} />
-                  <ReviewRow label="Sale Window" value={enumLabel(SALE_WINDOW_OPTIONS, saleWindow)} />
-                  <ReviewRow label="Unit Count" value={String(unitCount)} />
-                  <ReviewRow label="Phase Sale Allowed" value={phaseSaleAllowed ? 'Yes' : 'No'} />
-                  <ReviewRow label="Must Sell as Package" value={mustSellAsPackage ? 'Yes' : 'No'} />
-                  <div className="border-t border-border" />
-                  {/* Sale Terms */}
-                  <ReviewRow label="Deal Room Stage" value={`${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`} />
-                  <div className="border-t border-border" />
-                  {/* Documents */}
-                  <ReviewRow
-                    label="Documents"
-                    value={documents.map((d) => d.name).join(', ')}
-                  />
-                  <div className="flex justify-end gap-3 pt-2">
-                    {onSaveAsDraft && (
-                      <Button
-                        variant="outline"
-                        onClick={() => onSaveAsDraft(getFormSnapshot(), step)}
-                      >
-                        <FileText size={16} />
-                        Save as Draft
-                      </Button>
-                    )}
-                    <Button
-                      onClick={onSubmit}
-                      className="bg-mode-sell hover:bg-mode-sell/80 text-white px-6"
-                    >
-                      <CheckCircle2 size={16} />
-                      Submit for Review
-                    </Button>
-                  </div>
-                </div>
-              </SectionCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <SectionCard
+          icon={ClipboardCheck}
+          title="Review & Submit"
+          open={openSections.review}
+          onOpenChange={() => toggleSection('review')}
+          disabled={step < 2}
+        >
+          <div className="flex flex-col gap-4">
+            {/* Deal Overview */}
+            <ReviewRow label="Property" value={propertyName} />
+            <ReviewRow label="Asset Class" value={enumLabel(ASSET_CLASS_OPTIONS, assetClass)} />
+            <ReviewRow label="Asset Type" value={subtypeLabel} />
+            <ReviewRow label="Geography (MSA)" value={locationMsa} />
+            <ReviewRow label="Deal Stage" value={enumLabel(DEAL_STAGE_OPTIONS, dealStage)} />
+            <ReviewRow label="Pricing Posture" value={enumLabel(PRICING_POSTURE_OPTIONS, pricingPosture)} />
+            {pricingPosture === 'exact_price' && (
+              <ReviewRow label="Asking Price" value={`$${formatCurrency(exactPrice)}`} />
+            )}
+            {pricingPosture === 'price_range' && (
+              <ReviewRow label="Price Range" value={`$${formatCurrency(priceRangeMin)} \u2013 $${formatCurrency(priceRangeMax)}`} />
+            )}
+            <Separator />
+            {/* Asset Specs */}
+            <ReviewRow label="Product Type" value={enumLabel(BFR_PRODUCT_TYPES, productType)} />
+            <ReviewRow label="Development Status" value={enumLabel(DEVELOPMENT_STATUS_OPTIONS, currentDevelopmentStatus)} />
+            <ReviewRow label="Sale Stage Status" value={enumLabel(DEAL_STAGE_OPTIONS, saleStageStatus)} />
+            <ReviewRow label="Sale Window" value={enumLabel(SALE_WINDOW_OPTIONS, saleWindow)} />
+            <ReviewRow label="Unit Count" value={String(unitCount)} />
+            <ReviewRow label="Phase Sale Allowed" value={phaseSaleAllowed ? 'Yes' : 'No'} />
+            <ReviewRow label="Must Sell as Package" value={mustSellAsPackage ? 'Yes' : 'No'} />
+            <Separator />
+            {/* Sale Terms */}
+            <ReviewRow label="Deal Room Stage" value={`${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`} />
+            <Separator />
+            {/* Documents */}
+            <ReviewRow
+              label="Documents"
+              value={documents.length > 0 ? documents.map((d) => d.name).join(', ') : 'None'}
+            />
+            <div className="flex justify-end gap-3 pt-2">
+              {onSaveAsDraft && (
+                <Button
+                  variant="outline"
+                  onClick={() => onSaveAsDraft(getFormSnapshot(), step)}
+                >
+                  <FileText data-icon="inline-start" />
+                  Save as Draft
+                </Button>
+              )}
+              <Button
+                onClick={onSubmit}
+                className="bg-mode-sell hover:bg-mode-sell/80 text-white px-6"
+              >
+                <CheckCircle2 data-icon="inline-start" />
+                Submit for Review
+              </Button>
+            </div>
+          </div>
+        </SectionCard>
       </div>
-    </div>
-  )
-}
-
-// ── Sub-components ──────────────────────────────────────────────────────────
-
-function SectionCard({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof Building2
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-background p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-        <Icon size={16} className="text-mode-sell" />
-        {title}
-      </h3>
-      {children}
-    </div>
-  )
-}
-
-function FieldGroup({
-  label,
-  span,
-  children,
-}: {
-  label: string
-  span?: number
-  children: React.ReactNode
-}) {
-  return (
-    <label className={cn('flex flex-col gap-1.5', span === 2 && 'col-span-2')}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </label>
-  )
-}
-
-function ReviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-xs font-medium text-muted-foreground shrink-0">{label}</span>
-      <span className="text-sm text-foreground text-right">{value}</span>
-    </div>
-  )
-}
-
-function BooleanToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex rounded-lg border border-border overflow-hidden">
-      <button
-        onClick={() => onChange(true)}
-        className={cn(
-          'flex-1 px-4 py-2 text-sm font-medium transition-colors',
-          value ? 'bg-mode-sell text-white' : 'bg-background text-muted-foreground hover:bg-muted',
-        )}
-      >
-        Yes
-      </button>
-      <button
-        onClick={() => onChange(false)}
-        className={cn(
-          'flex-1 px-4 py-2 text-sm font-medium transition-colors',
-          !value ? 'bg-mode-sell text-white' : 'bg-background text-muted-foreground hover:bg-muted',
-        )}
-      >
-        No
-      </button>
     </div>
   )
 }

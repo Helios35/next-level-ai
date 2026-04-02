@@ -28,9 +28,13 @@ import {
   PanelLeftClose,
   Maximize2,
   Minimize2,
+  Upload,
+  CheckCircle2,
+  Paperclip,
 } from 'lucide-react'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
+import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -145,9 +149,11 @@ const CHAT_COLLAPSED_W = 32
 export type { Mode }
 
 export interface ChatContext {
-  messages: { role: 'ai' | 'user'; text: string; time: string }[]
+  messages: { role: 'ai' | 'user'; text: string; time: string; attachment?: { docName: string; fileName: string } }[]
   contextLabel: string
   skills?: string[]
+  onAttach?: (docName: string, fileName: string) => void
+  pendingDocs?: { name: string; status: string; fileName?: string }[]
 }
 
 interface AppShellProps {
@@ -197,6 +203,11 @@ export default function AppShell({
   const shellRef = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
   const chatScrollRef = useRef<HTMLDivElement>(null)
+
+  // Document upload refs & state (chat panel)
+  const chatFileInputRef = useRef<HTMLInputElement>(null)
+  const pendingDocLabelRef = useRef('')
+  const [attachPopoverOpen, setAttachPopoverOpen] = useState(false)
 
   // Apply dark class to html
   useEffect(() => {
@@ -280,6 +291,25 @@ export default function AppShell({
       onModeChange?.(newMode)
     }
   }
+
+  // ── Document upload helpers (chat panel) ─────────────────────────────────
+
+  const openChatFilePicker = useCallback((docLabel: string) => {
+    pendingDocLabelRef.current = docLabel
+    setAttachPopoverOpen(false)
+    chatFileInputRef.current?.click()
+  }, [])
+
+  const handleChatFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && pendingDocLabelRef.current) {
+      chatContext?.onAttach?.(pendingDocLabelRef.current, file.name)
+    }
+    e.target.value = '' // reset for re-selection
+    pendingDocLabelRef.current = ''
+  }, [chatContext])
+
+  const pendingDocsFiltered = chatContext?.pendingDocs?.filter((d) => d.status === 'pending') ?? []
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -492,18 +522,34 @@ export default function AppShell({
                   <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
                     {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
                       <div key={i} className={cn('flex flex-col', msg.role === 'user' ? 'items-end' : 'items-start')}>
-                        <div
-                          className={cn(
-                            'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
-                            msg.role === 'user'
-                              ? cn(config.chatBubble, 'rounded-br-sm')
-                              : cn('bg-background/80 text-foreground border rounded-bl-sm backdrop-blur-sm', config.chatBubbleBorder),
-                          )}
-                        >
-                          {msg.text}
-                        </div>
+                        {/* Attachment bubble (user uploaded a document) */}
+                        {msg.attachment ? (
+                          <div
+                            className={cn(
+                              'max-w-[85%] flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 rounded-br-sm',
+                              config.chatBubble,
+                            )}
+                          >
+                            <Paperclip size={14} className="shrink-0 opacity-70" />
+                            <div className="min-w-0">
+                              <div className="text-xs font-medium truncate">{msg.attachment.fileName}</div>
+                              <div className="text-[11px] opacity-70 truncate">{msg.attachment.docName}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className={cn(
+                              'max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed',
+                              msg.role === 'user'
+                                ? cn(config.chatBubble, 'rounded-br-sm')
+                                : cn('bg-background/80 text-foreground border rounded-bl-sm backdrop-blur-sm', config.chatBubbleBorder),
+                            )}
+                          >
+                            {msg.text}
+                          </div>
+                        )}
                         {/* Action icons for AI messages */}
-                        {msg.role === 'ai' && (
+                        {msg.role === 'ai' && !msg.attachment && (
                           <div className="mt-1 flex items-center gap-2 px-1">
                             <button className={cn('text-muted-foreground/50 transition-colors', config.chatHover)}>
                               <Copy size={12} />
@@ -516,6 +562,30 @@ export default function AppShell({
                         <span className="mt-0.5 px-1 text-[10px] text-muted-foreground/50">{msg.time}</span>
                       </div>
                     ))}
+
+                    {/* Interactive pending documents card */}
+                    {chatContext?.pendingDocs && chatContext.pendingDocs.length > 0 && (
+                      <div className="flex flex-col items-start">
+                        <div className="w-full rounded-xl border bg-background/80 backdrop-blur-sm p-2">
+                          <DocumentListGroup>
+                            {chatContext.pendingDocs.map((doc) => (
+                              <DocumentListItem
+                                key={doc.name}
+                                variant={doc.status === 'uploaded' ? 'uploaded' : 'pending'}
+                                icon={doc.status === 'uploaded' ? CheckCircle2 : FileText}
+                                title={doc.name}
+                                description={doc.status === 'uploaded' && doc.fileName ? doc.fileName : undefined}
+                                primaryAction={
+                                  doc.status === 'uploaded'
+                                    ? { label: 'Uploaded', icon: CheckCircle2 }
+                                    : { label: 'Upload', icon: Upload, onClick: () => openChatFilePicker(doc.name) }
+                                }
+                              />
+                            ))}
+                          </DocumentListGroup>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Skills bar */}
@@ -555,12 +625,57 @@ export default function AppShell({
                           } : undefined}
                         />
                       </div>
+                      {/* Hidden file input for chat uploads */}
+                      <input
+                        ref={chatFileInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={handleChatFileSelected}
+                      />
                       {/* Bottom bar: plus, context dropdown, send */}
                       <div className="flex items-center justify-between px-3 pb-3">
                         <div className="flex items-center gap-2">
-                          <button className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                            <Plus size={18} />
-                          </button>
+                          <div className="relative">
+                            <button
+                              onClick={() => {
+                                if (chatContext?.onAttach && pendingDocsFiltered.length > 0) {
+                                  setAttachPopoverOpen((prev) => !prev)
+                                }
+                              }}
+                              className={cn(
+                                'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
+                                chatContext?.onAttach && pendingDocsFiltered.length > 0
+                                  ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                  : 'text-muted-foreground/40 cursor-default',
+                              )}
+                            >
+                              <Plus size={18} />
+                            </button>
+                            {/* Attach popover */}
+                            {attachPopoverOpen && pendingDocsFiltered.length > 0 && (
+                              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-border bg-background shadow-lg p-1.5 z-50">
+                                <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Upload Document</p>
+                                {pendingDocsFiltered.map((doc) => (
+                                  <button
+                                    key={doc.name}
+                                    onClick={() => openChatFilePicker(doc.name)}
+                                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                  >
+                                    <Upload size={14} className="text-muted-foreground shrink-0" />
+                                    <span className="truncate">{doc.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {attachPopoverOpen && chatContext?.pendingDocs && pendingDocsFiltered.length === 0 && (
+                              <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl border border-border bg-background shadow-lg p-3 z-50">
+                                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <CheckCircle2 size={14} className="text-green-400" />
+                                  All documents received
+                                </p>
+                              </div>
+                            )}
+                          </div>
                           <button className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
                             <span>{chatContext?.contextLabel ?? config.contextLabel}</span>
                             <ChevronDown size={12} />

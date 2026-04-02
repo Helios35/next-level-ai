@@ -34,8 +34,11 @@ const WIZARD_SCRIPT = [
   "Got it \u2014 I\u2019ve captured the deal overview. Now let\u2019s get the asset-specific details. Tell me about the product type and where you are in the development timeline.",
   "Almost there \u2014 I\u2019ve locked in the asset specs. Let\u2019s position the sale. Where are you in the deal process?",
   "Perfect. Any documents you want to attach upfront? I\u2019ll flag anything missing as pending \u2014 you can always upload later.",
-  "I\u2019ve got everything I need. Here\u2019s your draft listing \u2014 review the details below and submit when you\u2019re ready.",
+  "Looking good \u2014 I\u2019ve collected what I need on documents. Let me know when you\u2019re ready and I\u2019ll pull together your listing for review.",
 ]
+
+const WIZARD_REVIEW_PROMPT =
+  "I\u2019ve got everything I need. Here\u2019s your draft listing \u2014 review the details below and submit when you\u2019re ready."
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -47,7 +50,10 @@ export default function ShellDemo() {
   // Wizard state
   const [wizardStep, setWizardStep] = useState(0)
   const [wizardMessages, setWizardMessages] = useState<
-    { role: 'ai' | 'user'; text: string; time: string }[]
+    { role: 'ai' | 'user'; text: string; time: string; attachment?: { docName: string; fileName: string } }[]
+  >([])
+  const [wizardDocuments, setWizardDocuments] = useState<
+    { name: string; status: string; fileName?: string }[]
   >([])
 
   // Draft state
@@ -115,6 +121,7 @@ export default function ShellDemo() {
       } else {
         setWizardMessages([{ role: 'ai', text: WIZARD_OPENING, time: now }])
         setWizardStep(0)
+        setWizardDocuments([])
       }
     }
   }, [pageKey(page)])
@@ -147,17 +154,72 @@ export default function ShellDemo() {
     navigateTo({ mode: 'sell', view: 'createListing' })
   }, [drafts, navigateTo])
 
+  // Populate pending documents when step reaches 4
+  useEffect(() => {
+    if (wizardStep >= 4 && wizardDocuments.length === 0) {
+      setWizardDocuments([
+        { name: 'Purchase & Sale Agreement', status: 'pending' },
+        { name: 'Survey / Site Plan', status: 'pending' },
+        { name: 'Pro Forma', status: 'pending' },
+      ])
+    }
+  }, [wizardStep, wizardDocuments.length])
+
+  // Handle document upload from chat or wizard
+  const handleDocumentUpload = useCallback((docName: string, fileName: string) => {
+    setWizardDocuments((prev) =>
+      prev.map((d) => (d.name === docName ? { ...d, status: 'uploaded', fileName } : d)),
+    )
+    const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    const pendingCount = wizardDocuments.filter(
+      (d) => d.status === 'pending' && d.name !== docName,
+    ).length
+    const aiText =
+      pendingCount > 0
+        ? `Got it — I've received your ${docName}. ${pendingCount} document${pendingCount === 1 ? '' : 's'} still pending.`
+        : `Got it — I've received your ${docName}. All documents are in!`
+    setWizardMessages((prev) => [
+      ...prev,
+      { role: 'user', text: '', time: now, attachment: { docName, fileName } },
+      { role: 'ai', text: aiText, time: now },
+    ])
+
+    // Auto-advance to review when all documents are uploaded
+    if (pendingCount === 0) {
+      setTimeout(() => {
+        setWizardMessages((prev) => [
+          ...prev,
+          { role: 'ai', text: WIZARD_REVIEW_PROMPT, time: now },
+        ])
+        setWizardStep(5)
+      }, 600)
+    }
+  }, [wizardDocuments])
+
   // Wizard send handler — advances the scripted conversation
   const handleWizardSend = useCallback((userText: string) => {
-    if (wizardStep >= 4) return
+    if (wizardStep >= 5) return
 
     const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
     const userMsg = { role: 'user' as const, text: userText, time: now }
-    const aiMsg = { role: 'ai' as const, text: WIZARD_SCRIPT[wizardStep], time: now }
 
+    // Step 4 (documents) → 5 (review): flag remaining docs as pending, advance
+    if (wizardStep === 4) {
+      const pending = wizardDocuments.filter((d) => d.status === 'pending')
+      const pendingNote =
+        pending.length > 0
+          ? ` I\u2019ve flagged ${pending.map((d) => d.name).join(', ')} as pending \u2014 you can upload ${pending.length === 1 ? 'it' : 'them'} anytime.`
+          : ''
+      const aiMsg = { role: 'ai' as const, text: WIZARD_REVIEW_PROMPT + pendingNote, time: now }
+      setWizardMessages((prev) => [...prev, userMsg, aiMsg])
+      setWizardStep(5)
+      return
+    }
+
+    const aiMsg = { role: 'ai' as const, text: WIZARD_SCRIPT[wizardStep], time: now }
     setWizardMessages((prev) => [...prev, userMsg, aiMsg])
     setWizardStep((prev) => prev + 1)
-  }, [wizardStep])
+  }, [wizardStep, wizardDocuments])
 
   // Build page-specific chat context
   const chatContext = useMemo<ChatContext | undefined>(() => {
@@ -166,6 +228,8 @@ export default function ShellDemo() {
         messages: wizardMessages,
         contextLabel: 'New Listing',
         skills: [],
+        onAttach: wizardStep >= 4 ? handleDocumentUpload : undefined,
+        pendingDocs: wizardStep >= 4 ? wizardDocuments : undefined,
       }
     }
     if (page.mode === 'sell' && page.view === 'dealRoom') {
@@ -180,7 +244,7 @@ export default function ShellDemo() {
       }
     }
     return undefined
-  }, [page, wizardMessages])
+  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload])
 
   const isCreateListing = page.mode === 'sell' && page.view === 'createListing'
 
@@ -218,6 +282,8 @@ export default function ShellDemo() {
           onSubmit={() => navigateTo({ mode: 'sell', view: 'listings' })}
           onSaveAsDraft={handleSaveAsDraft}
           initialState={resumeDraft?.formState}
+          documents={wizardDocuments}
+          onDocumentUpload={handleDocumentUpload}
         />
       )}
       {page.mode === 'sell' && page.view === 'drafts' && (

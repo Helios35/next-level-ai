@@ -102,7 +102,7 @@ export function MultiSelect({
       </div>
 
       {open && (
-        <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-10 mt-1 w-full rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 max-h-48 overflow-y-auto">
           {filtered.length > 0 ? (
             filtered.map((opt) => {
               const checked = selected.includes(opt.value)
