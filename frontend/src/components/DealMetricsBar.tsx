@@ -8,7 +8,7 @@ import { Popover, PopoverTrigger, PopoverContent } from './ui/popover'
 interface DealMetricsBarProps {
   currentStage: DealRoomStage
   matchScore?: number
-  matchedBuyerCount: number
+  buyerPoolCount: number
   showMatchScore?: boolean
   size?: 'sm' | 'default'
   className?: string
@@ -17,7 +17,7 @@ interface DealMetricsBarProps {
 export default function DealMetricsBar({
   currentStage,
   matchScore,
-  matchedBuyerCount,
+  buyerPoolCount,
   showMatchScore = true,
   size = 'default',
   className,
@@ -55,8 +55,8 @@ export default function DealMetricsBar({
             )}
           >
             <Users size={isSmall ? 13 : 15} />
-            <span className="font-semibold text-foreground">{matchedBuyerCount}</span>
-            Buyers
+            <span className="font-semibold text-foreground">{buyerPoolCount}</span>
+            Buyer Pool
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-48">
@@ -65,7 +65,7 @@ export default function DealMetricsBar({
               Buyer Pool
             </p>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">{matchedBuyerCount} Buyers</span>
+              <span className="text-sm text-foreground">{buyerPoolCount} Buyer Pool</span>
             </div>
             {matchScore != null && (
               <>

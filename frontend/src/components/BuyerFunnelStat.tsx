@@ -1,4 +1,3 @@
-import { ChevronRight } from 'lucide-react'
 import type { BuyerPoolEntry } from '@shared/types/buyerPool'
 
 interface BuyerFunnelStatProps {
@@ -25,20 +24,15 @@ export default function BuyerFunnelStat({ buyers }: BuyerFunnelStatProps) {
   ]
 
   return (
-    <div className="flex items-center gap-1.5">
-      {stages.map((stage, i) => (
-        <div key={stage.label} className="flex items-center gap-1.5">
-          <div className="flex flex-col items-center gap-0.5 rounded-lg bg-muted/30 border border-border px-3 py-2 min-w-0">
-            <span className="text-lg font-bold text-foreground tabular-nums leading-tight">
-              {stage.value}
-            </span>
-            <span className="text-[10px] text-muted-foreground leading-snug whitespace-nowrap">
-              {stage.label}
-            </span>
-          </div>
-          {i < stages.length - 1 && (
-            <ChevronRight size={14} className="shrink-0 text-muted-foreground/50" />
-          )}
+    <div className="grid grid-cols-5 gap-1.5">
+      {stages.map((stage) => (
+        <div key={stage.label} className="flex flex-col items-center gap-0.5 rounded-lg bg-muted/30 border border-border px-3 py-2">
+          <span className="text-lg font-bold text-foreground tabular-nums leading-tight">
+            {stage.value}
+          </span>
+          <span className="text-[10px] text-muted-foreground leading-snug whitespace-nowrap">
+            {stage.label}
+          </span>
         </div>
       ))}
     </div>

@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react'
 import { cn } from '@/utils/cn'
+import { formatRelativeTime } from '@/utils/formatRelativeTime'
 import {
   FileText, Users, BarChart2, Milestone,
-  Upload, Check, Eye, RefreshCw, Lock,
-
+  Upload, Check, Eye, RefreshCw, Lock, Clock,
 } from 'lucide-react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_DEAL_PREVIEW_SELLER } from '@/data/mock/dealPreviews'
@@ -100,6 +100,8 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
   const marketIntel = MOCK_MARKET_INTEL[id]
   const milestones = MOCK_MILESTONES[id] ?? []
 
+  const [activeTab, setActiveTab] = useState('documents')
+
   // Document action state — lives here so it survives tab switches
   const [docOverrides, setDocOverrides] = useState<Record<string, DocOverride>>({})
   const [viewingDoc, setViewingDoc] = useState<DocumentUploadItem | null>(null)
@@ -117,10 +119,15 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
   return (
     <div className="flex h-full flex-col">
       {/* ═══ DEAL HEADER ═══ */}
-      <DealRoomHeader deal={deal} onBack={onBack} />
+      <DealRoomHeader
+        deal={deal}
+        buyerPoolCount={buyers.length}
+        onBack={onBack}
+        onBuyerPoolClick={() => setActiveTab('buyer-pool')}
+      />
 
       {/* ═══ TABS ═══ */}
-      <Tabs defaultValue="documents" className="flex flex-1 flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden">
         <TabsList className="shrink-0 border-b border-border bg-background px-6 py-1.5">
           <TabsTrigger value="documents">
             <FileText size={16} />
@@ -427,6 +434,54 @@ function BuyerPoolTab({ buyers }: { buyers: BuyerPoolEntry[] }) {
           </div>
         </div>
       )}
+
+      {/* Recent Activity */}
+      {(() => {
+        const events: { label: string; detail?: string; date: Date }[] = []
+        for (const b of buyers) {
+          if (b.accessRequestedAt) {
+            events.push({
+              label: `${b.anonymizedLabel} requested access`,
+              date: new Date(b.accessRequestedAt),
+            })
+          }
+          if (b.passedAt) {
+            events.push({
+              label: `${b.anonymizedLabel} passed`,
+              detail: b.passReason,
+              date: new Date(b.passedAt),
+            })
+          }
+        }
+        events.sort((a, b) => b.date.getTime() - a.date.getTime())
+        if (events.length === 0) return null
+
+        return (
+          <div className="space-y-3">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Recent Activity — {events.length} event{events.length !== 1 ? 's' : ''}
+            </h3>
+            <div className="flex flex-col gap-2">
+              {events.map((event, i) => (
+                <Item key={i} variant="muted" className="px-4 py-2.5">
+                  <ItemContent>
+                    <ItemTitle className="text-xs font-normal">
+                      <Clock size={14} className="shrink-0 text-muted-foreground" />
+                      {event.label}
+                    </ItemTitle>
+                    {event.detail && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{event.detail}</p>
+                    )}
+                  </ItemContent>
+                  <span className="text-[11px] text-muted-foreground shrink-0">
+                    {formatRelativeTime(event.date.toISOString())}
+                  </span>
+                </Item>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
