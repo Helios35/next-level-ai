@@ -62,7 +62,7 @@ export default function DealMetricsBar({
         <PopoverContent className="w-48">
           <div className="space-y-2">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Matched Buyers
+              Buyer Pool
             </p>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">{matchedBuyerCount} Buyers</span>

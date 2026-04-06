@@ -3,7 +3,7 @@ import type { AssetSubType, DealStage, PricingPosture, PriceRange } from '@share
 
 export interface BuyerActivitySnapshot {
   totalViews: number
-  ndaSigned: number
+  acceptedRequests: number
   offersReceived: number
   lastActivityAt: string
 }
@@ -37,7 +37,7 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
   dr_001: {
     buyerActivity: {
       totalViews: 47,
-      ndaSigned: 2,
+      acceptedRequests: 2,
       offersReceived: 1,
       lastActivityAt: '2026-03-28T14:30:00Z',
     },
@@ -53,7 +53,7 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
   dr_002: {
     buyerActivity: {
       totalViews: 23,
-      ndaSigned: 0,
+      acceptedRequests: 0,
       offersReceived: 0,
       lastActivityAt: '2026-03-25T09:15:00Z',
     },
@@ -67,7 +67,7 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
   dr_005: {
     buyerActivity: {
       totalViews: 62,
-      ndaSigned: 3,
+      acceptedRequests: 3,
       offersReceived: 0,
       lastActivityAt: '2026-03-29T16:45:00Z',
     },
@@ -82,7 +82,7 @@ export const MOCK_DEAL_PREVIEW_SELLER: Record<string, DealPreviewSeller> = {
   dr_006: {
     buyerActivity: {
       totalViews: 8,
-      ndaSigned: 0,
+      acceptedRequests: 0,
       offersReceived: 0,
       lastActivityAt: '2026-02-05T11:00:00Z',
     },
@@ -115,7 +115,7 @@ export const MOCK_DEAL_PREVIEW_BUYER: Record<string, DealPreviewBuyer> = {
     matchScore: 78,
     pricingPosture: 'price_range',
     priceRange: { min: 6500000, max: 9000000 },
-    seatStatus: 'access_requested',
+    seatStatus: 'accepted',
     accessRequestedAt: '2026-02-20T14:00:00Z',
   },
   dr_005: {

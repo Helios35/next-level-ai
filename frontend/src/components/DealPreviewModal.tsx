@@ -105,7 +105,7 @@ export default function DealPreviewModal({
           <div>
             <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Key Metrics</h4>
             <StatTileGrid className="grid-cols-4">
-              <StatTile value={deal.matchedBuyerCount} label="Matched Buyers" />
+              <StatTile value={deal.matchedBuyerCount} label="Buyer Pool" />
               <StatTile value={`${deal.matchScore}%`} label="Match Score" />
               <StatTile value={preview?.buyerActivity.totalViews ?? 0} label="Total Views" />
               <StatTile value={preview?.buyerActivity.offersReceived ?? 0} label="Offers Received" />
@@ -132,7 +132,7 @@ export default function DealPreviewModal({
                 <div className="h-6 w-px bg-border shrink-0" />
                 <span className="flex-1 flex items-center justify-center gap-1.5">
                   <FileSignature size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.ndaSigned}</span> NDAs
+                  <span className="font-semibold text-foreground">{preview.buyerActivity.acceptedRequests}</span> Accepted
                 </span>
                 <div className="h-6 w-px bg-border shrink-0" />
                 <span className="flex-1 flex items-center justify-center gap-1.5">
@@ -142,7 +142,7 @@ export default function DealPreviewModal({
                 <div className="h-6 w-px bg-border shrink-0" />
                 <span className="flex-1 flex items-center justify-center gap-1.5">
                   <Clock size={12} className="shrink-0" />
-                  Active {formatRelativeTime(preview.buyerActivity.lastActivityAt)}
+                  Last Buyer Activity {formatRelativeTime(preview.buyerActivity.lastActivityAt)}
                 </span>
               </div>
             </div>
