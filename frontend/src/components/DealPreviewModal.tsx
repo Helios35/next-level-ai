@@ -1,8 +1,8 @@
-import { Building2, Home, MapPin, DollarSign, HardHat, FileText, Eye, FileSignature, HandCoins, Clock } from 'lucide-react'
-import { cn } from '@/utils/cn'
+import { Building2, Home, MapPin, DollarSign, HardHat } from 'lucide-react'
 import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import type { DealRoom } from '@shared/types/dealRoom'
-import { MOCK_DEAL_PREVIEW_SELLER, type DocumentUploadItem } from '@/data/mock/dealPreviews'
+import type { BuyerPoolEntry } from '@shared/types/buyerPool'
+import { MOCK_BUYER_POOL_DR001, MOCK_BUYER_POOL_DR002, MOCK_BUYER_POOL_DR005 } from '@/data/mock/buyerPool'
 import {
   Dialog,
   DialogContent,
@@ -12,31 +12,19 @@ import {
 } from './ui/dialog'
 import StatusBadge from './StatusBadge'
 import StageProgressBar from './StageProgressBar'
-import { StatTile, StatTileGrid } from './ui/stat-tile'
+import BuyerFunnelStat from './BuyerFunnelStat'
+
+const BUYER_POOL_BY_DEAL: Record<string, BuyerPoolEntry[]> = {
+  dr_001: MOCK_BUYER_POOL_DR001,
+  dr_002: MOCK_BUYER_POOL_DR002,
+  dr_005: MOCK_BUYER_POOL_DR005,
+}
 
 interface DealPreviewModalProps {
   deal: DealRoom | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onOpenDealRoom: (dealId: string) => void
-}
-
-const DOC_STATUS_STYLES: Record<DocumentUploadItem['status'], { dot: string; label: string }> = {
-  approved: { dot: 'bg-green-400', label: 'Approved' },
-  uploaded: { dot: 'bg-blue-400', label: 'Uploaded' },
-  under_review: { dot: 'bg-amber-400', label: 'Under Review' },
-  flagged: { dot: 'bg-red-400', label: 'Flagged' },
-  not_started: { dot: 'bg-muted-foreground/40', label: 'Not Started' },
-}
-
-function formatRelativeTime(isoDate: string): string {
-  const diff = Date.now() - new Date(isoDate).getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
 }
 
 export default function DealPreviewModal({
@@ -47,7 +35,6 @@ export default function DealPreviewModal({
 }: DealPreviewModalProps) {
   if (!deal) return null
 
-  const preview = MOCK_DEAL_PREVIEW_SELLER[deal.id]
   const AssetIcon = deal.assetSubType === 'sfr_portfolio' ? Home : Building2
   const subtypeLabel = ASSET_SUBTYPE_LABELS[deal.assetSubType]
   const stageLabel = DEAL_STAGE_LABELS[deal.shared.dealStage]
@@ -59,7 +46,7 @@ export default function DealPreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0">
+      <DialogContent className="max-w-lg gap-0">
         {/* Header */}
         <DialogHeader className="pb-4">
           <div className="flex items-start justify-between gap-3 pr-8">
@@ -101,15 +88,10 @@ export default function DealPreviewModal({
 
         {/* Body */}
         <div className="space-y-4 px-5 pb-5">
-          {/* Key Metrics */}
+          {/* Buyer Funnel */}
           <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Key Metrics</h4>
-            <StatTileGrid className="grid-cols-4">
-              <StatTile value={deal.matchedBuyerCount} label="Buyer Pool" />
-              <StatTile value={`${deal.matchScore}%`} label="Match Score" />
-              <StatTile value={preview?.buyerActivity.totalViews ?? 0} label="Total Views" />
-              <StatTile value={preview?.buyerActivity.offersReceived ?? 0} label="Offers Received" />
-            </StatTileGrid>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Buyer Funnel</h4>
+            <BuyerFunnelStat buyers={BUYER_POOL_BY_DEAL[deal.id] ?? []} />
           </div>
 
           {/* Stage Progress */}
@@ -120,62 +102,6 @@ export default function DealPreviewModal({
             </div>
           </div>
 
-          {/* Buyer Activity */}
-          {preview && (
-            <div>
-              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Buyer Activity</h4>
-              <div className="flex items-center rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <Eye size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.totalViews}</span> Views
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <FileSignature size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.acceptedRequests}</span> Accepted
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <HandCoins size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.offersReceived}</span> Offers
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <Clock size={12} className="shrink-0" />
-                  Last Buyer Activity {formatRelativeTime(preview.buyerActivity.lastActivityAt)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Documents */}
-          {preview && preview.documents.length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Documents</h4>
-              <div className="rounded-lg border border-border divide-y divide-border">
-                {preview.documents.map((doc) => {
-                  const style = DOC_STATUS_STYLES[doc.status]
-                  return (
-                    <div key={doc.type} className="flex items-center gap-3 px-4 py-2.5">
-                      <div className={cn(
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
-                        doc.status === 'not_started'
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-mode-sell/10 text-mode-sell',
-                      )}>
-                        <FileText size={14} />
-                      </div>
-                      <span className="flex-1 text-sm text-foreground truncate">{doc.label}</span>
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0">
-                        <span className={cn('h-1.5 w-1.5 rounded-full', style.dot)} />
-                        {style.label}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer CTA */}

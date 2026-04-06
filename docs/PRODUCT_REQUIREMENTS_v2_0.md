@@ -459,6 +459,19 @@ The external Buyer-Seller interface uses a three-mode shell — **Sell · Buy ·
 
 **Sell mode** — Your Listings, Create Listing, Drafts. Seller deal room creation and management. Deal rooms progress through the 9-stage lifecycle. Market Tested and Dormant deals remain visible with status badges.
 
+**Seller Deal Room — Buyer Match Count Prominence**
+
+The buyer match count is a visually dominant element in the seller deal room header. This is a locked requirement — the count is the first data point the seller sees after the listing title.
+
+| Property | Requirement |
+|---|---|
+| Position | Directly below the listing title in the deal room header — first data point the seller sees after the name |
+| Size | Large — visually dominant. Not a badge, not a footnote |
+| Color | Accent color — outside the mode color system, stand-alone highlight |
+| Label | Plain language using locked terminology: `{n} Buyer Pool` (e.g. "3 Buyer Pool") |
+| Behavior | Clickable — routes seller directly to the Buyer Pool tab |
+| Tooltip | Optional — e.g. "View qualification details" on hover |
+
 **Buy mode** — Your Deals, Discover Deals, Access Requested. Buyers browse matched deal cards, request deal room access, and manage active deal rooms. Deal cards show state-dependent CTAs (Coming Soon / Active Disposition / Access Pending / Wait Queue / Enter Deal Room).
 
 **Strategy mode** — Your Strategies, Create Strategy, Drafts. Buyers create and manage buy strategies that broadcast against active deal rooms. Match counts populate immediately on strategy save.

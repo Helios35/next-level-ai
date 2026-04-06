@@ -96,7 +96,7 @@ export default function DealCard({
       <DealMetricsBar
         currentStage={deal.currentStage}
         matchScore={deal.matchScore}
-        matchedBuyerCount={deal.matchedBuyerCount}
+        buyerPoolCount={deal.matchedBuyerCount}
         showMatchScore={false}
         size="sm"
         className="mt-5"
