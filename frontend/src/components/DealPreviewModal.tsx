@@ -1,8 +1,10 @@
-import { Building2, Home, MapPin, DollarSign, HardHat, FileText, Eye, FileSignature, HandCoins, Clock } from 'lucide-react'
+import { Building2, Home, MapPin, DollarSign, HardHat, FileText, Clock } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import type { DealRoom } from '@shared/types/dealRoom'
+import type { BuyerPoolEntry } from '@shared/types/buyerPool'
 import { MOCK_DEAL_PREVIEW_SELLER, type DocumentUploadItem } from '@/data/mock/dealPreviews'
+import { MOCK_BUYER_POOL_DR001, MOCK_BUYER_POOL_DR002, MOCK_BUYER_POOL_DR005 } from '@/data/mock/buyerPool'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,13 @@ import {
 } from './ui/dialog'
 import StatusBadge from './StatusBadge'
 import StageProgressBar from './StageProgressBar'
-import { StatTile, StatTileGrid } from './ui/stat-tile'
+import BuyerFunnelStat from './BuyerFunnelStat'
+
+const BUYER_POOL_BY_DEAL: Record<string, BuyerPoolEntry[]> = {
+  dr_001: MOCK_BUYER_POOL_DR001,
+  dr_002: MOCK_BUYER_POOL_DR002,
+  dr_005: MOCK_BUYER_POOL_DR005,
+}
 
 interface DealPreviewModalProps {
   deal: DealRoom | null
@@ -101,15 +109,10 @@ export default function DealPreviewModal({
 
         {/* Body */}
         <div className="space-y-4 px-5 pb-5">
-          {/* Key Metrics */}
+          {/* Buyer Funnel */}
           <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Key Metrics</h4>
-            <StatTileGrid className="grid-cols-4">
-              <StatTile value={deal.matchedBuyerCount} label="Buyer Pool" />
-              <StatTile value={`${deal.matchScore}%`} label="Match Score" />
-              <StatTile value={preview?.buyerActivity.totalViews ?? 0} label="Total Views" />
-              <StatTile value={preview?.buyerActivity.offersReceived ?? 0} label="Offers Received" />
-            </StatTileGrid>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Buyer Funnel</h4>
+            <BuyerFunnelStat buyers={BUYER_POOL_BY_DEAL[deal.id] ?? []} />
           </div>
 
           {/* Stage Progress */}
@@ -120,33 +123,53 @@ export default function DealPreviewModal({
             </div>
           </div>
 
-          {/* Buyer Activity */}
-          {preview && (
-            <div>
-              <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Buyer Activity</h4>
-              <div className="flex items-center rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <Eye size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.totalViews}</span> Views
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <FileSignature size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.acceptedRequests}</span> Accepted
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <HandCoins size={12} className="shrink-0" />
-                  <span className="font-semibold text-foreground">{preview.buyerActivity.offersReceived}</span> Offers
-                </span>
-                <div className="h-6 w-px bg-border shrink-0" />
-                <span className="flex-1 flex items-center justify-center gap-1.5">
-                  <Clock size={12} className="shrink-0" />
-                  Last Buyer Activity {formatRelativeTime(preview.buyerActivity.lastActivityAt)}
-                </span>
+          {/* Buyer Activity Feed */}
+          {(() => {
+            const buyers = BUYER_POOL_BY_DEAL[deal.id] ?? []
+            const events: { label: string; detail?: string; date: Date }[] = []
+
+            for (const b of buyers) {
+              if (b.accessRequestedAt) {
+                events.push({
+                  label: `${b.anonymizedLabel} requested access`,
+                  date: new Date(b.accessRequestedAt),
+                })
+              }
+              if (b.passedAt) {
+                events.push({
+                  label: `${b.anonymizedLabel} passed`,
+                  detail: b.passReason,
+                  date: new Date(b.passedAt),
+                })
+              }
+            }
+
+            events.sort((a, b) => b.date.getTime() - a.date.getTime())
+
+            if (events.length === 0) return null
+
+            return (
+              <div>
+                <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Buyer Activity</h4>
+                <div className="rounded-lg border border-border divide-y divide-border">
+                  {events.slice(0, 5).map((event, i) => (
+                    <div key={i} className="flex items-start gap-2.5 px-4 py-2.5">
+                      <Clock size={12} className="shrink-0 text-muted-foreground mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-foreground">{event.label}</p>
+                        {event.detail && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{event.detail}</p>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {formatRelativeTime(event.date.toISOString())}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Documents */}
           {preview && preview.documents.length > 0 && (
