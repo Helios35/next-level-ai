@@ -16,6 +16,27 @@
 
 ---
 
+## Platform Terminology
+
+These terms are locked platform-wide. All documentation, UI copy, and code comments must follow this taxonomy.
+
+| Term | Definition | Audience |
+|------|------------|----------|
+| **Listing** | The asset a seller submits for disposition. Sellers create, manage, and track listings. | Sellers only |
+| **Deal Room** | The temporary transaction workspace created around a listing. Both sellers and buyers operate inside a deal room. | Both |
+| **Deal** | Buyer-facing language for what they discover and access. Buyers discover deals, request access to deals, and participate in deal rooms. | Buyers only |
+
+**Rules:**
+
+- Seller-facing UI always uses **"Listing"** — never "Deal" for the thing they created
+- Buyer-facing UI always uses **"Deal"** or **"Deal Room"** — never "Listing"
+- Internal code object type remains `listing` for the seller-side entity
+- Stats and labels follow the audience:
+  - Seller stats → "Listings Open," "Listings Started," "Listings Closed"
+  - Buyer stats → "Deals Accessed," "Offers Made," "Deals Won"
+
+---
+
 ## 1. User Model
 
 Two distinct user categories. They do not share a surface or sidebar.

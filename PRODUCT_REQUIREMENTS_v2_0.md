@@ -1,9 +1,12 @@
 # Strata NextLevel — Product Requirements Document
 
-> **Version:** 1.9
-> **Last Updated:** March 2026
+> **Version:** 2.0
+> **Last Updated:** April 2026
 > **Stack:** React 18 · Vite · TypeScript · Tailwind CSS · shadcn/ui · Supabase
 > **Demo Target:** May 18, 2026
+>
+> **Changes from v1.9:**
+> - Section 1.5 — Platform Terminology added. Locked terminology for Listing (seller-facing), Deal (buyer-facing), and Deal Room (shared). Rules for UI copy, code objects, and stats labels defined.
 >
 > **Changes from v1.8:**
 > - Section 1 — Product Overview updated. Mission, positioning, and go-to-market phasing added from Strata NextLevel 3.2 Business Plan Narrative. Strategic context and monetization streams added as Sections 1.3 and 1.4.
@@ -68,6 +71,25 @@ After sufficient deal velocity is achieved, ancillary offerings layered in — b
 | **Lender Participation** | Lenders pay per lead and per closed financing transaction. | Phase 4 — post deal velocity |
 
 Both seller credits and buyer success fees are expected to generate revenue within the first three months of MVP launch.
+
+### 1.5 Platform Terminology
+
+These terms are locked platform-wide. All documentation, UI copy, and code comments must follow this taxonomy.
+
+| Term | Definition | Audience |
+|------|------------|----------|
+| **Listing** | The asset a seller submits for disposition. Sellers create, manage, and track listings. | Sellers only |
+| **Deal Room** | The temporary transaction workspace created around a listing. Both sellers and buyers operate inside a deal room. | Both |
+| **Deal** | Buyer-facing language for what they discover and access. Buyers discover deals, request access to deals, and participate in deal rooms. | Buyers only |
+
+**Rules:**
+
+- Seller-facing UI always uses **"Listing"** — never "Deal" for the thing they created
+- Buyer-facing UI always uses **"Deal"** or **"Deal Room"** — never "Listing"
+- Internal code object type remains `listing` for the seller-side entity
+- Stats and labels follow the audience:
+  - Seller stats → "Listings Open," "Listings Started," "Listings Closed"
+  - Buyer stats → "Deals Accessed," "Offers Made," "Deals Won"
 
 ---
 
