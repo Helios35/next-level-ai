@@ -64,7 +64,7 @@ export default function DealCardList({
         <span className="whitespace-nowrap">{formatPrice(deal)}</span>
       </div>
 
-      {/* Deal Stage */}
+      {/* Development Stage */}
       <div className="flex items-center gap-1 text-xs text-muted-foreground px-2">
         <HardHat size={12} className="shrink-0" />
         <span>{stageLabel}</span>
@@ -75,7 +75,7 @@ export default function DealCardList({
         <StageProgressBar currentStage={deal.currentStage} showLabel={false} />
       </div>
 
-      {/* Matched Buyers */}
+      {/* Buyer Pool */}
       <div className="flex items-center gap-1 text-xs text-muted-foreground px-2">
         <Users size={13} />
         <span className="font-semibold text-foreground">{deal.matchedBuyerCount}</span>

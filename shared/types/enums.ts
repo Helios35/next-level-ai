@@ -32,12 +32,11 @@ export type DealRoomStatus =
 export type StrategyStatus = 'broadcasting' | 'paused' | 'draft'
 
 export type SeatStatus =
-  | 'outreach_sent'
-  | 'access_requested'
-  | 'access_pending'
+  | 'invited'
+  | 'accepted'
   | 'seated'
-  | 'wait_queue'
   | 'passed'
+  | 'pending'
 
 export type QualificationStatus = 'qualified' | 'not_qualified'
 

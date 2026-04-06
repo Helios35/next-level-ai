@@ -71,7 +71,7 @@ const FILTER_SECTIONS: FilterSection[] = [
   },
   {
     key: 'dealStage',
-    label: 'Deal Stage',
+    label: 'Development Stage',
     options: [
       { value: 'pre_development', label: 'Pre-Development' },
       { value: 'in_development', label: 'In Development' },
@@ -142,7 +142,7 @@ export default function FilterModal({
         <SheetHeader>
           <SheetTitle>Filters</SheetTitle>
           <SheetDescription className="sr-only">
-            Filter your listings by location, stage, status, asset type, price range, and deal stage
+            Filter your listings by location, stage, status, asset type, price range, and development stage
           </SheetDescription>
         </SheetHeader>
 
@@ -244,7 +244,7 @@ export default function FilterModal({
             </div>
           )}
 
-          {/* Deal Stage */}
+          {/* Development Stage */}
           {FILTER_SECTIONS.slice(2).map((section) => (
             <div key={section.key}>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">

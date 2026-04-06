@@ -414,7 +414,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               />
             </Field>
             <Field>
-              <FieldLabel>Deal Stage</FieldLabel>
+              <FieldLabel>Development Stage</FieldLabel>
               <Select items={DEAL_STAGE_OPTIONS} value={dealStage} onValueChange={setDealStage}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select stage" />
@@ -669,7 +669,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
             <ReviewRow label="Asset Class" value={enumLabel(ASSET_CLASS_OPTIONS, assetClass)} />
             <ReviewRow label="Asset Type" value={subtypeLabel} />
             <ReviewRow label="Geography (MSA)" value={locationMsa} />
-            <ReviewRow label="Deal Stage" value={enumLabel(DEAL_STAGE_OPTIONS, dealStage)} />
+            <ReviewRow label="Development Stage" value={enumLabel(DEAL_STAGE_OPTIONS, dealStage)} />
             <ReviewRow label="Pricing Posture" value={enumLabel(PRICING_POSTURE_OPTIONS, pricingPosture)} />
             {pricingPosture === 'exact_price' && (
               <ReviewRow label="Asking Price" value={`$${formatCurrency(exactPrice)}`} />

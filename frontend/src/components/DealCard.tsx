@@ -82,7 +82,7 @@ export default function DealCard({
         </InfoPopover>
         <div className="h-8 w-px bg-border shrink-0" />
         <InfoPopover
-          label="Deal Stage"
+          label="Development Stage"
           value={stageLabel}
           icon={<HardHat size={12} />}
           className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"

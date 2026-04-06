@@ -136,7 +136,7 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
           </TabsTrigger>
           <TabsTrigger value="milestones">
             <Milestone size={16} />
-            Milestones
+            Stages
           </TabsTrigger>
         </TabsList>
 
@@ -311,7 +311,7 @@ function DocumentsTab({ dealName, documents, docOverrides, onUpload, onView }: D
 
 function BuyerPoolTab({ buyers }: { buyers: BuyerPoolEntry[] }) {
   const seated = buyers.filter((b) => b.seatStatus === 'seated')
-  const waitQueue = buyers.filter((b) => b.seatStatus === 'wait_queue')
+  const pending = buyers.filter((b) => b.seatStatus === 'pending')
 
   return (
     <div className="px-6 py-6 space-y-6">
@@ -345,14 +345,14 @@ function BuyerPoolTab({ buyers }: { buyers: BuyerPoolEntry[] }) {
         Seat allocation is managed by your Disposition Specialist. Buyers are seated based on match quality, qualification status, and DS judgment. Maximum 3 concurrent seats.
       </InfoCallout>
 
-      {/* Wait Queue */}
-      {waitQueue.length > 0 && (
+      {/* Pending */}
+      {pending.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Wait Queue — {waitQueue.length} buyer{waitQueue.length !== 1 ? 's' : ''} waiting
+            Pending — {pending.length} buyer{pending.length !== 1 ? 's' : ''} waiting
           </h3>
           <div className="flex flex-col gap-2">
-            {waitQueue.map((buyer) => (
+            {pending.map((buyer) => (
               <Item key={buyer.id} variant="muted" className="px-4 py-2.5">
                 <ItemContent>
                   <ItemTitle>
@@ -402,14 +402,14 @@ function BuyerPoolTab({ buyers }: { buyers: BuyerPoolEntry[] }) {
         </div>
       )}
 
-      {/* Outreach pipeline (for early-stage deals) */}
-      {buyers.filter((b) => b.seatStatus === 'outreach_sent' || b.seatStatus === 'access_requested').length > 0 && (
+      {/* Invited / Accepted pipeline (for early-stage deals) */}
+      {buyers.filter((b) => b.seatStatus === 'invited' || b.seatStatus === 'accepted').length > 0 && (
         <div className="space-y-3">
           <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Outreach Pipeline
           </h3>
           <div className="flex flex-col gap-2">
-            {buyers.filter((b) => b.seatStatus === 'outreach_sent' || b.seatStatus === 'access_requested').map((buyer) => (
+            {buyers.filter((b) => b.seatStatus === 'invited' || b.seatStatus === 'accepted').map((buyer) => (
               <Item key={buyer.id} variant="muted" className="px-4 py-2.5">
                 <ItemContent>
                   <ItemTitle>
@@ -418,7 +418,7 @@ function BuyerPoolTab({ buyers }: { buyers: BuyerPoolEntry[] }) {
                       size="sm"
                       className="border-transparent bg-blue-500/20 text-blue-400"
                     >
-                      {buyer.seatStatus === 'access_requested' ? 'Access Requested' : 'Outreach Sent'}
+                      {buyer.seatStatus === 'accepted' ? 'Accepted' : 'Invited'}
                     </Badge>
                   </ItemTitle>
                 </ItemContent>

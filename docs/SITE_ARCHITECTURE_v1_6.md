@@ -13,6 +13,16 @@
 > - Locked decision #22 added — Strategy as top-level mode
 > - Locked decision #23 added — Sidebar collapsed by default
 > - Locked decision #24 added — Mode-specific sidebar color accent (deferred to branding pass)
+>
+> **Taxonomy extraction (April 2026):**
+> - Platform Terminology block replaced with pointer to TAXONOMY_v1_0.md Section 1
+> - Section 6 — Deal Room Status Model values, transition rules, and buyer pool exhaustion conditions replaced with pointer to TAXONOMY_v1_0.md Section 9. UI-relevant visibility behavior retained.
+
+---
+
+## Platform Terminology
+
+> Platform terminology is defined and maintained in **TAXONOMY_v1_0.md — Section 1**. All UI copy, documentation, and code comments must follow that definition. Do not redefine terms here.
 
 ---
 
@@ -458,36 +468,9 @@ DS Portal (/ds)
 
 ## 6. Deal Room Status Model
 
-Deal rooms carry a `status` field separate from `currentStage`. Stage tracks where in the lifecycle a deal is. Status tracks the deal's operational state — active in pipeline, or in a terminal/paused condition.
+Deal rooms carry a `status` field separate from `currentStage`. Stage tracks where in the lifecycle a deal is. Status tracks the deal's operational state.
 
-| Status | Description | Who Sets It |
-|--------|-------------|-------------|
-| `active` | Deal is progressing through the 9-stage lifecycle | System on creation; DS on reactivation |
-| `accepted_offer` | Winning offer confirmed by DS — competitive phase frozen — post-acceptance milestones in progress | DS |
-| `market_tested` | All 3 seats filled, all buyers passed, no offers received, full buyer pool exhausted | DS only |
-| `dormant` | Deal paused — stalled documents (21-day rule), seller-elected pause, or post-market-tested with no adjustment | DS or system (21-day rule) |
-| `closed` | Deal closed successfully — DS marks Closed milestone in post-acceptance tracker | DS |
-| `withdrawn` | Seller withdrew the deal | Seller or DS |
-
-### Transition Rules
-
-- `active` → `accepted_offer`: DS confirms winning offer at Stage 9
-- `accepted_offer` → `closed`: DS marks Closed milestone in post-acceptance tracker
-- `active` → `market_tested`: DS action only — requires buyer pool exhaustion confirmation
-- `market_tested` → `active`: Seller elects to adjust pricing or structure — deal re-enters Stage 7
-- `market_tested` → `dormant`: Seller declines adjustment or does not respond within follow-up window
-- `active` → `dormant`: Document collection stalls past 21-day window (system-triggered) or seller elects to pause
-- `dormant` → `active`: DS reactivates on seller request — deal re-enters at appropriate stage
-- `active` → `withdrawn`: Seller withdraws at Decision Point (Stage 5) or DS closes with no path forward
-
-### Buyer Pool Exhaustion Rule
-
-All four conditions must be true before DS can mark a deal as Market Tested:
-
-1. All 3 seats have been filled sequentially
-2. All seated buyers have either formally passed or allowed their underwriting window to expire
-3. No written LOIs have been received
-4. All eligible matched buyers in the filtered pool have been invited and passed
+> All status values, definitions, transition rules, and buyer pool exhaustion conditions are defined in **TAXONOMY_v1_0.md — Section 9**.
 
 ### Seller Visibility for Non-Active Statuses
 
