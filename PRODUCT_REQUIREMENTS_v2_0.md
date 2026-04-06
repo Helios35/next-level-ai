@@ -362,6 +362,32 @@ A deal enters Dormant in three scenarios:
 
 Dormant behavior: no active buyer exposure, no open seats, deal remains visible in seller's deal room list with Dormant badge, reactivatable at any time via DS on seller request.
 
+#### Seat Assignment Rules
+
+Two paths exist for a buyer to enter a deal room. Seating priority and DS control differ by path.
+
+**Path 1 — DS-Invited Buyer:**
+The DS sends an invite to a specific buyer. The buyer accepts.
+- If a seat is available → buyer is seated immediately. No second DS approval required. The invite was the approval.
+- If all 3 seats are full → buyer moves to `pending` with priority status.
+
+**Path 2 — Buyer-Initiated Request:**
+A buyer discovers a deal and requests access without being invited.
+- Goes directly to `pending`. No auto-seating.
+- DS reviews and approves or rejects.
+
+**Seat Priority Queue:**
+When a seat opens, fill in this order:
+
+1. **Invited buyers in `pending`** — sorted by invite date, oldest first (first invited, first seated)
+2. **Self-requested buyers in `pending`** — only considered after zero invited buyers remain in the queue, sorted by request date, oldest first
+
+Invited buyers always take priority over self-requested buyers regardless of when the self-request was submitted.
+
+**Seat Cap:**
+- Maximum 3 concurrent seats per deal room at all times
+- DS controls all seating — no auto-seating without DS action except in the case of an invited buyer when a seat is already available (Path 1 above)
+
 #### Post-Acceptance Milestone Tracking (Stage 9)
 
 When DS confirms the winning offer, the deal status moves to `accepted_offer` — not `closed`. Accepted offer and actual closing are distinct events that can be weeks or months apart.
