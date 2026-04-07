@@ -30,7 +30,7 @@ export interface DealRoomSharedCriteria {
   assetType: AssetType
   assetSubType: AssetSubType
   geography: Geography
-  dealStage: DealStage
+  currentDevelopmentStatus: DevelopmentStatus
   pricingPosture: PricingPosture
   priceRange?: PriceRange
   exactPrice?: number
@@ -47,7 +47,6 @@ export interface UniqueCriteria_SFR {
 export interface UniqueCriteria_BFR {
   productType: BFRProductType
   saleStageStatus: DealStage
-  currentDevelopmentStatus: DevelopmentStatus
   coStatus?: 'complete' | 'pending' | 'not_applicable' | 'unknown'
   estimatedCompletionDate?: string
   phaseSaleAllowed: boolean
@@ -70,7 +69,6 @@ export interface UniqueCriteria_Land {
   projectedUnitCount: number | 'unknown'
   productTypesAllowed: AssetSubType[]
   sellerIntendedProduct: AssetSubType
-  currentDevelopmentStatus: DevelopmentStatus
   saleStageStatus: DealStage
   estimatedCompletionDate?: string
   utilityWater: 'city' | 'well' | 'unknown'
