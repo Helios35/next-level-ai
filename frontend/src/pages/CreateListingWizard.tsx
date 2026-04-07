@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { NestedSelect } from '@/components/ui/nested-select'
 import { SectionCard } from '@/components/ui/section-card'
 import { ReviewRow } from '@/components/ui/review-row'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -14,7 +15,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
@@ -31,7 +31,7 @@ import {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const WIZARD_STEPS = ['Deal Overview', 'Asset Specs', 'Sale Terms', 'Documents', 'Review']
+const WIZARD_STEPS = ['Deal Overview', 'Asset Specs', 'Asset Details', 'Documents', 'Review']
 
 // AssetType (top-level class)
 const ASSET_CLASS_OPTIONS: { value: string; label: string }[] = [
@@ -100,6 +100,33 @@ const DEVELOPMENT_STATUS_OPTIONS: { value: string; label: string; group: string 
   { value: 'stabilized_operations', label: 'Stabilized Operations', group: 'Stabilized' },
 ]
 
+// DevelopmentStatus grouped for two-level dropdown
+const DEVELOPMENT_STATUS_GROUPS = [
+  { label: 'Pre-Construction', options: [
+    { value: 'raw_no_submission', label: 'Raw / No Submission' },
+    { value: 'concept_plan_prepared', label: 'Concept Plan Prepared' },
+    { value: 'submitted_for_entitlement', label: 'Submitted for Entitlement' },
+    { value: 'entitled_approved', label: 'Entitled / Approved' },
+    { value: 'recorded_platted', label: 'Recorded / Platted' },
+  ]},
+  { label: 'Construction', options: [
+    { value: 'horizontal_under_construction', label: 'Horizontal Under Construction' },
+    { value: 'horizontals_complete', label: 'Horizontals Complete' },
+    { value: 'vertical_under_construction', label: 'Vertical Under Construction' },
+    { value: 'vertical_substantially_complete', label: 'Vertical Substantially Complete' },
+  ]},
+  { label: 'Delivery', options: [
+    { value: 'delivered_co_in_process', label: 'Delivered \u2014 CO in Process' },
+    { value: 'delivered_co_complete', label: 'Delivered \u2014 CO Complete' },
+  ]},
+  { label: 'Lease-Up', options: [
+    { value: 'lease_up_underway', label: 'Lease-Up Underway' },
+  ]},
+  { label: 'Stabilized', options: [
+    { value: 'stabilized_operations', label: 'Stabilized Operations' },
+  ]},
+]
+
 // SaleWindow enum
 const SALE_WINDOW_OPTIONS: { value: string; label: string }[] = [
   { value: 'immediate', label: 'Immediate' },
@@ -121,6 +148,105 @@ const STAGE_LABELS: Record<number, string> = {
   9: 'Post-Close',
 }
 
+// BFR Tier 3 — Lease-Up Risk Appetite
+const LEASE_UP_RISK_OPTIONS: { value: string; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'heavy', label: 'Heavy' },
+]
+
+// BFR Tier 3 — Amenity Requirements
+const AMENITY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'pool', label: 'Pool' },
+  { value: 'clubhouse', label: 'Clubhouse' },
+  { value: 'fitness', label: 'Fitness' },
+  { value: 'none_required', label: 'None required' },
+]
+
+// BFR Tier 3 — Phase Sale Preference
+const PHASE_SALE_PREF_OPTIONS: { value: string; label: string }[] = [
+  { value: 'required', label: 'Required' },
+  { value: 'preferred', label: 'Preferred' },
+  { value: 'not_needed', label: 'Not needed' },
+]
+
+// SFR Tier 3 — HOA Status (seller side of HOA Tolerance)
+const HOA_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+]
+
+// SFR Tier 3 — Sewer Type (seller side of Septic Tolerance)
+const SEWER_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'city', label: 'City Sewer' },
+  { value: 'septic', label: 'Septic' },
+]
+
+// SFR Tier 3 — Section 8 Policy (seller side of Section 8 Tolerance)
+const SECTION_8_POLICY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'limited', label: 'Limited' },
+  { value: 'any', label: 'Any' },
+]
+
+// SFR Tier 3 — Property Condition (seller side of Value-Add Tolerance)
+const SFR_CONDITION_OPTIONS: { value: string; label: string }[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+]
+
+// MF Tier 3 — Deferred Maintenance (seller side of Value-Add Tolerance)
+const MF_DEFERRED_MAINTENANCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'light', label: 'Light' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'heavy', label: 'Heavy' },
+]
+
+// Land Tier 3 — Target Basis (seller side)
+const TARGET_BASIS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'per_lot', label: 'Per Lot' },
+  { value: 'per_acre', label: 'Per Acre' },
+]
+
+// Land Tier 3 — Entitlement Depth (seller side of Required Entitlement Depth)
+const ENTITLEMENT_DEPTH_OPTIONS: { value: string; label: string }[] = [
+  { value: 'raw', label: 'Raw' },
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'recorded', label: 'Recorded' },
+]
+
+// Land Tier 3 — Development Depth (seller side of Required Development Depth)
+const DEVELOPMENT_DEPTH_OPTIONS: { value: string; label: string }[] = [
+  { value: 'raw_only', label: 'Raw only' },
+  { value: 'entitled', label: 'Entitled' },
+  { value: 'horizontal_underway', label: 'Horizontal underway' },
+  { value: 'finished_lots', label: 'Finished lots only' },
+]
+
+// Garage Preference — Tier 2 Residential Income Group
+const GARAGE_PREFERENCE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'required', label: 'Required' },
+  { value: 'preferred', label: 'Preferred' },
+  { value: 'no_preference', label: 'No preference' },
+]
+
+// Land Product Type — Tier 2 Land Group
+const LAND_PRODUCT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'sfd', label: 'SFD' },
+  { value: 'townhomes', label: 'Townhomes' },
+  { value: 'duplexes', label: 'Duplexes' },
+  { value: 'multifamily', label: 'Multifamily' },
+]
+
+// Pricing Basis — Tier 2 Land Group
+const PRICING_BASIS_OPTIONS: { value: string; label: string }[] = [
+  { value: 'per_lot', label: 'Per Lot' },
+  { value: 'per_acre', label: 'Per Acre' },
+]
+
 // ── Section keys ────────────────────────────────────────────────────────────
 
 type SectionKey = 'dealOverview' | 'assetSpecs' | 'saleTerms' | 'documents' | 'review'
@@ -132,19 +258,42 @@ export interface WizardFormState {
   assetClass: string
   assetSubType: string
   locationMsa: string
-  dealStage: string
+  currentDevelopmentStatus: string
   pricingPosture: string
   exactPrice: number | ''
   priceRangeMin: number | ''
   priceRangeMax: number | ''
   productType: string
-  currentDevelopmentStatus: string
-  saleStageStatus: string
-  saleWindow: string
   unitCount: number | ''
-  phaseSaleAllowed: boolean
-  mustSellAsPackage: boolean
+  sqftMin?: number | ''
+  sqftMax?: number | ''
+  garagePreference?: string
+  landProductType?: string
+  pricingBasis?: string
   stageNumber: number
+  // BFR Tier 3
+  leaseUpRisk?: string
+  targetPpuMin?: number | ''
+  targetPpuMax?: number | ''
+  amenityRequirements?: string[]
+  phaseSalePref?: string
+  // SFR Tier 3
+  hoaStatus?: string
+  sewerType?: string
+  section8Policy?: string
+  yearBuilt?: number | ''
+  bedCount?: number | ''
+  bathCount?: number | ''
+  propertyCondition?: string
+  // MF Tier 3
+  mfYearBuilt?: number | ''
+  deferredMaintenance?: string
+  // Land Tier 3
+  targetBasis?: string
+  projectedDensity?: number | ''
+  entitlementDepth?: string
+  developmentDepth?: string
+  phasedTakedownAllowed?: string
   documents: { name: string; status: string }[]
 }
 
@@ -172,23 +321,45 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
   const [assetClass, setAssetClass] = useState(initialState?.assetClass ?? '')
   const [assetSubType, setAssetSubType] = useState(initialState?.assetSubType ?? '')
   const [locationMsa, setLocationMsa] = useState(initialState?.locationMsa ?? '')
-  const [dealStage, setDealStage] = useState(initialState?.dealStage ?? '')
+  const [currentDevelopmentStatus, setCurrentDevelopmentStatus] = useState(initialState?.currentDevelopmentStatus ?? '')
   const [pricingPosture, setPricingPosture] = useState(initialState?.pricingPosture ?? '')
   const [exactPrice, setExactPrice] = useState<number | ''>(initialState?.exactPrice ?? '')
   const [priceRangeMin, setPriceRangeMin] = useState<number | ''>(initialState?.priceRangeMin ?? '')
   const [priceRangeMax, setPriceRangeMax] = useState<number | ''>(initialState?.priceRangeMax ?? '')
 
-  // ── Step 2: Asset Specs (Tier 2 — UniqueCriteria, BFR demo) ────────────
+  // ── Step 2: Asset Specs (Tier 2 — UniqueCriteria) ──────────────────────
   const [productType, setProductType] = useState(initialState?.productType ?? '')
-  const [currentDevelopmentStatus, setCurrentDevelopmentStatus] = useState(initialState?.currentDevelopmentStatus ?? '')
-  const [saleStageStatus, setSaleStageStatus] = useState(initialState?.saleStageStatus ?? '')
-  const [saleWindow, setSaleWindow] = useState(initialState?.saleWindow ?? '')
   const [unitCount, setUnitCount] = useState<number | ''>(initialState?.unitCount ?? '')
-  const [phaseSaleAllowed, setPhaseSaleAllowed] = useState(initialState?.phaseSaleAllowed ?? false)
-  const [mustSellAsPackage, setMustSellAsPackage] = useState(initialState?.mustSellAsPackage ?? false)
+  const [sqftMin, setSqftMin] = useState<number | ''>(initialState?.sqftMin ?? '')
+  const [sqftMax, setSqftMax] = useState<number | ''>(initialState?.sqftMax ?? '')
+  const [garagePreference, setGaragePreference] = useState(initialState?.garagePreference ?? '')
+  const [landProductType, setLandProductType] = useState(initialState?.landProductType ?? '')
+  const [pricingBasis, setPricingBasis] = useState(initialState?.pricingBasis ?? '')
 
-  // ── Step 3: Sale Terms ──────────────────────────────────────────────────
+  // ── Step 3: Asset Details (Tier 3 — soft refinement) ────────────────────
   const [stageNumber, setStageNumber] = useState(initialState?.stageNumber ?? 1)
+  const [leaseUpRisk, setLeaseUpRisk] = useState(initialState?.leaseUpRisk ?? '')
+  const [targetPpuMin, setTargetPpuMin] = useState<number | ''>(initialState?.targetPpuMin ?? '')
+  const [targetPpuMax, setTargetPpuMax] = useState<number | ''>(initialState?.targetPpuMax ?? '')
+  const [amenityRequirements, setAmenityRequirements] = useState<string[]>(initialState?.amenityRequirements ?? [])
+  const [phaseSalePref, setPhaseSalePref] = useState(initialState?.phaseSalePref ?? '')
+  // SFR Tier 3
+  const [hoaStatus, setHoaStatus] = useState(initialState?.hoaStatus ?? '')
+  const [sewerType, setSewerType] = useState(initialState?.sewerType ?? '')
+  const [section8Policy, setSection8Policy] = useState(initialState?.section8Policy ?? '')
+  const [yearBuilt, setYearBuilt] = useState<number | ''>(initialState?.yearBuilt ?? '')
+  const [bedCount, setBedCount] = useState<number | ''>(initialState?.bedCount ?? '')
+  const [bathCount, setBathCount] = useState<number | ''>(initialState?.bathCount ?? '')
+  const [propertyCondition, setPropertyCondition] = useState(initialState?.propertyCondition ?? '')
+  // MF Tier 3
+  const [mfYearBuilt, setMfYearBuilt] = useState<number | ''>(initialState?.mfYearBuilt ?? '')
+  const [deferredMaintenance, setDeferredMaintenance] = useState(initialState?.deferredMaintenance ?? '')
+  // Land Tier 3
+  const [targetBasis, setTargetBasis] = useState(initialState?.targetBasis ?? '')
+  const [projectedDensity, setProjectedDensity] = useState<number | ''>(initialState?.projectedDensity ?? '')
+  const [entitlementDepth, setEntitlementDepth] = useState(initialState?.entitlementDepth ?? '')
+  const [developmentDepth, setDevelopmentDepth] = useState(initialState?.developmentDepth ?? '')
+  const [phasedTakedownAllowed, setPhasedTakedownAllowed] = useState(initialState?.phasedTakedownAllowed ?? '')
 
   // ── Step 4: Documents ───────────────────────────────────────────────────
   const [internalDocuments, setInternalDocuments] = useState<{ name: string; status: string }[]>(initialState?.documents ?? [])
@@ -263,7 +434,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
       setAssetClass('residential_income')
       setAssetSubType('build_for_rent')
       setLocationMsa('Atlanta-Sandy Springs-Alpharetta, GA')
-      setDealStage('in_development')
+      setCurrentDevelopmentStatus('vertical_under_construction')
       setPricingPosture('exact_price')
       setExactPrice(8_400_000)
     }
@@ -272,12 +443,10 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
   useEffect(() => {
     if (step >= 2 && !productType) {
       setProductType('detached')
-      setCurrentDevelopmentStatus('vertical_under_construction')
-      setSaleStageStatus('in_development')
-      setSaleWindow('6_12_months')
       setUnitCount(42)
-      setPhaseSaleAllowed(false)
-      setMustSellAsPackage(true)
+      setSqftMin(1200)
+      setSqftMax(1800)
+      setGaragePreference('preferred')
     }
   }, [step, productType])
 
@@ -286,6 +455,16 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
       setStageNumber(4)
     }
   }, [step, stageNumber])
+
+  useEffect(() => {
+    if (step >= 3 && assetSubType === 'build_for_rent' && !leaseUpRisk) {
+      setLeaseUpRisk('moderate')
+      setTargetPpuMin(180_000)
+      setTargetPpuMax(220_000)
+      setAmenityRequirements(['pool', 'fitness'])
+      setPhaseSalePref('preferred')
+    }
+  }, [step, assetSubType, leaseUpRisk])
 
   useEffect(() => {
     if (!externalDocuments && step >= 4 && internalDocuments.length === 0) {
@@ -312,11 +491,16 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
     options.find((o) => o.value === val)?.label ?? val
 
   const getFormSnapshot = (): WizardFormState => ({
-    propertyName, assetClass, assetSubType, locationMsa, dealStage,
+    propertyName, assetClass, assetSubType, locationMsa, currentDevelopmentStatus,
     pricingPosture, exactPrice, priceRangeMin, priceRangeMax,
-    productType, currentDevelopmentStatus, saleStageStatus, saleWindow,
-    unitCount, phaseSaleAllowed, mustSellAsPackage,
-    stageNumber, documents,
+    productType, unitCount, sqftMin, sqftMax, garagePreference,
+    landProductType, pricingBasis,
+    stageNumber,
+    leaseUpRisk, targetPpuMin, targetPpuMax, amenityRequirements, phaseSalePref,
+    hoaStatus, sewerType, section8Policy, yearBuilt, bedCount, bathCount, propertyCondition,
+    mfYearBuilt, deferredMaintenance,
+    targetBasis, projectedDensity, entitlementDepth, developmentDepth, phasedTakedownAllowed,
+    documents,
   })
 
   const subtypeOptions = SUBTYPE_BY_CLASS[assetClass] ?? []
@@ -377,7 +561,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               />
             </Field>
             <Field>
-              <FieldLabel>Asset Class</FieldLabel>
+              <FieldLabel>Asset Type</FieldLabel>
               <Select items={ASSET_CLASS_OPTIONS} value={assetClass} onValueChange={handleAssetClassChange}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select class" />
@@ -392,7 +576,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               </Select>
             </Field>
             <Field>
-              <FieldLabel>Asset Type</FieldLabel>
+              <FieldLabel>Asset Sub-Type</FieldLabel>
               <Select items={subtypeOptions} value={assetSubType} onValueChange={setAssetSubType} disabled={isLand}>
                 <SelectTrigger className={cn('w-full', isLand && 'opacity-60')}>
                   <SelectValue placeholder="Select type" />
@@ -414,19 +598,14 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               />
             </Field>
             <Field>
-              <FieldLabel>Development Stage</FieldLabel>
-              <Select items={DEAL_STAGE_OPTIONS} value={dealStage} onValueChange={setDealStage}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {DEAL_STAGE_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <FieldLabel>Current Development Status</FieldLabel>
+              <NestedSelect
+                groups={DEVELOPMENT_STATUS_GROUPS}
+                value={currentDevelopmentStatus}
+                onValueChange={setCurrentDevelopmentStatus}
+                placeholder="Select status"
+                className="w-full"
+              />
             </Field>
             <Field>
               <FieldLabel>Pricing Posture</FieldLabel>
@@ -494,129 +673,377 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
           onOpenChange={() => toggleSection('assetSpecs')}
           disabled={step < 1}
         >
-          <FieldGroup className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel>Product Type</FieldLabel>
-              <Select items={BFR_PRODUCT_TYPES} value={productType} onValueChange={setProductType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {BFR_PRODUCT_TYPES.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>Development Status</FieldLabel>
-              <Select items={DEVELOPMENT_STATUS_OPTIONS} value={currentDevelopmentStatus} onValueChange={setCurrentDevelopmentStatus}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(() => {
-                    const groups = [...new Set(DEVELOPMENT_STATUS_OPTIONS.map((o) => o.group))]
-                    return groups.map((g) => (
-                      <SelectGroup key={g}>
-                        <SelectLabel>{g}</SelectLabel>
-                        {DEVELOPMENT_STATUS_OPTIONS.filter((o) => o.group === g).map((o) => (
-                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))
-                  })()}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>Sale Stage Status</FieldLabel>
-              <Select items={DEAL_STAGE_OPTIONS} value={saleStageStatus} onValueChange={setSaleStageStatus}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {DEAL_STAGE_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>Sale Window</FieldLabel>
-              <Select items={SALE_WINDOW_OPTIONS} value={saleWindow} onValueChange={setSaleWindow}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select window" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {SALE_WINDOW_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel>Unit Count</FieldLabel>
-              <Input
-                type="number"
-                value={unitCount}
-                onChange={(e) => setUnitCount(e.target.value ? Number(e.target.value) : '')}
-              />
-            </Field>
-            <div /> {/* empty cell for grid alignment */}
-            <Field>
-              <FieldLabel>Phase Sale Allowed</FieldLabel>
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                value={phaseSaleAllowed ? 'yes' : 'no'}
-                onValueChange={(val) => { if (val) setPhaseSaleAllowed(val === 'yes') }}
-                className="w-full"
-              >
-                <ToggleGroupItem value="yes" className="flex-1">Yes</ToggleGroupItem>
-                <ToggleGroupItem value="no" className="flex-1">No</ToggleGroupItem>
-              </ToggleGroup>
-            </Field>
-            <Field>
-              <FieldLabel>Must Sell as Package</FieldLabel>
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                value={mustSellAsPackage ? 'yes' : 'no'}
-                onValueChange={(val) => { if (val) setMustSellAsPackage(val === 'yes') }}
-                className="w-full"
-              >
-                <ToggleGroupItem value="yes" className="flex-1">Yes</ToggleGroupItem>
-                <ToggleGroupItem value="no" className="flex-1">No</ToggleGroupItem>
-              </ToggleGroup>
-            </Field>
-          </FieldGroup>
+          {/* Residential Income group: BFR, SFR, MF */}
+          {(assetSubType === 'build_for_rent' || assetSubType === 'sfr_portfolio' || assetSubType === 'multifamily') && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Product Type</FieldLabel>
+                <Select items={BFR_PRODUCT_TYPES} value={productType} onValueChange={setProductType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {BFR_PRODUCT_TYPES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Unit Count</FieldLabel>
+                <Input
+                  type="number"
+                  value={unitCount}
+                  onChange={(e) => setUnitCount(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Square Footage Min</FieldLabel>
+                <Input
+                  type="number"
+                  value={sqftMin}
+                  onChange={(e) => setSqftMin(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Square Footage Max</FieldLabel>
+                <Input
+                  type="number"
+                  value={sqftMax}
+                  onChange={(e) => setSqftMax(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Garage Preference</FieldLabel>
+                <Select items={GARAGE_PREFERENCE_OPTIONS} value={garagePreference} onValueChange={setGaragePreference}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {GARAGE_PREFERENCE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
+          )}
+
+          {/* Land group */}
+          {assetSubType === 'land' && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Land Product Type</FieldLabel>
+                <Select items={LAND_PRODUCT_TYPE_OPTIONS} value={landProductType} onValueChange={setLandProductType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {LAND_PRODUCT_TYPE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Target Unit Count</FieldLabel>
+                <Input
+                  type="number"
+                  value={unitCount}
+                  onChange={(e) => setUnitCount(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Pricing Basis</FieldLabel>
+                <Select items={PRICING_BASIS_OPTIONS} value={pricingBasis} onValueChange={setPricingBasis}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select basis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {PRICING_BASIS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
+          )}
         </SectionCard>
 
-        {/* ── Step 3: Sale Terms (soft gate — no blocking) ─────────── */}
+        {/* ── Step 3: Asset Details (Tier 3 — soft refinement) ──────── */}
         <SectionCard
           icon={Scale}
-          title="Sale Terms"
+          title="Asset Details"
           open={openSections.saleTerms}
           onOpenChange={() => toggleSection('saleTerms')}
           disabled={step < 2}
         >
-          <Field>
-            <FieldLabel>{`Deal Room Stage: ${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`}</FieldLabel>
-            <Slider
-              value={[stageNumber]}
-              onValueChange={(val: number[]) => setStageNumber(val[0])}
-              min={1}
-              max={9}
-              step={1}
-            />
-          </Field>
+          {/* BFR Tier 3 */}
+          {assetSubType === 'build_for_rent' && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Lease-Up Status</FieldLabel>
+                <Select items={LEASE_UP_RISK_OPTIONS} value={leaseUpRisk} onValueChange={setLeaseUpRisk}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {LEASE_UP_RISK_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Phase Sale Allowed</FieldLabel>
+                <Select items={PHASE_SALE_PREF_OPTIONS} value={phaseSalePref} onValueChange={setPhaseSalePref}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {PHASE_SALE_PREF_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Target Price Per Unit (Min)</FieldLabel>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                  <Input
+                    value={formatCurrency(targetPpuMin)}
+                    onChange={(e) => setTargetPpuMin(parseCurrency(e.target.value))}
+                    className="pl-7"
+                  />
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel>Target Price Per Unit (Max)</FieldLabel>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                  <Input
+                    value={formatCurrency(targetPpuMax)}
+                    onChange={(e) => setTargetPpuMax(parseCurrency(e.target.value))}
+                    className="pl-7"
+                  />
+                </div>
+              </Field>
+              <Field className="col-span-2">
+                <FieldLabel>Amenity Package</FieldLabel>
+                <MultiSelect
+                  options={AMENITY_OPTIONS}
+                  selected={amenityRequirements}
+                  onChange={setAmenityRequirements}
+                  placeholder="Select amenities..."
+                />
+              </Field>
+            </FieldGroup>
+          )}
+
+          {/* SFR Tier 3 */}
+          {assetSubType === 'sfr_portfolio' && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>HOA Status</FieldLabel>
+                <Select items={HOA_STATUS_OPTIONS} value={hoaStatus} onValueChange={setHoaStatus}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {HOA_STATUS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Sewer Type</FieldLabel>
+                <Select items={SEWER_TYPE_OPTIONS} value={sewerType} onValueChange={setSewerType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {SEWER_TYPE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Section 8 Policy</FieldLabel>
+                <Select items={SECTION_8_POLICY_OPTIONS} value={section8Policy} onValueChange={setSection8Policy}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select policy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {SECTION_8_POLICY_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Year Built</FieldLabel>
+                <Input
+                  type="number"
+                  value={yearBuilt}
+                  onChange={(e) => setYearBuilt(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Bedrooms</FieldLabel>
+                <Input
+                  type="number"
+                  value={bedCount}
+                  onChange={(e) => setBedCount(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Bathrooms</FieldLabel>
+                <Input
+                  type="number"
+                  value={bathCount}
+                  onChange={(e) => setBathCount(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Property Condition</FieldLabel>
+                <Select items={SFR_CONDITION_OPTIONS} value={propertyCondition} onValueChange={setPropertyCondition}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {SFR_CONDITION_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
+          )}
+
+          {/* MF Tier 3 */}
+          {assetSubType === 'multifamily' && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Year Built</FieldLabel>
+                <Input
+                  type="number"
+                  value={mfYearBuilt}
+                  onChange={(e) => setMfYearBuilt(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Deferred Maintenance</FieldLabel>
+                <Select items={MF_DEFERRED_MAINTENANCE_OPTIONS} value={deferredMaintenance} onValueChange={setDeferredMaintenance}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {MF_DEFERRED_MAINTENANCE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FieldGroup>
+          )}
+
+          {/* Land Tier 3 */}
+          {assetSubType === 'land' && (
+            <FieldGroup className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel>Target Basis</FieldLabel>
+                <Select items={TARGET_BASIS_OPTIONS} value={targetBasis} onValueChange={setTargetBasis}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select basis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {TARGET_BASIS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Projected Density</FieldLabel>
+                <Input
+                  type="number"
+                  placeholder="Units per buildable acre"
+                  value={projectedDensity}
+                  onChange={(e) => setProjectedDensity(e.target.value ? Number(e.target.value) : '')}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Entitlement Status</FieldLabel>
+                <Select items={ENTITLEMENT_DEPTH_OPTIONS} value={entitlementDepth} onValueChange={setEntitlementDepth}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {ENTITLEMENT_DEPTH_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Development Depth</FieldLabel>
+                <Select items={DEVELOPMENT_DEPTH_OPTIONS} value={developmentDepth} onValueChange={setDevelopmentDepth}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select depth" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {DEVELOPMENT_DEPTH_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel>Phased Takedown Allowed</FieldLabel>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  value={phasedTakedownAllowed}
+                  onValueChange={(val) => { if (val) setPhasedTakedownAllowed(val) }}
+                  className="w-full"
+                >
+                  <ToggleGroupItem value="yes" className="flex-1">Yes</ToggleGroupItem>
+                  <ToggleGroupItem value="no" className="flex-1">No</ToggleGroupItem>
+                </ToggleGroup>
+              </Field>
+            </FieldGroup>
+          )}
         </SectionCard>
 
         {/* ── Step 4: Documents ─────────────────────────────────────── */}
@@ -666,10 +1093,10 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
           <div className="flex flex-col gap-4">
             {/* Deal Overview */}
             <ReviewRow label="Property" value={propertyName} />
-            <ReviewRow label="Asset Class" value={enumLabel(ASSET_CLASS_OPTIONS, assetClass)} />
-            <ReviewRow label="Asset Type" value={subtypeLabel} />
+            <ReviewRow label="Asset Type" value={enumLabel(ASSET_CLASS_OPTIONS, assetClass)} />
+            <ReviewRow label="Asset Sub-Type" value={subtypeLabel} />
             <ReviewRow label="Geography (MSA)" value={locationMsa} />
-            <ReviewRow label="Development Stage" value={enumLabel(DEAL_STAGE_OPTIONS, dealStage)} />
+            <ReviewRow label="Current Development Status" value={enumLabel(DEVELOPMENT_STATUS_OPTIONS, currentDevelopmentStatus)} />
             <ReviewRow label="Pricing Posture" value={enumLabel(PRICING_POSTURE_OPTIONS, pricingPosture)} />
             {pricingPosture === 'exact_price' && (
               <ReviewRow label="Asking Price" value={`$${formatCurrency(exactPrice)}`} />
@@ -678,17 +1105,63 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
               <ReviewRow label="Price Range" value={`$${formatCurrency(priceRangeMin)} \u2013 $${formatCurrency(priceRangeMax)}`} />
             )}
             <Separator />
-            {/* Asset Specs */}
-            <ReviewRow label="Product Type" value={enumLabel(BFR_PRODUCT_TYPES, productType)} />
-            <ReviewRow label="Development Status" value={enumLabel(DEVELOPMENT_STATUS_OPTIONS, currentDevelopmentStatus)} />
-            <ReviewRow label="Sale Stage Status" value={enumLabel(DEAL_STAGE_OPTIONS, saleStageStatus)} />
-            <ReviewRow label="Sale Window" value={enumLabel(SALE_WINDOW_OPTIONS, saleWindow)} />
-            <ReviewRow label="Unit Count" value={String(unitCount)} />
-            <ReviewRow label="Phase Sale Allowed" value={phaseSaleAllowed ? 'Yes' : 'No'} />
-            <ReviewRow label="Must Sell as Package" value={mustSellAsPackage ? 'Yes' : 'No'} />
+            {/* Asset Specs — Residential Income */}
+            {(assetSubType === 'build_for_rent' || assetSubType === 'sfr_portfolio' || assetSubType === 'multifamily') && (
+              <>
+                <ReviewRow label="Product Type" value={enumLabel(BFR_PRODUCT_TYPES, productType)} />
+                <ReviewRow label="Unit Count" value={String(unitCount)} />
+                <ReviewRow label="Square Footage Range" value={`${sqftMin} – ${sqftMax}`} />
+                <ReviewRow label="Garage Preference" value={enumLabel(GARAGE_PREFERENCE_OPTIONS, garagePreference)} />
+              </>
+            )}
+            {/* Asset Specs — Land */}
+            {assetSubType === 'land' && (
+              <>
+                <ReviewRow label="Land Product Type" value={enumLabel(LAND_PRODUCT_TYPE_OPTIONS, landProductType)} />
+                <ReviewRow label="Target Unit Count" value={String(unitCount)} />
+                <ReviewRow label="Pricing Basis" value={enumLabel(PRICING_BASIS_OPTIONS, pricingBasis)} />
+              </>
+            )}
             <Separator />
-            {/* Sale Terms */}
+            {/* Asset Details — BFR */}
             <ReviewRow label="Deal Room Stage" value={`${stageNumber} \u2014 ${STAGE_LABELS[stageNumber] ?? ''}`} />
+            {assetSubType === 'build_for_rent' && (
+              <>
+                <ReviewRow label="Lease-Up Status" value={enumLabel(LEASE_UP_RISK_OPTIONS, leaseUpRisk)} />
+                <ReviewRow label="Target Price Per Unit" value={`$${formatCurrency(targetPpuMin)} \u2013 $${formatCurrency(targetPpuMax)}`} />
+                <ReviewRow label="Amenity Package" value={amenityRequirements.map((v) => enumLabel(AMENITY_OPTIONS, v)).join(', ') || 'None'} />
+                <ReviewRow label="Phase Sale Allowed" value={enumLabel(PHASE_SALE_PREF_OPTIONS, phaseSalePref)} />
+              </>
+            )}
+            {/* Asset Details — SFR */}
+            {assetSubType === 'sfr_portfolio' && (
+              <>
+                <ReviewRow label="HOA Status" value={enumLabel(HOA_STATUS_OPTIONS, hoaStatus)} />
+                <ReviewRow label="Sewer Type" value={enumLabel(SEWER_TYPE_OPTIONS, sewerType)} />
+                <ReviewRow label="Section 8 Policy" value={enumLabel(SECTION_8_POLICY_OPTIONS, section8Policy)} />
+                <ReviewRow label="Year Built" value={String(yearBuilt)} />
+                <ReviewRow label="Bedrooms" value={String(bedCount)} />
+                <ReviewRow label="Bathrooms" value={String(bathCount)} />
+                <ReviewRow label="Property Condition" value={enumLabel(SFR_CONDITION_OPTIONS, propertyCondition)} />
+              </>
+            )}
+            {/* Asset Details — MF */}
+            {assetSubType === 'multifamily' && (
+              <>
+                <ReviewRow label="Year Built" value={String(mfYearBuilt)} />
+                <ReviewRow label="Deferred Maintenance" value={enumLabel(MF_DEFERRED_MAINTENANCE_OPTIONS, deferredMaintenance)} />
+              </>
+            )}
+            {/* Asset Details — Land */}
+            {assetSubType === 'land' && (
+              <>
+                <ReviewRow label="Target Basis" value={enumLabel(TARGET_BASIS_OPTIONS, targetBasis)} />
+                <ReviewRow label="Projected Density" value={projectedDensity ? `${projectedDensity} units/acre` : ''} />
+                <ReviewRow label="Entitlement Status" value={enumLabel(ENTITLEMENT_DEPTH_OPTIONS, entitlementDepth)} />
+                <ReviewRow label="Development Depth" value={enumLabel(DEVELOPMENT_DEPTH_OPTIONS, developmentDepth)} />
+                <ReviewRow label="Phased Takedown Allowed" value={phasedTakedownAllowed === 'yes' ? 'Yes' : phasedTakedownAllowed === 'no' ? 'No' : ''} />
+              </>
+            )}
             <Separator />
             {/* Documents */}
             <ReviewRow

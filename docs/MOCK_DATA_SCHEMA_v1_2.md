@@ -556,11 +556,15 @@ export interface DealRoomSharedCriteria {
   assetType: AssetType;
   assetSubType: AssetSubType;
   geography: Geography;
-  dealStage: DealStage;
+  currentDevelopmentStatus: DevelopmentStatus;  // granular two-level field — see TIER_DATA_BREAKDOWN.md
   pricingPosture: PricingPosture;
   priceRange?: PriceRange;
   exactPrice?: number;
 }
+// Note: `dealStage` has been removed. `currentDevelopmentStatus` replaces it as the
+// Tier 1 development-progress field. The stored value is the granular selection
+// (e.g. 'vertical_under_construction'), not the parent category ('Construction').
+// See TIER_DATA_BREAKDOWN.md for the full two-level option set.
 
 // Asset-specific Unique Deal Criteria
 export interface UniqueCriteria_SFR {
@@ -575,7 +579,7 @@ export interface UniqueCriteria_SFR {
 export interface UniqueCriteria_BFR {
   productType: BFRProductType;
   saleStageStatus: DealStage;
-  currentDevelopmentStatus: DevelopmentStatus;
+  // Note: currentDevelopmentStatus moved to DealRoomSharedCriteria (Tier 1)
   coStatus?: 'complete' | 'pending' | 'not_applicable' | 'unknown';
   estimatedCompletionDate?: string;
   phaseSaleAllowed: boolean;
@@ -598,7 +602,7 @@ export interface UniqueCriteria_Land {
   projectedUnitCount: number | 'unknown';
   productTypesAllowed: AssetSubType[];
   sellerIntendedProduct: AssetSubType;
-  currentDevelopmentStatus: DevelopmentStatus;
+  // Note: currentDevelopmentStatus moved to DealRoomSharedCriteria (Tier 1)
   saleStageStatus: DealStage;
   estimatedCompletionDate?: string;
   utilityWater: 'city' | 'well' | 'unknown';

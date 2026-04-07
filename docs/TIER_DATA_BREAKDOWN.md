@@ -22,9 +22,36 @@ Applies to every asset type. Hard matching on both sides.
 | Asset Type | Hard | Both | Residential Income or Land |
 | Asset Sub-Type | Hard | Both | SFR / BFR / MF / Land |
 | Geography | Hard | Both | MSA → City → ZIP hierarchy |
-| Deal Stage | Hard | Both | Pre-Dev / In Dev / Delivered / Lease-Up / Stabilized |
+| Current Development Status | Hard | Both | Granular two-level field. Parent categories: Pre-Construction / Construction / Delivery / Lease-Up / Stabilized. Stored value is the granular selection, not the parent category. |
 | Equity Check Size | Hard | Buyer only | Min / Max range. Total deal size derived internally — buyer never calculates |
 | Pricing Posture | Hard | Seller only | Exact Price / Price Range / Needs Guidance |
+
+**Current Development Status — Two-Level Option Set**
+
+```
+Pre-Construction
+  └── Raw / No Submission
+  └── Concept Plan Prepared
+  └── Submitted for Entitlement
+  └── Entitled / Approved
+  └── Recorded / Platted
+
+Construction
+  └── Horizontal Under Construction
+  └── Horizontals Complete
+  └── Vertical Under Construction
+  └── Vertical Substantially Complete
+
+Delivery
+  └── Delivered — CO in Process
+  └── Delivered — CO Complete
+
+Lease-Up
+  └── Lease-Up Underway
+
+Stabilized
+  └── Stabilized Operations
+```
 
 ---
 
@@ -42,6 +69,8 @@ Hard matching. Applies to a group of sub-types, not all asset types.
 | Square Footage Range | Hard | Both | Min / Max |
 | Garage Preference | Hard | Both | Required / Preferred / No preference |
 
+> `currentDevelopmentStatus` has been moved to Tier 1 — it is captured in `DealRoomSharedCriteria` and is not re-captured in Tier 2.
+
 ### Land Group (Land only)
 
 | Field | Match Type | Sides | Notes |
@@ -50,53 +79,55 @@ Hard matching. Applies to a group of sub-types, not all asset types.
 | Target Unit Count Range | Hard | Both | Min / Max |
 | Pricing Basis | Hard | Both | Per Lot / Per Acre |
 
+> `currentDevelopmentStatus` has been moved to Tier 1 — it is captured in `DealRoomSharedCriteria` and is not re-captured in Tier 2.
+
 ---
 
 ## Tier 3 — Unique (Soft Match — Never Blocks Visibility)
 
-Sub-type specific. Affects DS ranking and seat allocation only. All fields are buyer-side only.
+Sub-type specific. Affects DS ranking and seat allocation only. Fields exist on both seller and buyer sides — seller enters the actual property value, buyer enters their preference or tolerance. The matching engine compares the two.
 
 ### SFR Only
 
 | Field | Match Type | Sides | Notes |
 |---|---|---|---|
-| HOA Tolerance | Soft | Buyer only | No / Limited / Any |
-| Septic Tolerance | Soft | Buyer only | No / Any |
-| Section 8 Tolerance | Soft | Buyer only | None / Limited / Any |
-| Vintage Preference | Soft | Buyer only | Min year built |
-| Bed / Bath Preference | Soft | Buyer only | Range |
-| Value-Add Tolerance | Soft | Buyer only | Low / Medium / High |
+| HOA Tolerance | Soft | Both | Seller: actual HOA status. Buyer: tolerance (No / Limited / Any) |
+| Septic Tolerance | Soft | Both | Seller: actual septic status. Buyer: tolerance (No / Any) |
+| Section 8 Tolerance | Soft | Both | Seller: actual Section 8 policy. Buyer: tolerance (None / Limited / Any) |
+| Vintage Preference | Soft | Both | Seller: actual year built. Buyer: minimum year built preference |
+| Bed / Bath Preference | Soft | Both | Seller: actual bed / bath counts. Buyer: minimum range preference |
+| Value-Add Tolerance | Soft | Both | Seller: actual property condition. Buyer: tolerance (Low / Medium / High) |
 
 ### BFR Only
 
 | Field | Match Type | Sides | Notes |
 |---|---|---|---|
-| Lease-Up Risk Appetite | Soft | Buyer only | Light / Moderate / Heavy |
-| Target Price Per Unit | Soft | Buyer only | Range |
-| Amenity Requirements | Soft | Buyer only | Pool / Clubhouse / Fitness / None required |
-| Phase Sale Preference | Soft | Buyer only | Required / Preferred / Not needed |
+| Lease-Up Risk Appetite | Soft | Both | Seller: actual lease-up status / trajectory. Buyer: risk tolerance (Light / Moderate / Heavy) |
+| Target Price Per Unit | Soft | Both | Seller: target price per unit. Buyer: acceptable price per unit range |
+| Amenity Requirements | Soft | Both | Seller: actual amenity package. Buyer: required amenities (Pool / Clubhouse / Fitness / None required) |
+| Phase Sale Preference | Soft | Both | Seller: whether phase sale is allowed. Buyer: preference (Required / Preferred / Not needed) |
 
 ### Multifamily Only
 
 | Field | Match Type | Sides | Notes |
 |---|---|---|---|
-| Vintage Preference | Soft | Buyer only | Min year built |
-| Value-Add Tolerance | Soft | Buyer only | Core / Light / Moderate / Heavy |
+| Vintage Preference | Soft | Both | Seller: actual year built. Buyer: minimum year built preference |
+| Value-Add Tolerance | Soft | Both | Seller: actual deferred maintenance level. Buyer: tolerance (Core / Light / Moderate / Heavy) |
 
 ### Land Only
 
 | Field | Match Type | Sides | Notes |
 |---|---|---|---|
-| Target Basis | Soft | Buyer only | Per Lot range or Per Acre range |
-| Min Density Preference | Soft | Buyer only | Units per buildable acre |
-| Required Entitlement Depth | Soft | Buyer only | Raw OK / Submitted OK / Approved required / Recorded required |
-| Required Development Depth | Soft | Buyer only | Raw only / Entitled / Horizontal underway / Finished lots only |
-| Phased Takedown Preference | Soft | Buyer only | Required / Preferred / Not needed |
+| Target Basis | Soft | Both | Seller: actual pricing basis. Buyer: acceptable basis (Per Lot / Per Acre) |
+| Min Density Preference | Soft | Both | Seller: projected unit count / density. Buyer: minimum units per buildable acre |
+| Required Entitlement Depth | Soft | Both | Seller: actual entitlement status. Buyer: minimum required (Raw OK / Submitted OK / Approved required / Recorded required) |
+| Required Development Depth | Soft | Both | Seller: actual development depth. Buyer: minimum required (Raw only / Entitled / Horizontal underway / Finished lots only) |
+| Phased Takedown Preference | Soft | Both | Seller: whether phased takedown is allowed. Buyer: preference (Required / Preferred / Not needed) |
 
 ---
 
 ## Open Questions
 
 1. **Tier 1 asymmetry** — Equity Check Size (buyer) and Pricing Posture (seller) have no counterpart on the opposite side. Are these being matched against each other, or are they context-only fields?
-2. **Tier 3 is entirely buyer-side** — DS ranks buyers against each other using buyer preferences only. No seller signal at Tier 3. Intentional?
-3. **BFR seller data gap** — seller knows their amenity package, lease-up status, and price per unit target. None captured as seller fields. A buyer requiring a pool can't be matched against a seller who has one.
+2. ~~**Tier 3 is entirely buyer-side**~~ — Resolved. All Tier 3 fields exist on both sides. Seller enters the actual property value or policy; buyer enters their preference or tolerance. The matching engine compares the two.
+3. ~~**BFR seller data gap**~~ — Resolved. BFR Tier 3 fields (amenity package, lease-up status, price per unit, phase sale) are now defined as Both-sided fields.
