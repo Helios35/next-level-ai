@@ -31,6 +31,10 @@
   --color-mode-buy: hsl(262 30% 55%);
   --color-mode-strategy: hsl(38 50% 50%);
 
+  /* Main content area — slightly offset from shell chrome */
+  --color-main: hsl(220 5% 92%);
+  --color-main-foreground: hsl(240 10% 3.9%);
+
   /* Surface — shared bg for nav header, sidebar, chat panel */
   --color-surface: hsl(220 5% 95%);
   --color-surface-foreground: hsl(240 5.3% 26.1%);
@@ -83,6 +87,10 @@
   --color-mode-sell: hsl(172 30% 50%);
   --color-mode-buy: hsl(262 28% 60%);
   --color-mode-strategy: hsl(38 45% 55%);
+
+  /* Main content area — dark equivalent */
+  --color-main: hsl(240 8% 7%);
+  --color-main-foreground: hsl(0 0% 98%);
 
   /* Surface — dark equivalent */
   --color-surface: hsl(240 6% 10%);

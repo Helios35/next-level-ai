@@ -27,7 +27,7 @@ function SectionCard({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border bg-background transition-opacity',
+        'rounded-xl border border-border bg-background shadow-sm transition-opacity',
         disabled && 'opacity-50 pointer-events-none',
         className,
       )}

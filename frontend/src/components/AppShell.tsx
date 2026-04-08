@@ -445,7 +445,7 @@ export default function AppShell({
           >
             {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
           </button>
-          <main className="flex-1 overflow-y-auto pt-2 sm:pt-10">
+          <main className="flex-1 overflow-y-auto bg-main pt-2 sm:pt-10">
             {children ?? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
                 <FileText size={48} strokeWidth={1} className="opacity-30" />

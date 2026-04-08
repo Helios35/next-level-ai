@@ -33,7 +33,7 @@ export default function DealCard({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-muted/30 p-5 transition-colors hover:border-mode-sell/30',
+        'flex flex-col rounded-lg border border-border bg-muted/30 shadow-sm p-5 transition-colors hover:border-mode-sell/30',
         className,
       )}
     >
@@ -95,9 +95,7 @@ export default function DealCard({
       {/* Deal metrics */}
       <DealMetricsBar
         currentStage={deal.currentStage}
-        matchScore={deal.matchScore}
         buyerPoolCount={deal.matchedBuyerCount}
-        showMatchScore={false}
         size="sm"
         className="mt-5"
       />

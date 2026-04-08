@@ -1,4 +1,4 @@
-import { ArrowLeft, Users } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { AssetSubType } from '@shared/types/enums'
@@ -29,13 +29,12 @@ interface DealRoomHeaderProps {
   deal: DealRoom
   buyerPoolCount?: number
   onBack?: () => void
-  onBuyerPoolClick?: () => void
   className?: string
 }
 
-function DealRoomHeader({ deal, buyerPoolCount, onBack, onBuyerPoolClick, className }: DealRoomHeaderProps) {
+function DealRoomHeader({ deal, buyerPoolCount, onBack, className }: DealRoomHeaderProps) {
   return (
-    <div className={cn('shrink-0 border-b border-border bg-background px-6 pt-5 pb-4', className)}>
+    <div className={cn('shrink-0 border-b border-border bg-main px-6 pt-5 pb-4', className)}>
       {onBack && (
         <button
           onClick={onBack}
@@ -55,23 +54,10 @@ function DealRoomHeader({ deal, buyerPoolCount, onBack, onBuyerPoolClick, classN
           <p className="mt-1 text-sm text-muted-foreground">
             {buildDescription(deal)}
           </p>
-          {buyerPoolCount != null && (
-            <button
-              type="button"
-              onClick={onBuyerPoolClick}
-              title="View qualification details"
-              className="mt-2 inline-flex items-center gap-2 rounded-lg bg-sky-500/15 px-3 py-1.5 text-sky-400 transition-colors hover:bg-sky-500/25 cursor-pointer"
-            >
-              <Users size={18} />
-              <span className="text-xl font-bold tabular-nums">{buyerPoolCount}</span>
-              <span className="text-sm font-medium">Buyer Pool</span>
-            </button>
-          )}
         </div>
 
         <DealMetricsBar
           currentStage={deal.currentStage}
-          matchScore={deal.matchScore}
           buyerPoolCount={buyerPoolCount ?? deal.matchedBuyerCount}
           className="shrink-0"
         />

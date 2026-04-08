@@ -123,12 +123,11 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
         deal={deal}
         buyerPoolCount={buyers.length}
         onBack={onBack}
-        onBuyerPoolClick={() => setActiveTab('buyer-pool')}
       />
 
       {/* ═══ TABS ═══ */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden">
-        <TabsList className="shrink-0 border-b border-border bg-background px-6 py-1.5">
+        <TabsList className="shrink-0 border-b border-border bg-main px-6 py-1.5">
           <TabsTrigger value="documents">
             <FileText size={16} />
             Documents

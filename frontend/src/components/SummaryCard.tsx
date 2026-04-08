@@ -10,7 +10,7 @@ interface SummaryCardProps {
 
 function SummaryCard({ title, badge, children, className }: SummaryCardProps) {
   return (
-    <div className={cn('rounded-xl border border-border bg-background p-5 space-y-3', className)}>
+    <div className={cn('rounded-xl border border-border bg-background shadow-sm p-5 space-y-3', className)}>
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {badge && (

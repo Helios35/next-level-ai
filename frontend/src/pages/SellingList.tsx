@@ -180,7 +180,7 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
             <input
               type="text"
               placeholder="Search your listings..."
-              className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-mode-sell/50 transition-colors"
+              className="w-full rounded-lg border border-border bg-main py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-mode-sell/50 transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

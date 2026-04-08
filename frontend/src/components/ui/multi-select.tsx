@@ -52,7 +52,7 @@ export function MultiSelect({
   return (
     <div ref={wrapperRef} className="relative">
       <div
-        className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-2 cursor-text min-h-[38px]"
+        className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-main px-2.5 py-2 cursor-text min-h-[38px]"
         onMouseDown={() => {
           userClickedRef.current = true
         }}
