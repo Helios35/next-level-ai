@@ -23,8 +23,8 @@ Applies to every asset type. Hard matching on both sides.
 | Asset Sub-Type | Hard | Both | SFR / BFR / MF / Land |
 | Geography | Hard | Both | MSA → City → ZIP hierarchy |
 | Current Development Status | Hard | Both | Granular two-level field. Parent categories: Pre-Construction / Construction / Delivery / Lease-Up / Stabilized. Stored value is the granular selection, not the parent category. |
-| Equity Check Size | Hard | Buyer only | Min / Max range. Total deal size derived internally — buyer never calculates |
-| Pricing Posture | Hard | Seller only | Exact Price / Price Range / Needs Guidance |
+| Equity Check Size | Hard | Buyer only | Min / Max range. Cross-matched against seller's asking price — buyer's range must cover the seller's ask. Total deal size derived internally — buyer never calculates. |
+| Pricing Posture | Hard | Seller only | Exact Price / Price Range / Needs Guidance. Cross-matched against buyer's Equity Check Size range. Signals to the engine how to interpret the seller's price value. |
 
 **Current Development Status — Two-Level Option Set**
 
@@ -128,6 +128,6 @@ Sub-type specific. Affects DS ranking and seat allocation only. Fields exist on 
 
 ## Open Questions
 
-1. **Tier 1 asymmetry** — Equity Check Size (buyer) and Pricing Posture (seller) have no counterpart on the opposite side. Are these being matched against each other, or are they context-only fields?
+1. ~~**Tier 1 asymmetry**~~ — Resolved. Equity Check Size (buyer) and Pricing Posture (seller) are cross-matched against each other per Business Rule 5.3. Buyer's equity check size range must cover the seller's asking price. Pricing Posture signals how to interpret the seller's price value.
 2. ~~**Tier 3 is entirely buyer-side**~~ — Resolved. All Tier 3 fields exist on both sides. Seller enters the actual property value or policy; buyer enters their preference or tolerance. The matching engine compares the two.
 3. ~~**BFR seller data gap**~~ — Resolved. BFR Tier 3 fields (amenity package, lease-up status, price per unit, phase sale) are now defined as Both-sided fields.

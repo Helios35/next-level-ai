@@ -136,15 +136,17 @@ Terms used throughout this document. Full definitions in **TAXONOMY_v1_0.md**.
 
 **5.2** Tier 1 (Universal/Shared Deal Criteria) is a hard match. No alignment on Tier 1 means the deal is invisible to the buyer's strategy — it does not appear in matches.
 
-**5.3** Tier 2 (Sub-Type Group Shared) is a hard match. No alignment on Tier 2 means the deal is invisible to the buyer's strategy.
+**5.3** Equity Check Size (buyer) is cross-matched against the seller's asking price as a Tier 1 hard match. The buyer's equity check size range must cover the seller's asking price. If the seller's asking price falls outside the buyer's equity check size range, the deal is invisible to that buyer's strategy — same as any other Tier 1 mismatch. Pricing Posture (seller) signals to the engine how to interpret the seller's price value: Exact Price uses the exact figure, Price Range uses the range midpoint or spread, Needs Guidance treats the price as unset and does not block matching.
 
-**5.4** Tier 3 (Unique/sub-type specific) is a soft match. Tier 3 affects match ranking and DS seat allocation context only. A Tier 3 mismatch never blocks deal visibility.
+**5.4** Tier 2 (Sub-Type Group Shared) is a hard match. No alignment on Tier 2 means the deal is invisible to the buyer's strategy.
 
-**5.5** Match Score is a 0–100% alignment metric calculated from Shared and Unique Deal Criteria. It is displayed to buyers on deal cards and in the Deal Preview Modal.
+**5.5** Tier 3 (Unique/sub-type specific) is a soft match. Tier 3 affects match ranking and DS seat allocation context only. A Tier 3 mismatch never blocks deal visibility.
 
-**5.6** A deal in Coming Soon state (Stage 6) is visible to matched buyers as a preview-only card. Buyers cannot request access — they can only indicate interest.
+**5.6** Match Score is a 0–100% alignment metric calculated from Shared and Unique Deal Criteria. It is displayed to buyers on deal cards and in the Deal Preview Modal.
 
-**5.7** A deal in Active Disposition (Stage 7) is fully visible to matched buyers. Buyers can preview and request access.
+**5.7** A deal in Coming Soon state (Stage 6) is visible to matched buyers as a preview-only card. Buyers cannot request access — they can only indicate interest.
+
+**5.8** A deal in Active Disposition (Stage 7) is fully visible to matched buyers. Buyers can preview and request access.
 
 ---
 

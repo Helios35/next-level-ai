@@ -42,6 +42,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-16T10:00:00Z',
     updatedAt: '2026-03-01T09:00:00Z',
+    ownerSourceType: 'direct',
+    sourceId: null,
   },
   {
     id: 'dr_002',
@@ -78,6 +80,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-02-08T10:00:00Z',
     updatedAt: '2026-02-28T14:00:00Z',
+    ownerSourceType: 'direct',
+    sourceId: null,
   },
   {
     id: 'dr_005',
@@ -119,6 +123,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-03T10:00:00Z',
     updatedAt: '2026-02-28T11:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_001',
   },
   {
     id: 'dr_006',
@@ -147,5 +153,7 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-18T10:00:00Z',
     updatedAt: '2026-02-10T09:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_002',
   },
 ]

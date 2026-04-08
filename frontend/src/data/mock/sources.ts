@@ -1,0 +1,40 @@
+import type { Source } from '@shared/types/source'
+
+export const MOCK_SOURCES: Source[] = [
+  {
+    id: 'src_001',
+    name: 'James Holloway',
+    company: 'Holloway Realty Group',
+    email: 'james@hollowayrealty.com',
+    sourcePartyType: 'broker',
+    uniqueLinkToken: 'src_holloway_realty',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_holloway_realty',
+    createdAt: '2026-01-10T09:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+  {
+    id: 'src_002',
+    name: 'Priya Nair',
+    company: 'Strata Market Development',
+    email: 'priya.nair@stratarealty.com',
+    sourcePartyType: 'md',
+    uniqueLinkToken: 'src_strata_md_priya',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_strata_md_priya',
+    createdAt: '2026-01-12T11:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+  {
+    id: 'src_003',
+    name: 'Derek Osei',
+    company: 'Sunbelt Capital Partners',
+    email: 'derek.osei@sunbeltcap.com',
+    sourcePartyType: 'partner',
+    uniqueLinkToken: 'src_sunbelt_capital',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_sunbelt_capital',
+    createdAt: '2026-02-01T10:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+]
