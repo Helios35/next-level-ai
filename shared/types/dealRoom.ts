@@ -1,6 +1,7 @@
 import type {
   AssetType, AssetSubType, DealStage, PricingPosture,
   DealRoomStage, DealRoomStatus, Geography, PriceRange,
+  OwnerSourceType,
 } from './enums'
 
 export type SaleWindow = 'immediate' | '3_6_months' | '6_12_months' | '12_plus_months'
@@ -115,4 +116,9 @@ export interface DealRoom {
   stageHistory: StageTransition[]
   createdAt: string
   updatedAt: string
+
+  // SOURCE ATTRIBUTION — added in Source Attribution Sprint
+  // Inherited from the seller's user record at deal room creation. Never set independently.
+  ownerSourceType: OwnerSourceType    // 'direct' | 'sourced'
+  sourceId: string | null             // FK to sources table — null if ownerSourceType is 'direct'
 }

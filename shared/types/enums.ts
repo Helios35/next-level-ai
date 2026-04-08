@@ -65,6 +65,12 @@ export type CapRateRange = {
   max: number
 }
 
+// Top-level owner entry classification
+export type OwnerSourceType = 'direct' | 'sourced'
+
+// Who sourced the owner — only relevant when OwnerSourceType is 'sourced'
+export type SourcePartyType = 'md' | 'broker' | 'partner'
+
 export const getMatchScoreColor = (score: number): MatchScoreColor => {
   if (score >= 80) return 'green'
   if (score >= 50) return 'gold'

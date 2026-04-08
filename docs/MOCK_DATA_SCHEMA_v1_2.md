@@ -120,12 +120,37 @@ export type CapRateRange = {
   max: number;
 };
 
+// Top-level owner entry classification
+export type OwnerSourceType = 'direct' | 'sourced';
+
+// Who sourced the owner — only relevant when OwnerSourceType is 'sourced'
+export type SourcePartyType = 'md' | 'broker' | 'partner';
+
 // Helper
 export const getMatchScoreColor = (score: number): MatchScoreColor => {
   if (score >= 80) return 'green';
   if (score >= 50) return 'gold';
   return 'gray';
 };
+```
+
+```typescript
+// shared/types/source.ts
+
+import { SourcePartyType } from './enums';
+
+export interface Source {
+  id: string;                        // e.g. 'src_001'
+  name: string;                      // person name
+  company: string;                   // firm name
+  email: string;                     // contact email
+  sourcePartyType: SourcePartyType;  // 'md' | 'broker' | 'partner'
+  uniqueLinkToken: string;           // the ?src= value
+  generatedLink: string;             // full signup URL with token
+  createdAt: string;                 // ISO date string
+  createdByAdminId: string;          // ID of Admin who created the record
+  isActive: boolean;                 // soft disable without deleting
+}
 ```
 
 ---
@@ -147,6 +172,10 @@ export interface User {
   avatarInitials: string;      // derived from name e.g. "NI"
   qualificationComplete: boolean;
   createdAt: string;           // ISO date string
+
+  // SOURCE ATTRIBUTION — added in Source Attribution Sprint
+  ownerSourceType: OwnerSourceType;    // 'direct' | 'sourced' — always set, never null
+  sourceId: string | null;             // FK to sources table — null if ownerSourceType is 'direct'
 }
 
 export interface BuyerPerformance {
@@ -180,6 +209,8 @@ export const MOCK_CURRENT_USER: User = {
   avatarInitials: 'MW',
   qualificationComplete: true,
   createdAt: '2026-01-14T10:00:00Z',
+  ownerSourceType: 'direct',
+  sourceId: null,
 };
 
 export const MOCK_BUYER_PERFORMANCE: BuyerPerformance = {
@@ -194,6 +225,80 @@ export const MOCK_SELLER_PERFORMANCE: SellerPerformance = {
   dealsCanceled: 0,
   dealsClosed: 1,
 };
+
+export const MOCK_SOURCED_SELLER_USERS: User[] = [
+  {
+    id: 'user_010',
+    name: 'Carol Tran',
+    email: 'carol.tran@landmarkdev.com',
+    company: 'Landmark Development',
+    role: 'seller',
+    brokerFlag: false,
+    avatarInitials: 'CT',
+    qualificationComplete: false,
+    createdAt: '2026-01-20T10:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_001',
+  },
+  {
+    id: 'user_011',
+    name: 'Brian Okafor',
+    email: 'b.okafor@pinecresthomes.com',
+    company: 'Pinecrest Homes',
+    role: 'seller',
+    brokerFlag: false,
+    avatarInitials: 'BO',
+    qualificationComplete: false,
+    createdAt: '2026-02-05T09:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_002',
+  },
+];
+```
+
+```typescript
+// frontend/src/data/mock/sources.ts
+
+import { Source } from '@shared/types/source';
+
+export const MOCK_SOURCES: Source[] = [
+  {
+    id: 'src_001',
+    name: 'James Holloway',
+    company: 'Holloway Realty Group',
+    email: 'james@hollowayrealty.com',
+    sourcePartyType: 'broker',
+    uniqueLinkToken: 'src_holloway_realty',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_holloway_realty',
+    createdAt: '2026-01-10T09:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+  {
+    id: 'src_002',
+    name: 'Priya Nair',
+    company: 'Strata Market Development',
+    email: 'priya.nair@stratarealty.com',
+    sourcePartyType: 'md',
+    uniqueLinkToken: 'src_strata_md_priya',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_strata_md_priya',
+    createdAt: '2026-01-12T11:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+  {
+    id: 'src_003',
+    name: 'Derek Osei',
+    company: 'Sunbelt Capital Partners',
+    email: 'derek.osei@sunbeltcap.com',
+    sourcePartyType: 'partner',
+    uniqueLinkToken: 'src_sunbelt_capital',
+    generatedLink: 'https://app.nextlevel.com/signup?role=seller&src=src_sunbelt_capital',
+    createdAt: '2026-02-01T10:00:00Z',
+    createdByAdminId: 'internal_002',
+    isActive: true,
+  },
+];
 ```
 
 ---
@@ -526,7 +631,8 @@ export const MOCK_STRATEGIES: BuyStrategy[] = [
 
 import {
   AssetType, AssetSubType, DealStage, PricingPosture,
-  DealRoomStage, DealRoomStatus, Geography, PriceRange
+  DealRoomStage, DealRoomStatus, Geography, PriceRange,
+  OwnerSourceType,
 } from './enums';
 
 export type SaleWindow = 'immediate' | '3_6_months' | '6_12_months' | '12_plus_months';
@@ -649,6 +755,11 @@ export interface DealRoom {
   stageHistory: StageTransition[];
   createdAt: string;
   updatedAt: string;
+
+  // SOURCE ATTRIBUTION — added in Source Attribution Sprint
+  // Inherited from the seller's user record at deal room creation. Never set independently.
+  ownerSourceType: OwnerSourceType;    // 'direct' | 'sourced'
+  sourceId: string | null;             // FK to sources table — null if ownerSourceType is 'direct'
 }
 ```
 
@@ -700,6 +811,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-16T10:00:00Z',
     updatedAt: '2026-03-01T09:00:00Z',
+    ownerSourceType: 'direct',
+    sourceId: null,
   },
   {
     id: 'dr_002',
@@ -736,6 +849,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-02-08T10:00:00Z',
     updatedAt: '2026-02-28T14:00:00Z',
+    ownerSourceType: 'direct',
+    sourceId: null,
   },
   // Market Tested example — all 3 seats exhausted, no offers received, awaiting seller decision
   {
@@ -778,6 +893,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-03T10:00:00Z',
     updatedAt: '2026-02-28T11:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_001',
   },
   // Dormant example — seller stalled on document collection past 21-day window
   {
@@ -807,6 +924,8 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     ],
     createdAt: '2026-01-18T10:00:00Z',
     updatedAt: '2026-02-10T09:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_002',
   },
 ];
 
@@ -836,6 +955,8 @@ export const MOCK_BUYER_DEAL_ROOMS: DealRoom[] = [
     stageHistory: [],
     createdAt: '2026-01-25T10:00:00Z',
     updatedAt: '2026-03-01T10:00:00Z',
+    ownerSourceType: 'sourced',
+    sourceId: 'src_003',
   },
   {
     id: 'dr_004',
@@ -861,6 +982,8 @@ export const MOCK_BUYER_DEAL_ROOMS: DealRoom[] = [
     stageHistory: [],
     createdAt: '2026-01-10T10:00:00Z',
     updatedAt: '2026-02-25T10:00:00Z',
+    ownerSourceType: 'direct',
+    sourceId: null,
   },
 ];
 ```
