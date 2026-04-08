@@ -10,7 +10,7 @@ function StatTile({ value, label, className }: StatTileProps) {
   return (
     <div
       className={cn(
-        'flex flex-col gap-0.5 rounded-lg bg-muted/30 border border-border px-4 py-3 min-w-0',
+        'flex flex-col gap-0.5 rounded-lg bg-muted/30 border border-border shadow-sm px-4 py-3 min-w-0',
         className,
       )}
     >
