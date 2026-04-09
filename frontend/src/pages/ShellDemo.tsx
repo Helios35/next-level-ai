@@ -10,6 +10,9 @@ import AccessRequested from '@/pages/AccessRequested'
 import YourStrategies from '@/pages/YourStrategies'
 import CreateStrategyWizard, { type StrategyFormState, type StrategyDraft } from '@/pages/CreateStrategyWizard'
 import StrategyDrafts from '@/pages/StrategyDrafts'
+import BuyerDealRoomView, { BUYER_DEAL_ROOM_CHAT } from '@/pages/BuyerDealRoomView'
+import SuccessFeeModal from '@/components/SuccessFeeModal'
+import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -85,6 +88,9 @@ export default function ShellDemo() {
     step: number
   } | null>(null)
 
+  // Success fee gate state
+  const [successFeeAcknowledged, setSuccessFeeAcknowledged] = useState<Set<string>>(new Set())
+
   // Strategy wizard state
   const [strategyWizardStep, setStrategyWizardStep] = useState(0)
   const [strategyWizardMessages, setStrategyWizardMessages] = useState<
@@ -95,6 +101,9 @@ export default function ShellDemo() {
     formState: StrategyFormState
     step: number
   } | null>(null)
+
+  const getDealName = (dealId: string) =>
+    MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId)?.name ?? 'Deal Room'
 
   const navigateTo = useCallback((next: Page) => {
     setHistory((prev) => {
@@ -356,6 +365,19 @@ export default function ShellDemo() {
         skills: ['Analyze deal', 'Buyer activity', 'Pricing guidance', 'Document status'],
       }
     }
+    if (page.mode === 'buy' && page.view === 'dealRoom') {
+      return {
+        messages: BUYER_DEAL_ROOM_CHAT.map((m) => ({
+          role: m.senderRole === 'buyer' ? 'user' as const : 'ai' as const,
+          text: m.content,
+          time: new Date(m.timestamp).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+          }),
+        })),
+        contextLabel: getDealName(page.dealId),
+        skills: ['Ask about docs', 'How does this work?', 'Offer process'],
+      }
+    }
     if (page.mode === 'buy') {
       return {
         messages: [
@@ -458,7 +480,18 @@ export default function ShellDemo() {
         <AccessRequested onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
       )}
       {page.mode === 'buy' && page.view === 'dealRoom' && (
-        <PlaceholderPage mode="buy" title="Deal Room" description="Buyer deal room coming in Sprint B-4." />
+        <>
+          <SuccessFeeModal
+            open={!successFeeAcknowledged.has(page.dealId)}
+            dealName={getDealName(page.dealId)}
+            onAccept={() => setSuccessFeeAcknowledged((prev) => new Set([...prev, page.dealId]))}
+            onDecline={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+          />
+          <BuyerDealRoomView
+            dealId={page.dealId}
+            onBack={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+          />
+        </>
       )}
       {page.mode === 'strategy' && page.view === 'yourStrategies' && (
         <YourStrategies

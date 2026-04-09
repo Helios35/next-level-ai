@@ -24,7 +24,7 @@ export const MOCK_BUYER_POOL_DR001: BuyerPoolEntry[] = [
     dealRoomId: 'dr_001',
     buyerId: 'user_buyer_02',
     anonymizedLabel: 'Investor #2038',
-    isCurrentUser: false,
+    isCurrentUser: true,
     qualificationStatus: 'qualified',
     seatStatus: 'seated',
     outreachStatus: 'responded',
