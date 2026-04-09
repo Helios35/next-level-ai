@@ -13,7 +13,14 @@ import StrategyDrafts from '@/pages/StrategyDrafts'
 import BuyerDealRoomView, { BUYER_DEAL_ROOM_CHAT } from '@/pages/BuyerDealRoomView'
 import BuyerActivationPage from '@/pages/BuyerActivationPage'
 import BuyerQualificationForm from '@/pages/BuyerQualificationForm'
+import LandingPage from '@/pages/LandingPage'
+import LoginPage from '@/pages/LoginPage'
+import SignUp from '@/pages/SignUp'
+import Onboarding from '@/pages/Onboarding'
 import SuccessFeeModal from '@/components/SuccessFeeModal'
+import { postLoginRoute } from '@/utils/postLoginRoute'
+import type { User } from '@shared/types/user'
+import type { UserRole } from '@shared/types/enums'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
@@ -32,8 +39,15 @@ type Page =
   | { mode: 'strategy'; view: 'yourStrategies' }
   | { mode: 'strategy'; view: 'createStrategy' }
   | { mode: 'strategy'; view: 'drafts' }
+  | { mode: 'auth'; view: 'landing' }
+  | { mode: 'auth'; view: 'login' }
+  | { mode: 'auth'; view: 'signup'; role?: UserRole }
+  | { mode: 'auth'; view: 'onboarding' }
 
 function pageKey(p: Page) {
+  if (p.mode === 'auth' && p.view === 'signup' && p.role) {
+    return `auth:signup:${p.role}`
+  }
   return `${p.mode}:${p.view}`
 }
 
@@ -72,8 +86,8 @@ const STRATEGY_WIZARD_SCRIPT = [
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function ShellDemo() {
-  const [page, setPage] = useState<Page>({ mode: 'sell', view: 'listings' })
-  const [history, setHistory] = useState<Page[]>([{ mode: 'sell', view: 'listings' }])
+  const [page, setPage] = useState<Page>({ mode: 'auth', view: 'landing' })
+  const [history, setHistory] = useState<Page[]>([{ mode: 'auth', view: 'landing' }])
   const [historyIndex, setHistoryIndex] = useState(0)
 
   // Wizard state
@@ -91,6 +105,9 @@ export default function ShellDemo() {
     formState: WizardFormState
     step: number
   } | null>(null)
+
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
   // Success fee gate state
   const [successFeeAcknowledged, setSuccessFeeAcknowledged] = useState<Set<string>>(new Set())
@@ -417,6 +434,7 @@ export default function ShellDemo() {
 
   // Map current page to sidebar nav index (sell mode: 0=Listings, 1=Create, 2=Drafts)
   const activeNavIndex = useMemo(() => {
+    if (page.mode === 'auth') return 0
     if (page.mode === 'sell') {
       if (page.view === 'listings' || page.view === 'dealRoom') return 0
       if (page.view === 'createListing') return 1
@@ -438,6 +456,55 @@ export default function ShellDemo() {
     }
     return 0
   }, [page])
+
+  // Auth pages render outside AppShell
+  if (page.mode === 'auth' && page.view === 'landing') {
+    return (
+      <LandingPage
+        onSellerCTA={() => navigateTo({ mode: 'auth', view: 'signup', role: 'seller' })}
+        onBuyerCTA={() => navigateTo({ mode: 'auth', view: 'signup', role: 'buyer' })}
+        onLogin={() => navigateTo({ mode: 'auth', view: 'login' })}
+      />
+    )
+  }
+
+  if (page.mode === 'auth' && page.view === 'login') {
+    return (
+      <LoginPage
+        onSuccess={() => navigateTo({ mode: 'sell', view: 'listings' })}
+        onSignUp={() => navigateTo({ mode: 'auth', view: 'signup' })}
+      />
+    )
+  }
+
+  if (page.mode === 'auth' && page.view === 'signup') {
+    return (
+      <SignUp
+        initialRole={page.role}
+        onComplete={(user, role) => {
+          setCurrentUser(user)
+          navigateTo({ mode: 'auth', view: 'onboarding' })
+        }}
+        onLogin={() => navigateTo({ mode: 'auth', view: 'login' })}
+      />
+    )
+  }
+
+  if (page.mode === 'auth' && page.view === 'onboarding') {
+    if (!currentUser) {
+      navigateTo({ mode: 'auth', view: 'landing' })
+      return null
+    }
+    return (
+      <Onboarding
+        user={currentUser}
+        onComplete={(updatedUser) => {
+          setCurrentUser(updatedUser)
+          navigateTo(postLoginRoute(updatedUser))
+        }}
+      />
+    )
+  }
 
   // Onboarding pages render outside AppShell (simplified standalone layout)
   if (page.mode === 'buy' && page.view === 'activation') {
@@ -495,15 +562,7 @@ export default function ShellDemo() {
         />
       )}
       {page.mode === 'buy' && page.view === 'yourDeals' && (
-        <div className="relative h-full">
-          <YourDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
-          <button
-            onClick={() => navigateTo({ mode: 'buy', view: 'activation' })}
-            className="fixed bottom-4 right-4 z-50 rounded-lg bg-mode-buy px-3 py-2 text-xs text-white shadow-lg hover:bg-mode-buy/80 transition-colors"
-          >
-            Preview Onboarding
-          </button>
-        </div>
+        <YourDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
       )}
       {page.mode === 'buy' && page.view === 'discoverDeals' && (
         <DiscoverDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
