@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import type { UserRole, OwnerSourceType } from '@shared/types/enums'
 import type { User } from '@shared/types/user'
 import { MOCK_SOURCES } from '@/data/mock/sources'
+import OnboardingShell from '@/components/OnboardingShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,9 +26,15 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function SignUp() {
+interface SignUpProps {
+  initialRole?: UserRole
+  onComplete: (user: User, role: UserRole) => void
+  onLogin?: () => void
+}
+
+export default function SignUp({ initialRole: propRole, onComplete, onLogin }: SignUpProps) {
   const isSourced = srcToken !== null
-  const initialRole: UserRole = isSourced ? 'seller' : (roleParam as UserRole) ?? 'buyer'
+  const initialRole: UserRole = propRole ?? (isSourced ? 'seller' : (roleParam as UserRole) ?? 'buyer')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -68,10 +75,12 @@ export default function SignUp() {
 
     // Prototype: log to console — production writes to Supabase
     console.log('[SignUp] User record created:', user)
+    onComplete(user, role)
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <OnboardingShell step={1} totalSteps={2}>
+      <div className="flex flex-1 items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md space-y-6 rounded-xl border border-border bg-background p-8"
@@ -153,7 +162,21 @@ export default function SignUp() {
         <Button type="submit" className="w-full">
           Create Account
         </Button>
+
+        {onLogin && (
+          <p className="text-sm text-muted-foreground text-center">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={onLogin}
+              className="text-foreground underline hover:text-foreground/80 transition-colors"
+            >
+              Log in
+            </button>
+          </p>
+        )}
       </form>
-    </div>
+      </div>
+    </OnboardingShell>
   )
 }
