@@ -4,6 +4,7 @@ interface MatchScoreRingProps {
   score: number
   size?: number
   strokeWidth?: number
+  colorMode?: 'sell' | 'buy' | 'strategy'
   className?: string
 }
 
@@ -11,6 +12,7 @@ export default function MatchScoreRing({
   score,
   size = 48,
   strokeWidth = 3.5,
+  colorMode = 'sell',
   className,
 }: MatchScoreRingProps) {
   const radius = (size - strokeWidth) / 2
@@ -37,7 +39,7 @@ export default function MatchScoreRing({
           cy={center}
           r={radius}
           fill="none"
-          stroke="var(--color-mode-sell)"
+          stroke={`var(--color-mode-${colorMode})`}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}

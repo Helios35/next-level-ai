@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { cn } from '@/utils/cn'
 import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import { Building2, Home, DollarSign, HardHat, MapPin } from 'lucide-react'
 import type { DealRoom } from '@shared/types/dealRoom'
+import type { BuyerCtaState } from '@shared/types/buyerStrategy'
 import StatusBadge from './StatusBadge'
 import DealMetricsBar from './DealMetricsBar'
+import MatchScoreRing from './MatchScoreRing'
 import { InfoPopover } from './ui/info-popover'
 
 function getUnitCount(deal: DealRoom): number | undefined {
@@ -12,11 +15,22 @@ function getUnitCount(deal: DealRoom): number | undefined {
   return undefined
 }
 
+const BUYER_CTA_MAP: Record<BuyerCtaState, { label: string; enabled: boolean }> = {
+  coming_soon: { label: 'Indicate Interest', enabled: true },
+  request_access: { label: 'Request Access', enabled: true },
+  access_pending: { label: 'Access Pending', enabled: false },
+  wait_queue: { label: 'Wait Queue', enabled: false },
+  enter_deal_room: { label: 'Enter Deal Room', enabled: true },
+}
+
 interface DealCardProps {
   deal: DealRoom
   onViewDetails?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onOpenDealRoom?: () => void
   className?: string
+  mode?: 'sell' | 'buy'
+  buyerCtaState?: BuyerCtaState
+  matchScore?: number
 }
 
 export default function DealCard({
@@ -24,16 +38,39 @@ export default function DealCard({
   onViewDetails,
   onOpenDealRoom,
   className,
+  mode = 'sell',
+  buyerCtaState,
+  matchScore,
 }: DealCardProps) {
+  const isBuy = mode === 'buy'
+  const [optimisticLabel, setOptimisticLabel] = useState<string | null>(null)
+  const [optimisticDisabled, setOptimisticDisabled] = useState(false)
+
   const AssetIcon = deal.assetSubType === 'sfr_portfolio' ? Home : Building2
   const subtypeLabel = ASSET_SUBTYPE_LABELS[deal.assetSubType]
   const unitCount = getUnitCount(deal)
   const stageLabel = DEAL_STAGE_LABELS[deal.shared.dealStage]
 
+  const priceBlurred = isBuy && buyerCtaState !== 'enter_deal_room'
+
+  function handleBuyerCtaClick() {
+    if (!buyerCtaState) return
+    if (buyerCtaState === 'coming_soon') {
+      setOptimisticLabel('Interested ✓')
+      setOptimisticDisabled(true)
+    } else if (buyerCtaState === 'request_access') {
+      setOptimisticLabel('Request Sent')
+      setOptimisticDisabled(true)
+    } else if (buyerCtaState === 'enter_deal_room') {
+      onOpenDealRoom?.()
+    }
+  }
+
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-muted/30 shadow-sm p-5 transition-colors hover:border-mode-sell/30',
+        'flex flex-col rounded-lg border border-border bg-muted/30 shadow-sm p-5 transition-colors',
+        isBuy ? 'hover:border-mode-buy/30' : 'hover:border-mode-sell/30',
         className,
       )}
     >
@@ -56,7 +93,11 @@ export default function DealCard({
             </InfoPopover>
           </div>
         </div>
-        <StatusBadge status={deal.status} className="shrink-0" />
+        {isBuy && matchScore != null ? (
+          <MatchScoreRing score={matchScore} colorMode="buy" size={40} className="shrink-0" />
+        ) : (
+          <StatusBadge status={deal.status} className="shrink-0" />
+        )}
       </div>
 
       {/* Metadata row */}
@@ -78,7 +119,9 @@ export default function DealCard({
           className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
         >
           <DollarSign size={12} className="shrink-0" />
-          <span className="truncate">{formatPrice(deal)}</span>
+          <span className={cn('truncate', priceBlurred && 'blur-sm select-none pointer-events-none')}>
+            {formatPrice(deal)}
+          </span>
         </InfoPopover>
         <div className="h-8 w-px bg-border shrink-0" />
         <InfoPopover
@@ -92,13 +135,15 @@ export default function DealCard({
         </InfoPopover>
       </div>
 
-      {/* Deal metrics */}
-      <DealMetricsBar
-        currentStage={deal.currentStage}
-        buyerPoolCount={deal.matchedBuyerCount}
-        size="sm"
-        className="mt-5"
-      />
+      {/* Deal metrics — seller only */}
+      {!isBuy && (
+        <DealMetricsBar
+          currentStage={deal.currentStage}
+          buyerPoolCount={deal.matchedBuyerCount}
+          size="sm"
+          className="mt-5"
+        />
+      )}
 
       {/* Action buttons */}
       <div className="mt-5 flex gap-2">
@@ -108,12 +153,27 @@ export default function DealCard({
         >
           View Details
         </button>
-        <button
-          onClick={onOpenDealRoom}
-          className="flex-1 rounded-lg bg-mode-sell px-3 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
-        >
-          Open Deal Room
-        </button>
+        {isBuy && buyerCtaState ? (
+          <button
+            onClick={handleBuyerCtaClick}
+            disabled={optimisticDisabled || !BUYER_CTA_MAP[buyerCtaState].enabled}
+            className={cn(
+              'flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-opacity',
+              optimisticDisabled || !BUYER_CTA_MAP[buyerCtaState].enabled
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-mode-buy text-white hover:opacity-90',
+            )}
+          >
+            {optimisticLabel ?? BUYER_CTA_MAP[buyerCtaState].label}
+          </button>
+        ) : (
+          <button
+            onClick={onOpenDealRoom}
+            className="flex-1 rounded-lg bg-mode-sell px-3 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+          >
+            Open Deal Room
+          </button>
+        )}
       </div>
     </div>
   )
