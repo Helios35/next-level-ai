@@ -29,10 +29,11 @@ interface DealRoomHeaderProps {
   deal: DealRoom
   buyerPoolCount?: number
   onBack?: () => void
+  viewer?: 'seller' | 'buyer'
   className?: string
 }
 
-function DealRoomHeader({ deal, buyerPoolCount, onBack, className }: DealRoomHeaderProps) {
+function DealRoomHeader({ deal, buyerPoolCount, onBack, viewer = 'seller', className }: DealRoomHeaderProps) {
   return (
     <div className={cn('shrink-0 border-b border-border bg-main px-6 pt-5 pb-4', className)}>
       {onBack && (
@@ -41,7 +42,7 @@ function DealRoomHeader({ deal, buyerPoolCount, onBack, className }: DealRoomHea
           className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft size={13} />
-          Back to Your Listings
+          {viewer === 'buyer' ? 'Back to Your Deals' : 'Back to Your Listings'}
         </button>
       )}
 
@@ -56,11 +57,13 @@ function DealRoomHeader({ deal, buyerPoolCount, onBack, className }: DealRoomHea
           </p>
         </div>
 
-        <DealMetricsBar
-          currentStage={deal.currentStage}
-          buyerPoolCount={buyerPoolCount ?? deal.matchedBuyerCount}
-          className="shrink-0"
-        />
+        {viewer !== 'buyer' && (
+          <DealMetricsBar
+            currentStage={deal.currentStage}
+            buyerPoolCount={buyerPoolCount ?? deal.matchedBuyerCount}
+            className="shrink-0"
+          />
+        )}
       </div>
     </div>
   )

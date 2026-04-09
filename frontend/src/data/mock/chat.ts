@@ -190,6 +190,76 @@ export const MOCK_CHAT_SELLER_DR005: ChatMessage[] = [
   },
 ]
 
+// ── Buyer deal room chat — dr_001 ─────────────────────────────────────────
+// 3 exchange pairs covering all question categories from AGENT_BUYER_DEAL_ROOM_v1_0
+
+export const MOCK_CHAT_BUYER_DR001: ChatMessage[] = [
+  // Category 1 — Doc-answerable: buyer asks about occupancy, AI answers from rent roll
+  {
+    id: 'bmsg_001',
+    dealRoomId: 'dr_001',
+    senderId: 'user_buyer_02',
+    senderRole: 'buyer',
+    senderLabel: 'You',
+    content: 'What is the current occupancy rate for Magnolia Farms?',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:00:00Z',
+  },
+  {
+    id: 'bmsg_002',
+    dealRoomId: 'dr_001',
+    senderId: 'ai_agent',
+    senderRole: 'ai_agent',
+    senderLabel: 'NextLevel AI',
+    content: 'Based on the rent roll uploaded on Feb 1, Magnolia Farms is currently at 89% occupancy — 64 of 72 units are leased. The remaining 8 units are in various stages of lease-up.',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:00:30Z',
+  },
+  // Category 2 — Platform mechanics: buyer asks how offer rounds work
+  {
+    id: 'bmsg_003',
+    dealRoomId: 'dr_001',
+    senderId: 'user_buyer_02',
+    senderRole: 'buyer',
+    senderLabel: 'You',
+    content: 'How do the offer rounds work? Can I update my offer after submitting?',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:05:00Z',
+  },
+  {
+    id: 'bmsg_004',
+    dealRoomId: 'dr_001',
+    senderId: 'ai_agent',
+    senderRole: 'ai_agent',
+    senderLabel: 'NextLevel AI',
+    content: 'When the deal moves to the Offer Round stage, you\'ll see a submission form in the deal room. You can submit one offer per round. Once submitted, your offer is sealed and cannot be modified during that round. If the seller opens a subsequent round, you\'ll be able to submit a revised offer at that time.',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:05:30Z',
+  },
+  // Category 3 — DS escalation: buyer asks market judgment question
+  {
+    id: 'bmsg_005',
+    dealRoomId: 'dr_001',
+    senderId: 'user_buyer_02',
+    senderRole: 'buyer',
+    senderLabel: 'You',
+    content: 'Is the asking price competitive for BFR assets in the Charlotte market right now?',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:12:00Z',
+  },
+  {
+    id: 'bmsg_006',
+    dealRoomId: 'dr_001',
+    senderId: 'ai_agent',
+    senderRole: 'ai_agent',
+    senderLabel: 'NextLevel AI',
+    content: 'Great question — I\'ve flagged this for our team and you\'ll hear back shortly.',
+    messageType: 'message',
+    timestamp: '2026-02-04T10:12:15Z',
+    isAiHandoff: true,
+  },
+]
+
 // ── Buyer Feedback — dr_001 ────────────────────────────────────────────────
 
 export const MOCK_BUYER_FEEDBACK_DR001: BuyerFeedbackItem[] = [
