@@ -8,7 +8,7 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
     assetSubType: 'build_for_rent',
     name: 'Magnolia Farms BFR — Charlotte',
     address: 'Cabarrus County, NC',
-    currentStage: 7,
+    currentStage: 8,
     status: 'active',
     shared: {
       assetType: 'residential_income',
@@ -39,6 +39,7 @@ export const MOCK_SELLER_DEAL_ROOMS: DealRoom[] = [
       { fromStage: 4, toStage: 5, actorId: 'internal_003', actorRole: 'analyst', timestamp: '2026-01-27T16:00:00Z' },
       { fromStage: 5, toStage: 6, actorId: 'user_001', actorRole: 'seller', timestamp: '2026-01-29T10:00:00Z' },
       { fromStage: 6, toStage: 7, actorId: 'internal_001', actorRole: 'ds', timestamp: '2026-02-03T09:00:00Z' },
+      { fromStage: 7, toStage: 8, actorId: 'internal_001', actorRole: 'ds', timestamp: '2026-02-10T09:00:00Z' },
     ],
     createdAt: '2026-01-16T10:00:00Z',
     updatedAt: '2026-03-01T09:00:00Z',
