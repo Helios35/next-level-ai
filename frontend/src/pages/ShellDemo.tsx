@@ -4,6 +4,9 @@ import SellingList from '@/pages/SellingList'
 import SellerDealRoomView, { DEAL_ROOM_CHAT_MESSAGES } from '@/pages/SellerDealRoomView'
 import CreateListingWizard, { type WizardFormState, type ListingDraft } from '@/pages/CreateListingWizard'
 import SellerDraftsPage from '@/pages/SellerDraftsPage'
+import YourDeals from '@/pages/YourDeals'
+import DiscoverDeals from '@/pages/DiscoverDeals'
+import AccessRequested from '@/pages/AccessRequested'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -12,7 +15,10 @@ type Page =
   | { mode: 'sell'; view: 'dealRoom'; dealId: string }
   | { mode: 'sell'; view: 'createListing' }
   | { mode: 'sell'; view: 'drafts' }
-  | { mode: 'buy'; view: 'landing' }
+  | { mode: 'buy'; view: 'yourDeals' }
+  | { mode: 'buy'; view: 'discoverDeals' }
+  | { mode: 'buy'; view: 'accessRequested' }
+  | { mode: 'buy'; view: 'dealRoom'; dealId: string }
   | { mode: 'strategy'; view: 'landing' }
 
 function pageKey(p: Page) {
@@ -21,7 +27,7 @@ function pageKey(p: Page) {
 
 const MODE_LANDING: Record<Mode, Page> = {
   sell: { mode: 'sell', view: 'listings' },
-  buy: { mode: 'buy', view: 'landing' },
+  buy: { mode: 'buy', view: 'yourDeals' },
   strategy: { mode: 'strategy', view: 'landing' },
 }
 
@@ -93,12 +99,21 @@ export default function ShellDemo() {
   }, [navigateTo])
 
   const handleNavChange = useCallback((_index: number, label: string) => {
+    // Sell mode nav
     if (label === 'Your Listings') {
       navigateTo({ mode: 'sell', view: 'listings' })
     } else if (label === 'Create Listing') {
       navigateTo({ mode: 'sell', view: 'createListing' })
     } else if (label === 'Drafts') {
       navigateTo({ mode: 'sell', view: 'drafts' })
+    }
+    // Buy mode nav
+    else if (label === 'Your Deals') {
+      navigateTo({ mode: 'buy', view: 'yourDeals' })
+    } else if (label === 'Discover Deals') {
+      navigateTo({ mode: 'buy', view: 'discoverDeals' })
+    } else if (label === 'Access Requested') {
+      navigateTo({ mode: 'buy', view: 'accessRequested' })
     }
   }, [navigateTo])
 
@@ -243,6 +258,17 @@ export default function ShellDemo() {
         skills: ['Analyze deal', 'Buyer activity', 'Pricing guidance', 'Document status'],
       }
     }
+    if (page.mode === 'buy') {
+      return {
+        messages: [
+          { role: 'ai' as const, text: "Good morning, James. I've found 3 new deals matching your Phoenix multifamily strategy. Want me to walk you through them?", time: '9:04 AM' },
+          { role: 'user' as const, text: 'Yes, show me the best match first.', time: '9:04 AM' },
+          { role: 'ai' as const, text: 'The top match is a 24-unit multifamily asset in Scottsdale — 94% match score. Strong rent roll, stabilized. Want me to request access?', time: '9:05 AM' },
+        ],
+        contextLabel: 'Deals',
+        skills: ['Show top matches', 'Summarize activity', 'Filter by type'],
+      }
+    }
     return undefined
   }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload])
 
@@ -250,10 +276,18 @@ export default function ShellDemo() {
 
   // Map current page to sidebar nav index (sell mode: 0=Listings, 1=Create, 2=Drafts)
   const activeNavIndex = useMemo(() => {
-    if (page.mode !== 'sell') return 0
-    if (page.view === 'listings' || page.view === 'dealRoom') return 0
-    if (page.view === 'createListing') return 1
-    if (page.view === 'drafts') return 2
+    if (page.mode === 'sell') {
+      if (page.view === 'listings' || page.view === 'dealRoom') return 0
+      if (page.view === 'createListing') return 1
+      if (page.view === 'drafts') return 2
+      return 0
+    }
+    if (page.mode === 'buy') {
+      if (page.view === 'yourDeals' || page.view === 'dealRoom') return 0
+      if (page.view === 'discoverDeals') return 1
+      if (page.view === 'accessRequested') return 2
+      return 0
+    }
     return 0
   }, [page])
 
@@ -293,8 +327,17 @@ export default function ShellDemo() {
           onDelete={(id) => setDrafts(prev => prev.filter(d => d.id !== id))}
         />
       )}
-      {page.mode === 'buy' && (
-        <PlaceholderPage mode="buy" title="Your Deals" description="Buy mode pages are coming soon." />
+      {page.mode === 'buy' && page.view === 'yourDeals' && (
+        <YourDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
+      )}
+      {page.mode === 'buy' && page.view === 'discoverDeals' && (
+        <DiscoverDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
+      )}
+      {page.mode === 'buy' && page.view === 'accessRequested' && (
+        <AccessRequested onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
+      )}
+      {page.mode === 'buy' && page.view === 'dealRoom' && (
+        <PlaceholderPage mode="buy" title="Deal Room" description="Buyer deal room coming in Sprint B-4." />
       )}
       {page.mode === 'strategy' && (
         <PlaceholderPage mode="strategy" title="Your Strategies" description="Strategy mode pages are coming soon." />
