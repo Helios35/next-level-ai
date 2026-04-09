@@ -7,6 +7,9 @@ import SellerDraftsPage from '@/pages/SellerDraftsPage'
 import YourDeals from '@/pages/YourDeals'
 import DiscoverDeals from '@/pages/DiscoverDeals'
 import AccessRequested from '@/pages/AccessRequested'
+import YourStrategies from '@/pages/YourStrategies'
+import CreateStrategyWizard, { type StrategyFormState, type StrategyDraft } from '@/pages/CreateStrategyWizard'
+import StrategyDrafts from '@/pages/StrategyDrafts'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -19,7 +22,9 @@ type Page =
   | { mode: 'buy'; view: 'discoverDeals' }
   | { mode: 'buy'; view: 'accessRequested' }
   | { mode: 'buy'; view: 'dealRoom'; dealId: string }
-  | { mode: 'strategy'; view: 'landing' }
+  | { mode: 'strategy'; view: 'yourStrategies' }
+  | { mode: 'strategy'; view: 'createStrategy' }
+  | { mode: 'strategy'; view: 'drafts' }
 
 function pageKey(p: Page) {
   return `${p.mode}:${p.view}`
@@ -28,7 +33,7 @@ function pageKey(p: Page) {
 const MODE_LANDING: Record<Mode, Page> = {
   sell: { mode: 'sell', view: 'listings' },
   buy: { mode: 'buy', view: 'yourDeals' },
-  strategy: { mode: 'strategy', view: 'landing' },
+  strategy: { mode: 'strategy', view: 'yourStrategies' },
 }
 
 // ── Wizard script ───────────────────────────────────────────────────────────
@@ -45,6 +50,17 @@ const WIZARD_SCRIPT = [
 
 const WIZARD_REVIEW_PROMPT =
   "I\u2019ve got everything I need. Here\u2019s your draft listing \u2014 review the details below and submit when you\u2019re ready."
+
+// ── Strategy wizard script ─────────────────────────────────────────────────
+
+const STRATEGY_WIZARD_OPENING =
+  "Let\u2019s build your strategy. Tell me what you\u2019re looking to buy \u2014 asset type, location, and deal size are a good starting point."
+
+const STRATEGY_WIZARD_SCRIPT = [
+  "Got it \u2014 I\u2019ve captured your core criteria. Now let\u2019s get more specific on the asset type details.",
+  "Good. Let\u2019s add some optional refinements \u2014 or skip ahead and save your strategy now.",
+  "Here\u2019s your strategy summary. Review the details and save when you\u2019re ready.",
+]
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -66,6 +82,17 @@ export default function ShellDemo() {
   const [drafts, setDrafts] = useState<ListingDraft[]>([])
   const [resumeDraft, setResumeDraft] = useState<{
     formState: WizardFormState
+    step: number
+  } | null>(null)
+
+  // Strategy wizard state
+  const [strategyWizardStep, setStrategyWizardStep] = useState(0)
+  const [strategyWizardMessages, setStrategyWizardMessages] = useState<
+    { role: 'ai' | 'user'; text: string; time: string }[]
+  >([])
+  const [strategyDrafts, setStrategyDrafts] = useState<StrategyDraft[]>([])
+  const [strategyResumeDraft, setStrategyResumeDraft] = useState<{
+    formState: StrategyFormState
     step: number
   } | null>(null)
 
@@ -115,7 +142,15 @@ export default function ShellDemo() {
     } else if (label === 'Access Requested') {
       navigateTo({ mode: 'buy', view: 'accessRequested' })
     }
-  }, [navigateTo])
+    // Strategy mode nav
+    else if (label === 'Your Strategies') {
+      navigateTo({ mode: 'strategy', view: 'yourStrategies' })
+    } else if (label === 'Create Strategy') {
+      navigateTo({ mode: 'strategy', view: 'createStrategy' })
+    } else if (label === 'Drafts' && page.mode === 'strategy') {
+      navigateTo({ mode: 'strategy', view: 'drafts' })
+    }
+  }, [navigateTo, page.mode])
 
   // Initialize / reset wizard state when entering the create listing page
   useEffect(() => {
@@ -236,6 +271,69 @@ export default function ShellDemo() {
     setWizardStep((prev) => prev + 1)
   }, [wizardStep, wizardDocuments])
 
+  // ── Strategy wizard lifecycle ─────────────────────────────────────────────
+
+  // Initialize / reset strategy wizard state when entering create strategy page
+  useEffect(() => {
+    if (page.mode === 'strategy' && page.view === 'createStrategy') {
+      const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+
+      if (strategyResumeDraft) {
+        setStrategyWizardStep(strategyResumeDraft.step)
+        const msgs: typeof strategyWizardMessages = [
+          { role: 'ai', text: STRATEGY_WIZARD_OPENING, time: now },
+        ]
+        for (let i = 0; i < strategyResumeDraft.step; i++) {
+          msgs.push({ role: 'user', text: '\u2026', time: now })
+          msgs.push({ role: 'ai', text: STRATEGY_WIZARD_SCRIPT[i], time: now })
+        }
+        setStrategyWizardMessages(msgs)
+      } else {
+        setStrategyWizardMessages([{ role: 'ai', text: STRATEGY_WIZARD_OPENING, time: now }])
+        setStrategyWizardStep(0)
+      }
+    }
+  }, [pageKey(page)])
+
+  // Clear strategy resume draft after consumed
+  useEffect(() => {
+    if (strategyResumeDraft && page.mode === 'strategy' && page.view === 'createStrategy') {
+      const timer = setTimeout(() => setStrategyResumeDraft(null), 0)
+      return () => clearTimeout(timer)
+    }
+  }, [strategyResumeDraft, pageKey(page)])
+
+  // Strategy draft handlers
+  const handleSaveStrategyAsDraft = useCallback((formState: StrategyFormState, currentStep: number) => {
+    const draft: StrategyDraft = {
+      id: crypto.randomUUID(),
+      formState,
+      wizardStep: currentStep,
+      savedAt: new Date().toISOString(),
+    }
+    setStrategyDrafts(prev => [...prev, draft])
+    navigateTo({ mode: 'strategy', view: 'drafts' })
+  }, [navigateTo])
+
+  const handleContinueStrategyDraft = useCallback((draftId: string) => {
+    const draft = strategyDrafts.find(d => d.id === draftId)
+    if (!draft) return
+    setStrategyResumeDraft({ formState: draft.formState, step: draft.wizardStep })
+    setStrategyDrafts(prev => prev.filter(d => d.id !== draftId))
+    navigateTo({ mode: 'strategy', view: 'createStrategy' })
+  }, [strategyDrafts, navigateTo])
+
+  // Strategy wizard send handler
+  const handleStrategyWizardSend = useCallback((userText: string) => {
+    if (strategyWizardStep >= 3) return
+
+    const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    const userMsg = { role: 'user' as const, text: userText, time: now }
+    const aiMsg = { role: 'ai' as const, text: STRATEGY_WIZARD_SCRIPT[strategyWizardStep], time: now }
+    setStrategyWizardMessages((prev) => [...prev, userMsg, aiMsg])
+    setStrategyWizardStep((prev) => prev + 1)
+  }, [strategyWizardStep])
+
   // Build page-specific chat context
   const chatContext = useMemo<ChatContext | undefined>(() => {
     if (page.mode === 'sell' && page.view === 'createListing') {
@@ -269,10 +367,27 @@ export default function ShellDemo() {
         skills: ['Show top matches', 'Summarize activity', 'Filter by type'],
       }
     }
+    if (page.mode === 'strategy' && page.view === 'createStrategy') {
+      return {
+        messages: strategyWizardMessages,
+        contextLabel: 'New Strategy',
+        skills: ['What should I include?', 'Explain matching', 'Tier 2 fields'],
+      }
+    }
+    if (page.mode === 'strategy') {
+      return {
+        messages: [
+          { role: 'ai' as const, text: "Your strategies are broadcasting. I\u2019ll notify you when new matches come in.", time: '9:00 AM' },
+        ],
+        contextLabel: 'Strategies',
+        skills: ['Show match summary', 'Edit strategy', 'Create new strategy'],
+      }
+    }
     return undefined
-  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload])
+  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload, strategyWizardMessages])
 
   const isCreateListing = page.mode === 'sell' && page.view === 'createListing'
+  const isCreateStrategy = page.mode === 'strategy' && page.view === 'createStrategy'
 
   // Map current page to sidebar nav index (sell mode: 0=Listings, 1=Create, 2=Drafts)
   const activeNavIndex = useMemo(() => {
@@ -286,6 +401,12 @@ export default function ShellDemo() {
       if (page.view === 'yourDeals' || page.view === 'dealRoom') return 0
       if (page.view === 'discoverDeals') return 1
       if (page.view === 'accessRequested') return 2
+      return 0
+    }
+    if (page.mode === 'strategy') {
+      if (page.view === 'yourStrategies') return 0
+      if (page.view === 'createStrategy') return 1
+      if (page.view === 'drafts') return 2
       return 0
     }
     return 0
@@ -302,7 +423,7 @@ export default function ShellDemo() {
       canGoBack={historyIndex > 0}
       canGoForward={historyIndex < history.length - 1}
       chatContext={chatContext}
-      onSendMessage={isCreateListing ? handleWizardSend : undefined}
+      onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : undefined}
     >
       {page.mode === 'sell' && page.view === 'listings' && (
         <SellingList onOpenDealRoom={(deal) => navigateTo({ mode: 'sell', view: 'dealRoom', dealId: deal.id })} />
@@ -339,8 +460,26 @@ export default function ShellDemo() {
       {page.mode === 'buy' && page.view === 'dealRoom' && (
         <PlaceholderPage mode="buy" title="Deal Room" description="Buyer deal room coming in Sprint B-4." />
       )}
-      {page.mode === 'strategy' && (
-        <PlaceholderPage mode="strategy" title="Your Strategies" description="Strategy mode pages are coming soon." />
+      {page.mode === 'strategy' && page.view === 'yourStrategies' && (
+        <YourStrategies
+          onCreateStrategy={() => navigateTo({ mode: 'strategy', view: 'createStrategy' })}
+          onEditStrategy={(id) => console.log('edit strategy', id)}
+        />
+      )}
+      {isCreateStrategy && (
+        <CreateStrategyWizard
+          step={strategyWizardStep}
+          onSubmit={() => navigateTo({ mode: 'strategy', view: 'yourStrategies' })}
+          onSaveAsDraft={handleSaveStrategyAsDraft}
+          initialState={strategyResumeDraft?.formState}
+        />
+      )}
+      {page.mode === 'strategy' && page.view === 'drafts' && (
+        <StrategyDrafts
+          drafts={strategyDrafts}
+          onContinue={handleContinueStrategyDraft}
+          onDelete={(id) => setStrategyDrafts(prev => prev.filter(d => d.id !== id))}
+        />
       )}
     </AppShell>
   )

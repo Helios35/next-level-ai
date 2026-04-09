@@ -11,6 +11,7 @@ type BuyerEmptyVariant =
 interface BuyerEmptyStateProps {
   variant: BuyerEmptyVariant
   onCTA?: () => void
+  accentMode?: 'buy' | 'strategy'
 }
 
 const VARIANT_CONFIG = {
@@ -52,7 +53,12 @@ const VARIANT_CONFIG = {
   },
 } as const
 
-export default function BuyerEmptyState({ variant, onCTA }: BuyerEmptyStateProps) {
+const ACCENT_CLASSES: Record<string, string> = {
+  buy: 'bg-mode-buy hover:bg-mode-buy/90',
+  strategy: 'bg-mode-strategy hover:bg-mode-strategy/90',
+}
+
+export default function BuyerEmptyState({ variant, onCTA, accentMode = 'buy' }: BuyerEmptyStateProps) {
   const config = VARIANT_CONFIG[variant]
   const Icon = config.icon
 
@@ -64,7 +70,7 @@ export default function BuyerEmptyState({ variant, onCTA }: BuyerEmptyStateProps
       {config.ctaLabel && onCTA && (
         <button
           onClick={onCTA}
-          className="mt-4 rounded-lg bg-mode-buy px-4 py-2 text-sm font-medium text-white hover:bg-mode-buy/90 transition-colors"
+          className={`mt-4 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${ACCENT_CLASSES[accentMode]}`}
         >
           {config.ctaLabel}
         </button>
