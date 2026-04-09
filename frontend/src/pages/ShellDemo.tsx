@@ -11,6 +11,8 @@ import YourStrategies from '@/pages/YourStrategies'
 import CreateStrategyWizard, { type StrategyFormState, type StrategyDraft } from '@/pages/CreateStrategyWizard'
 import StrategyDrafts from '@/pages/StrategyDrafts'
 import BuyerDealRoomView, { BUYER_DEAL_ROOM_CHAT } from '@/pages/BuyerDealRoomView'
+import BuyerActivationPage from '@/pages/BuyerActivationPage'
+import BuyerQualificationForm from '@/pages/BuyerQualificationForm'
 import SuccessFeeModal from '@/components/SuccessFeeModal'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 
@@ -25,6 +27,8 @@ type Page =
   | { mode: 'buy'; view: 'discoverDeals' }
   | { mode: 'buy'; view: 'accessRequested' }
   | { mode: 'buy'; view: 'dealRoom'; dealId: string }
+  | { mode: 'buy'; view: 'activation' }
+  | { mode: 'buy'; view: 'qualification' }
   | { mode: 'strategy'; view: 'yourStrategies' }
   | { mode: 'strategy'; view: 'createStrategy' }
   | { mode: 'strategy'; view: 'drafts' }
@@ -423,6 +427,7 @@ export default function ShellDemo() {
       if (page.view === 'yourDeals' || page.view === 'dealRoom') return 0
       if (page.view === 'discoverDeals') return 1
       if (page.view === 'accessRequested') return 2
+      if (page.view === 'activation' || page.view === 'qualification') return 0
       return 0
     }
     if (page.mode === 'strategy') {
@@ -433,6 +438,25 @@ export default function ShellDemo() {
     }
     return 0
   }, [page])
+
+  // Onboarding pages render outside AppShell (simplified standalone layout)
+  if (page.mode === 'buy' && page.view === 'activation') {
+    return (
+      <BuyerActivationPage
+        onCompleteProfile={() => navigateTo({ mode: 'buy', view: 'qualification' })}
+        onSkip={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+      />
+    )
+  }
+
+  if (page.mode === 'buy' && page.view === 'qualification') {
+    return (
+      <BuyerQualificationForm
+        onComplete={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+        onSkip={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+      />
+    )
+  }
 
   return (
     <AppShell
@@ -471,7 +495,15 @@ export default function ShellDemo() {
         />
       )}
       {page.mode === 'buy' && page.view === 'yourDeals' && (
-        <YourDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
+        <div className="relative h-full">
+          <YourDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
+          <button
+            onClick={() => navigateTo({ mode: 'buy', view: 'activation' })}
+            className="fixed bottom-4 right-4 z-50 rounded-lg bg-mode-buy px-3 py-2 text-xs text-white shadow-lg hover:bg-mode-buy/80 transition-colors"
+          >
+            Preview Onboarding
+          </button>
+        </div>
       )}
       {page.mode === 'buy' && page.view === 'discoverDeals' && (
         <DiscoverDeals onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
