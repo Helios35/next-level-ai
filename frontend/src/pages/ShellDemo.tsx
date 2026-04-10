@@ -18,6 +18,7 @@ import LoginPage from '@/pages/LoginPage'
 import SignUp from '@/pages/SignUp'
 import Onboarding from '@/pages/Onboarding'
 import SuccessFeeModal from '@/components/SuccessFeeModal'
+import CreditsModal from '@/components/CreditsModal'
 import { postLoginRoute } from '@/utils/postLoginRoute'
 import type { User } from '@shared/types/user'
 import type { UserRole } from '@shared/types/enums'
@@ -111,6 +112,9 @@ export default function ShellDemo() {
 
   // Success fee gate state
   const [successFeeAcknowledged, setSuccessFeeAcknowledged] = useState<Set<string>>(new Set())
+
+  // Credits modal state
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false)
 
   // Strategy wizard state
   const [strategyWizardStep, setStrategyWizardStep] = useState(0)
@@ -537,9 +541,13 @@ export default function ShellDemo() {
       canGoForward={historyIndex < history.length - 1}
       chatContext={chatContext}
       onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : undefined}
+      onCreditsClick={() => setCreditsModalOpen(true)}
     >
       {page.mode === 'sell' && page.view === 'listings' && (
-        <SellingList onOpenDealRoom={(deal) => navigateTo({ mode: 'sell', view: 'dealRoom', dealId: deal.id })} />
+        <SellingList
+          onOpenDealRoom={(deal) => navigateTo({ mode: 'sell', view: 'dealRoom', dealId: deal.id })}
+          onCreateListing={() => navigateTo({ mode: 'sell', view: 'createListing' })}
+        />
       )}
       {page.mode === 'sell' && page.view === 'dealRoom' && (
         <SellerDealRoomView dealId={page.dealId} onBack={() => navigateTo({ mode: 'sell', view: 'listings' })} />
@@ -605,6 +613,12 @@ export default function ShellDemo() {
           onDelete={(id) => setStrategyDrafts(prev => prev.filter(d => d.id !== id))}
         />
       )}
+      <CreditsModal
+        open={creditsModalOpen}
+        onOpenChange={setCreditsModalOpen}
+        currentBalance={400}
+        mode="view"
+      />
     </AppShell>
   )
 }

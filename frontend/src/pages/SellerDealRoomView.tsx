@@ -16,6 +16,7 @@ import type { DocumentUploadItem } from '@/data/mock/dealPreviews'
 import type { MarketIntelData } from '@/data/mock/marketIntel'
 import type { MilestoneItem } from '@/data/mock/milestones'
 import DealRoomHeader from '@/components/DealRoomHeader'
+import MarketTestedBanner from '@/components/MarketTestedBanner'
 import MilestoneTimeline from '@/components/MilestoneTimeline'
 import SeatedBuyerItem from '@/components/SeatedBuyerItem'
 import SummaryCard from '@/components/SummaryCard'
@@ -124,6 +125,15 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
         buyerPoolCount={buyers.length}
         onBack={onBack}
       />
+
+      {deal.status === 'market_tested' && (
+        <MarketTestedBanner
+          dealName={deal.name}
+          onAdjust={() => console.log('[MarketTested] Adjust selected')}
+          onPause={() => console.log('[MarketTested] Pause selected')}
+          onWithdraw={() => console.log('[MarketTested] Withdraw selected')}
+        />
+      )}
 
       {/* ═══ TABS ═══ */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-1 flex-col overflow-hidden">

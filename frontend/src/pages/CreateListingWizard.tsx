@@ -10,6 +10,7 @@ import { ReviewRow } from '@/components/ui/review-row'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import OwnershipGate from '@/components/OwnershipGate'
 import {
   Select,
   SelectContent,
@@ -389,6 +390,9 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
     e.target.value = ''
     pendingDocLabelRef.current = ''
   }, [onDocumentUpload])
+
+  // ── Ownership gate state ────────────────────────────────────────────────
+  const [ownershipGateOpen, setOwnershipGateOpen] = useState(false)
 
   // ── Section collapse state ──────────────────────────────────────────────
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
@@ -1179,7 +1183,7 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
                 </Button>
               )}
               <Button
-                onClick={onSubmit}
+                onClick={() => setOwnershipGateOpen(true)}
                 className="bg-mode-sell hover:bg-mode-sell/80 text-white px-6"
               >
                 <CheckCircle2 data-icon="inline-start" />
@@ -1189,6 +1193,16 @@ export default function CreateListingWizard({ step, onSubmit, onSaveAsDraft, ini
           </div>
         </SectionCard>
       </div>
+
+      <OwnershipGate
+        open={ownershipGateOpen}
+        listingName={propertyName || 'Your Listing'}
+        onConfirm={() => {
+          setOwnershipGateOpen(false)
+          onSubmit()
+        }}
+        onCancel={() => setOwnershipGateOpen(false)}
+      />
     </div>
   )
 }
