@@ -17,6 +17,9 @@ import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import SignUp from '@/pages/SignUp'
 import Onboarding from '@/pages/Onboarding'
+import Profile from '@/pages/Profile'
+import Settings from '@/pages/Settings'
+import { MOCK_CURRENT_USER } from '@/data/mock/users'
 import SuccessFeeModal from '@/components/SuccessFeeModal'
 import CreditsModal from '@/components/CreditsModal'
 import { postLoginRoute } from '@/utils/postLoginRoute'
@@ -44,6 +47,8 @@ type Page =
   | { mode: 'auth'; view: 'login' }
   | { mode: 'auth'; view: 'signup'; role?: UserRole }
   | { mode: 'auth'; view: 'onboarding' }
+  | { mode: 'global'; view: 'profile' }
+  | { mode: 'global'; view: 'settings' }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -90,6 +95,9 @@ export default function ShellDemo() {
   const [page, setPage] = useState<Page>({ mode: 'auth', view: 'landing' })
   const [history, setHistory] = useState<Page[]>([{ mode: 'auth', view: 'landing' }])
   const [historyIndex, setHistoryIndex] = useState(0)
+  // Remembered last mode-tab so the shell still renders correctly while on
+  // mode-agnostic global pages (Profile / Settings).
+  const [lastMode, setLastMode] = useState<Mode>('sell')
 
   // Wizard state
   const [wizardStep, setWizardStep] = useState(0)
@@ -137,13 +145,20 @@ export default function ShellDemo() {
     })
     setHistoryIndex((i) => i + 1)
     setPage(next)
+    if (next.mode === 'sell' || next.mode === 'buy' || next.mode === 'strategy') {
+      setLastMode(next.mode)
+    }
   }, [historyIndex])
 
   const goBack = useCallback(() => {
     if (historyIndex > 0) {
       const newIdx = historyIndex - 1
       setHistoryIndex(newIdx)
-      setPage(history[newIdx])
+      const target = history[newIdx]
+      setPage(target)
+      if (target.mode === 'sell' || target.mode === 'buy' || target.mode === 'strategy') {
+        setLastMode(target.mode)
+      }
     }
   }, [history, historyIndex])
 
@@ -151,7 +166,11 @@ export default function ShellDemo() {
     if (historyIndex < history.length - 1) {
       const newIdx = historyIndex + 1
       setHistoryIndex(newIdx)
-      setPage(history[newIdx])
+      const target = history[newIdx]
+      setPage(target)
+      if (target.mode === 'sell' || target.mode === 'buy' || target.mode === 'strategy') {
+        setLastMode(target.mode)
+      }
     }
   }, [history, historyIndex])
 
@@ -439,6 +458,7 @@ export default function ShellDemo() {
   // Map current page to sidebar nav index (sell mode: 0=Listings, 1=Create, 2=Drafts)
   const activeNavIndex = useMemo(() => {
     if (page.mode === 'auth') return 0
+    if (page.mode === 'global') return -1
     if (page.mode === 'sell') {
       if (page.view === 'listings' || page.view === 'dealRoom') return 0
       if (page.view === 'createListing') return 1
@@ -531,7 +551,7 @@ export default function ShellDemo() {
 
   return (
     <AppShell
-      activeMode={page.mode}
+      activeMode={page.mode === 'global' ? lastMode : (page.mode as Mode)}
       activeNavIndex={activeNavIndex}
       onModeChange={handleModeChange}
       onNavChange={handleNavChange}
@@ -542,6 +562,8 @@ export default function ShellDemo() {
       chatContext={chatContext}
       onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : undefined}
       onCreditsClick={() => setCreditsModalOpen(true)}
+      onAvatarClick={() => navigateTo({ mode: 'global', view: 'profile' })}
+      onSettingsClick={() => navigateTo({ mode: 'global', view: 'settings' })}
     >
       {page.mode === 'sell' && page.view === 'listings' && (
         <SellingList
@@ -612,6 +634,12 @@ export default function ShellDemo() {
           onContinue={handleContinueStrategyDraft}
           onDelete={(id) => setStrategyDrafts(prev => prev.filter(d => d.id !== id))}
         />
+      )}
+      {page.mode === 'global' && page.view === 'profile' && (
+        <Profile user={currentUser ?? MOCK_CURRENT_USER} onBack={() => goBack()} />
+      )}
+      {page.mode === 'global' && page.view === 'settings' && (
+        <Settings userRole={(currentUser ?? MOCK_CURRENT_USER).role} />
       )}
       <CreditsModal
         open={creditsModalOpen}

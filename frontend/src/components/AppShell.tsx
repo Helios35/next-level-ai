@@ -178,6 +178,10 @@ interface AppShellProps {
   activeNavIndex?: number
   /** Called when the credits display in the top bar is clicked */
   onCreditsClick?: () => void
+  /** Called when the user avatar in the top bar is clicked */
+  onAvatarClick?: () => void
+  /** Called when the Settings gear in the sidebar footer is clicked */
+  onSettingsClick?: () => void
 }
 
 export default function AppShell({
@@ -193,6 +197,8 @@ export default function AppShell({
   activeNavIndex,
   onSendMessage,
   onCreditsClick,
+  onAvatarClick,
+  onSettingsClick,
 }: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -375,7 +381,10 @@ export default function AppShell({
             </div>
             <span className="hidden sm:inline">400 Credits</span>
           </button>
-          <button className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground hover:ring-2 hover:ring-border transition-all">
+          <button
+            onClick={onAvatarClick}
+            className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground hover:ring-2 hover:ring-border transition-all"
+          >
             JD
           </button>
         </div>
@@ -429,7 +438,10 @@ export default function AppShell({
               <Bell size={18} className="shrink-0" />
               {sidebarOpen && <span className="truncate">Notifications</span>}
             </button>
-            <button className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+            <button
+              onClick={onSettingsClick}
+              className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
               <Settings size={18} className="shrink-0" />
               {sidebarOpen && <span className="truncate">Settings</span>}
             </button>
