@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import type { DealRoom } from '@shared/types/dealRoom'
@@ -7,11 +7,17 @@ import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import DealCard from '@/components/DealCard'
 import DealPreviewModal from '@/components/DealPreviewModal'
 import BuyerEmptyState from '@/components/BuyerEmptyState'
+import QualificationModal from '@/components/QualificationModal'
+import StrategyPromptModal from '@/components/StrategyPromptModal'
+import QualificationNudgeBanner from '@/components/QualificationNudgeBanner'
 import FilterModal, {
   type FilterState,
   EMPTY_FILTERS,
   isFiltersEmpty,
 } from '@/components/FilterModal'
+
+// Prototype: mock user qualification state
+const mockUser = { qualificationComplete: false, hasStrategy: true }
 
 // ── Filter config (mirrors SellingList) ─────────────────────────────────────
 
@@ -118,6 +124,16 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
   const [previewDeal, setPreviewDeal] = useState<DealRoom | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
 
+  const [qualModalOpen, setQualModalOpen] = useState(false)
+  const [strategyModalOpen, setStrategyModalOpen] = useState(false)
+  const [nudgeBannerDismissed, setNudgeBannerDismissed] = useState(false)
+  const [pendingAccessDealId, setPendingAccessDealId] = useState<string | null>(null)
+  const [requestedDealIds, setRequestedDealIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!mockUser.hasStrategy) setStrategyModalOpen(true)
+  }, [])
+
   const hasFilters = !isFiltersEmpty(activeFilters)
   const chips = hasFilters ? getActiveChips(activeFilters) : []
 
@@ -162,6 +178,19 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
         <h1 className="text-xl font-semibold text-foreground">Your Deals</h1>
         <span className="text-sm text-muted-foreground">{filteredDeals.length} matches</span>
       </div>
+
+      {/* Qualification nudge banner */}
+      {!mockUser.qualificationComplete &&
+        mockUser.hasStrategy &&
+        !nudgeBannerDismissed && (
+          <QualificationNudgeBanner
+            onComplete={() => {
+              /* TODO: route to qualification form */
+              console.log('Route to qualification form')
+            }}
+            onDismiss={() => setNudgeBannerDismissed(true)}
+          />
+        )}
 
       {/* Search + filter bar */}
       <div className="flex items-center gap-2">
@@ -221,22 +250,39 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
       )}
 
       {/* Deal card grid */}
-      {filteredDeals.length > 0 ? (
+      {!mockUser.hasStrategy ? (
+        <BuyerEmptyState
+          variant="no-strategy"
+          accentMode="buy"
+          onCTA={() => setStrategyModalOpen(true)}
+        />
+      ) : filteredDeals.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filteredDeals.map((deal) => {
             const buyerInfo = BUYER_DEAL_MAP[deal.id]
+            const effectiveCtaState: BuyerCtaState | undefined = requestedDealIds.has(deal.id)
+              ? 'access_pending'
+              : buyerInfo?.buyerCtaState
             return (
               <DealCard
                 key={deal.id}
                 deal={deal}
                 mode="buy"
-                buyerCtaState={buyerInfo?.buyerCtaState}
+                buyerCtaState={effectiveCtaState}
                 matchScore={buyerInfo?.matchScore}
                 onViewDetails={(e) => {
                   triggerRef.current = e.currentTarget as HTMLButtonElement
                   setPreviewDeal(deal)
                 }}
                 onOpenDealRoom={() => onOpenDealRoom(deal.id)}
+                onRequestAccess={() => {
+                  if (!mockUser.qualificationComplete) {
+                    setPendingAccessDealId(deal.id)
+                    setQualModalOpen(true)
+                  } else {
+                    setRequestedDealIds((prev) => new Set(prev).add(deal.id))
+                  }
+                }}
               />
             )
           })}
@@ -262,6 +308,38 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
         viewer="buyer"
         buyerCtaState={previewDeal ? BUYER_DEAL_MAP[previewDeal.id]?.buyerCtaState : undefined}
         matchScore={previewDeal ? BUYER_DEAL_MAP[previewDeal.id]?.matchScore : undefined}
+      />
+
+      {/* Qualification soft-gate modal (access request trigger) */}
+      <QualificationModal
+        open={qualModalOpen}
+        onOpenChange={setQualModalOpen}
+        trigger="access_request"
+        onCompleteProfile={() => {
+          setQualModalOpen(false)
+          setPendingAccessDealId(null)
+          /* TODO: route to qualification form */
+          console.log('Route to qualification form')
+        }}
+        onSkip={() => {
+          if (pendingAccessDealId) {
+            setRequestedDealIds((prev) => new Set(prev).add(pendingAccessDealId))
+            setPendingAccessDealId(null)
+          }
+          setQualModalOpen(false)
+        }}
+      />
+
+      {/* Strategy prompt modal */}
+      <StrategyPromptModal
+        open={strategyModalOpen}
+        onOpenChange={setStrategyModalOpen}
+        onCreateStrategy={() => {
+          setStrategyModalOpen(false)
+          /* TODO: route to CreateStrategyWizard */
+          console.log('Route to CreateStrategyWizard')
+        }}
+        onDismiss={() => setStrategyModalOpen(false)}
       />
 
       {/* Filter Sheet */}

@@ -27,6 +27,7 @@ interface DealCardProps {
   deal: DealRoom
   onViewDetails?: (e: React.MouseEvent<HTMLButtonElement>) => void
   onOpenDealRoom?: () => void
+  onRequestAccess?: () => void
   className?: string
   mode?: 'sell' | 'buy'
   buyerCtaState?: BuyerCtaState
@@ -37,6 +38,7 @@ export default function DealCard({
   deal,
   onViewDetails,
   onOpenDealRoom,
+  onRequestAccess,
   className,
   mode = 'sell',
   buyerCtaState,
@@ -59,6 +61,10 @@ export default function DealCard({
       setOptimisticLabel('Interested ✓')
       setOptimisticDisabled(true)
     } else if (buyerCtaState === 'request_access') {
+      if (onRequestAccess) {
+        onRequestAccess()
+        return
+      }
       setOptimisticLabel('Request Sent')
       setOptimisticDisabled(true)
     } else if (buyerCtaState === 'enter_deal_room') {
