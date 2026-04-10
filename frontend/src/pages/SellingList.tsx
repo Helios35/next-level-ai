@@ -103,9 +103,10 @@ const STATS = [
 
 interface SellingListProps {
   onOpenDealRoom?: (deal: DealRoom) => void
+  onCreateListing?: () => void
 }
 
-export default function SellingList({ onOpenDealRoom }: SellingListProps) {
+export default function SellingList({ onOpenDealRoom, onCreateListing }: SellingListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -260,7 +261,9 @@ export default function SellingList({ onOpenDealRoom }: SellingListProps) {
       )}
 
       {/* Deal cards */}
-      {filteredDeals.length > 0 ? (
+      {MOCK_SELLER_DEAL_ROOMS.length === 0 ? (
+        <SellerListingsEmpty variant="no-listings" onCTA={onCreateListing} />
+      ) : filteredDeals.length > 0 ? (
         viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredDeals.map((deal) => (

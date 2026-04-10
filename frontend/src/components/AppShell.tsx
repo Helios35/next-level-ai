@@ -176,6 +176,8 @@ interface AppShellProps {
   onSendMessage?: (text: string) => void
   /** Controlled active sidebar nav index — syncs highlight on programmatic navigation */
   activeNavIndex?: number
+  /** Called when the credits display in the top bar is clicked */
+  onCreditsClick?: () => void
 }
 
 export default function AppShell({
@@ -190,6 +192,7 @@ export default function AppShell({
   activeMode,
   activeNavIndex,
   onSendMessage,
+  onCreditsClick,
 }: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -363,7 +366,10 @@ export default function AppShell({
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button
+            onClick={onCreditsClick}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
             <div className="flex h-5 w-5 items-center justify-center rounded bg-amber-500/20 text-amber-500">
               <span className="text-[10px] font-bold">C</span>
             </div>
