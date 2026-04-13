@@ -87,7 +87,7 @@ Terms used throughout this document. Full definitions in **TAXONOMY_v1_0.md**.
 
 **2.6** A buyer cannot request access to a Coming Soon deal (Stage 6). They can preview it and indicate interest only. Access requests open at Stage 7 (Active Disposition).
 
-**2.7** Before entering an active deal room for the first time, a buyer must acknowledge the 3% success fee agreement. This is a hard gate. The buyer cannot enter the deal room without completing this modal.
+**2.7** *(Removed April 2026)* — Success fee gate removed. Buyers enter deal rooms directly without any fee acknowledgment.
 
 **2.8** A buyer who is denied a seat by DS is placed in the Wait Queue. They are not removed from the deal — they remain visible to DS and can be seated if a seat opens.
 
@@ -208,7 +208,7 @@ DS-invited buyers always take priority over self-requested buyers, regardless of
 
 **8.6** When a buyer is denied a seat, the AI Disposition Engine sends a structured denial message. The buyer moves to Wait Queue. DS does not write the denial message — AI generates it, DS authorizes delivery.
 
-**8.7** When a buyer is approved for a seat, the AI Disposition Engine sends a welcome message. The buyer must then complete the success fee acknowledgment (Rule 2.7) before entering the deal room.
+**8.7** When a buyer is approved for a seat, the AI Disposition Engine sends a welcome message. The buyer can then enter the deal room immediately.
 
 ---
 
@@ -330,9 +330,9 @@ When the DS steps in, the handoff is transparent — the seller is informed.
 
 **13.4** If a seller attempts to activate a deal room with insufficient credits, the credit gate modal surfaces automatically. The seller must purchase credits before proceeding. The deal room cannot go live without sufficient credits.
 
-**13.5** The buyer success fee is 3% of gross purchase price, due at closing. No fee is charged if the deal does not close.
+**13.5** *(Updated April 2026)* There is no buyer success fee. Commission is collected from the seller prior to the deal room going live. Buyers enter deal rooms without any fee gate.
 
-**13.6** Buyers must acknowledge the success fee agreement before entering an active deal room for the first time. This is a hard gate — the success fee modal cannot be bypassed.
+**13.6** *(Removed April 2026)* — See updated Rule 13.5.
 
 **13.7** Payment information is never entered or stored by the platform on behalf of the user. Buyers and sellers enter payment details themselves.
 
@@ -417,6 +417,12 @@ When the DS steps in, the handoff is transparent — the seller is informed.
 **E.7** If no buyer submits an offer in a given round, they are treated as having passed. DS advances to the next round or to Stage 9 if it was Round 3.
 
 **E.8** Tier A and Tier B in the internal SOP both map to Green / Approve on the platform. Tier C maps to Red / Reject. Yellow routes through Return to Admin. Tier A/B/C language does not appear anywhere in the platform UI.
+
+**E.9** *(Added April 2026)* Before a buyer can submit an offer, they must declare their intent: "Indicate Interest to Offer" or "Pass." This is the Offer Intent Gate. It renders at the top of the Offer Round section when `offerIntent === 'undecided'`.
+
+**E.10** *(Added April 2026)* If a buyer selects "Pass," a Watch/Pass modal opens. The buyer must select a reason before the pass is confirmed. On confirmation, their seat is released (Rule E.1) and their feedback is recorded for market intelligence purposes.
+
+**E.11** *(Added April 2026)* If a buyer selects "Indicate Interest to Offer," the offer form is revealed. The `recordOfferIntent` stub is called. The intent gate collapses and does not re-render for this session.
 
 ---
 

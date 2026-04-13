@@ -59,18 +59,17 @@ const FIRM_TYPE_OPTIONS = [
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function roleLabel(role: User['role']): string {
-  if (role === 'both') return 'Buyer & Seller'
-  if (role === 'buyer') return 'Buyer'
+  if (role === 'principal') return 'Principal'
   if (role === 'seller') return 'Seller'
   return 'Broker'
 }
 
 function isBuyerRole(role: User['role']): boolean {
-  return role === 'buyer' || role === 'both' || role === 'broker'
+  return role === 'principal' || role === 'broker'
 }
 
 function isSellerRole(role: User['role']): boolean {
-  return role === 'seller' || role === 'both'
+  return role === 'seller'
 }
 
 // ── Component ──────────────────────────────────────────────────────────────

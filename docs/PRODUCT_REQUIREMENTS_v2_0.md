@@ -78,10 +78,10 @@ After sufficient deal velocity is achieved, ancillary offerings layered in — b
 | Stream | Model | Timeline |
 |--------|-------|----------|
 | **Seller Credits** | Sellers pay for access to matched buyers — charged at deal room activation. 400 free credits on first deal room. $100 per credit thereafter. | Immediate at MVP launch |
-| **Buyer Success Fee** | Buyers use platform free. 3% of gross purchase price due at closing. No fee if deal does not close. Acknowledged before entering active deal room. | Immediate at MVP launch |
+| **Buyer Access** | Free. No fees charged to buyers at any point. Commission is seller-side only. | Immediate at MVP launch |
 | **Lender Participation** | Lenders pay per lead and per closed financing transaction. | Phase 4 — post deal velocity |
 
-Both seller credits and buyer success fees are expected to generate revenue within the first three months of MVP launch.
+Seller credits are expected to generate revenue within the first three months of MVP launch.
 
 ### 1.5 Platform Terminology
 
@@ -474,6 +474,20 @@ The buyer match count is a visually dominant element in the seller deal room hea
 
 **Buy mode** — Your Deals, Discover Deals, Access Requested. Buyers browse matched deal cards, request deal room access, and manage active deal rooms. Deal cards show state-dependent CTAs (Coming Soon / Active Disposition / Access Pending / Wait Queue / Enter Deal Room).
 
+**Buyer Deal Room — Offer Intent Gate** *(Added April 2026)*
+
+At Stage 8 (Offer Negotiation), buyers must declare intent before accessing the offer form. The `OfferIntentGate` component presents two options:
+
+| Action | Result |
+|--------|--------|
+| "I'm Interested in Offering" | Reveals the offer submission form. `recordOfferIntent` stub called. Gate collapses permanently for this session. |
+| "Pass on This Deal" | Opens `WatchPassModal` — non-dismissible dialog requiring a reason (Pricing / Timing / Asset Type / Market / Other) and optional notes. On confirmation, seat is released per Rule E.1 (pass is terminal). `recordPassFeedback` stub called. |
+
+**Buyer Deal Room — AI Actions** *(Added April 2026)*
+
+- "Get Deal Summary" — prominent `bg-mode-buy` button above the Document Package section. Sends `"Give me a summary of this deal"` to the AI chat panel.
+- Skills chips in the chat panel are wired to auto-send their text as chat messages: `["Get deal summary", "Ask about the documents", "How does the offer process work?", "What is my competition?"]`.
+
 **Strategy mode** — Your Strategies, Create Strategy, Drafts. Buyers create and manage buy strategies that broadcast against active deal rooms. Match counts populate immediately on strategy save.
 
 **AI chat panel** — persistent on all screens, resizable and collapsible. Context chip reflects current mode and active deal. Contextually aware of platform state.
@@ -628,7 +642,7 @@ Structural patterns locked:
 | P0 | Database persistence | Persist deal rooms, strategies, offers, qualifications, chat, stage transitions, status transitions in Supabase |
 | P1 | Real-time chat | Supabase Realtime for deal room messaging |
 | P1 | Document storage | Supabase Storage for deal room document uploads |
-| P1 | Payment integration | Stripe for credit purchases and success fee collection |
+| P1 | Payment integration | Stripe for credit purchases |
 | P2 | Email notifications | Configurable delivery based on cadence settings |
 | P2 | AI-powered matching | Replace scripted intake with live LLM-driven conversations |
 | P2 | Analytics dashboard | Admin metrics — deal flow, conversion rates, time-to-close by stage |

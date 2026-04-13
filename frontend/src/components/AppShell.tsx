@@ -614,7 +614,16 @@ export default function AppShell({
                       {(chatContext?.skills ?? SKILLS).map((skill) => (
                         <button
                           key={skill}
-                          className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
+                          onClick={() => {
+                            if (onSendMessage) {
+                              onSendMessage(skill)
+                            }
+                          }}
+                          className={cn(
+                            'shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors',
+                            onSendMessage ? 'cursor-pointer' : 'cursor-default opacity-50',
+                            config.chatSkill,
+                          )}
                         >
                           {skill}
                         </button>

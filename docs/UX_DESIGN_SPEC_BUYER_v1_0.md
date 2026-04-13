@@ -297,7 +297,7 @@ Apply the same layout: `flex flex-col items-center justify-center py-20 text-cen
 
 ### 4.4 Buyer Deal Room View (`/deal-room/:dealId`)
 
-**Purpose:** The buyer's workspace for an active deal. Accessible only after the success fee acknowledgment modal is completed.
+**Purpose:** The buyer's workspace for an active deal. Accessible immediately upon navigation from the buyer deal feed.
 
 **Layout:** Full-width content area. Three stacked sections: Deal Room Header → Document Section → Offer Section.
 
@@ -316,17 +316,23 @@ Apply the same layout: `flex flex-col items-center justify-center py-20 text-cen
 - Never shows names, companies, or offer details. Per Guardrail G-1, G-3 in `AGENT_BUYER_DEAL_ROOM_v1_0.md`.
 - Design: `section-card` from `components/ui/section-card.tsx` as container. Each buyer row uses `item` component.
 
+**"Get Deal Summary" Button:**
+- Prominent `bg-mode-buy text-white` button placed above the Document Section, below the inactivity nudge.
+- On click: sends `"Give me a summary of this deal"` to the AI chat panel via `onSendMessage`.
+
 **Chat Panel (AI Q&A):**
 - Wired through `AppShell` chat panel — same panel used by seller wizard.
 - `chatContext.contextLabel` = deal name.
-- `chatContext.skills` = buyer-relevant quick actions: "Ask about docs", "How does this work?", "Offer process".
+- `chatContext.skills` = buyer-relevant quick actions: `["Get deal summary", "Ask about the documents", "How does the offer process work?", "What is my competition?"]`. Skills chips are wired to auto-send their text as a chat message when clicked.
 - AI bubble color: `bg-mode-buy` (already configured in `AppShell` `MODE_CONFIG`).
 
-**Offer Section:**
+**Offer Section (Offer Intent Gate):**
 - Visible only at Stage 8 (Offer Negotiation).
-- Contains offer submission form and buyer's own offer status.
-- Buyer's own offer displayed with gold border: `border-yellow-400 border-2`.
-- See Section 6.2 for Offer Submission Form spec.
+- Entry point is the `OfferIntentGate` component — a decision gate that forces the buyer to declare intent before seeing the offer form.
+- Two options: "I'm Interested in Offering" (reveals offer form, calls `recordOfferIntent` stub) and "Pass on This Deal" (opens `WatchPassModal`).
+- After indicating interest: standard offer form entry (Submit Offer / Update Offer buttons).
+- After passing: static text "You have passed on this deal. Your seat has been released."
+- See Section 6.2 for Offer Submission Form spec. See Section 6.3 for WatchPassModal spec.
 
 ---
 
@@ -403,29 +409,7 @@ Card structure (follow `DealCard` card shell pattern exactly — same border, ra
 
 ## 6. Modal and Overlay Specs
 
-### 6.1 Success Fee Acknowledgment Modal — NEW
-
-**Trigger:** Buyer attempts to enter a deal room for the first time. Hard gate — cannot bypass. Per Business Rules 2.7.
-
-**Component:** `SuccessFeeModal.tsx`. Use shadcn `Dialog` from `components/ui/dialog.tsx` as the base.
-
-```typescript
-interface SuccessFeeModalProps {
-  open: boolean
-  dealName: string
-  onAccept: () => void   // advances buyer into deal room
-  onDecline: () => void  // returns buyer to deal card
-}
-```
-
-**Content:**
-- Heading: "Before You Enter" — `text-lg font-semibold`
-- Body: plain-English explanation of the 3% success fee. Fee is due at closing only — not upfront. No fee if deal does not close.
-- Checkbox (shadcn `checkbox`): "I understand and agree to the 3% success fee" — required before Accept button is enabled.
-- Accept button: `bg-mode-buy` — enabled only when checkbox is checked.
-- Decline button: secondary — returns buyer to deal list.
-
-**No close-on-backdrop-click.** `onOpenChange` must not allow dismissal without an explicit Accept or Decline action. This is a hard gate.
+**6.1** *(Removed April 2026)* — Success fee modal removed. No buyer fee gate exists. Buyers enter deal rooms directly.
 
 ---
 
@@ -454,6 +438,26 @@ interface OfferSubmissionFormProps {
 **Submit behavior:** On submit → offer logged with `status: 'submitted'`. DS receives hard trigger notification (per Business Rules 12.4). Buyer sees their offer in the deal room with gold border: `border-yellow-400 border-2`.
 
 **No cancel after submit.** Per Business Rules 9.7, an existing offer stands automatically. If buyer does not update, prior offer carries forward.
+
+---
+
+### 6.3 Watch/Pass Modal — NEW *(Added April 2026)*
+
+**Trigger:** Buyer clicks "Pass on This Deal" in the `OfferIntentGate`.
+
+**Component:** `WatchPassModal.tsx`. Uses shadcn `Dialog` with `disablePointerDismissal` — buyer cannot dismiss by clicking outside. No close button (`showCloseButton={false}`).
+
+**Content:**
+- Title: "Passing on this deal?"
+- Body: "Once you pass, your seat is released and cannot be reclaimed. Let us know why — your feedback helps us improve future matches."
+- Reason select (required): Options — Pricing, Timing, Asset Type, Market, Other
+- Notes textarea (optional): placeholder "Any other context for your decision…", `h-20 resize-none`
+
+**Footer:**
+- "Confirm Pass" — `bg-destructive text-destructive-foreground hover:bg-destructive/90`, disabled until reason is selected. Calls `recordPassFeedback` stub, sets `offerIntent` to `'passed'`.
+- "Go Back" — `variant="outline"`. Closes modal, returns to intent gate.
+
+**Per Business Rule E.1:** Pass is terminal. Once confirmed, the buyer cannot re-enter the deal room.
 
 ---
 

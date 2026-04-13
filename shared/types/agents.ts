@@ -19,7 +19,7 @@ export interface IntentCaptureSignal {
 export interface BuyerActivationContext {
   userId: string
   userName: string
-  accountRole: 'buyer' | 'both' | 'broker'
+  accountRole: 'principal' | 'broker'
   intentSignals: IntentCaptureSignal[]
   intentRating: 'high' | 'medium' | 'low'
   strategyDraft: Record<string, unknown>

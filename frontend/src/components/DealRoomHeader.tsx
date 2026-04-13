@@ -28,12 +28,13 @@ function buildDescription(deal: DealRoom): string {
 interface DealRoomHeaderProps {
   deal: DealRoom
   buyerPoolCount?: number
+  seatedBuyerCount?: number
   onBack?: () => void
   viewer?: 'seller' | 'buyer'
   className?: string
 }
 
-function DealRoomHeader({ deal, buyerPoolCount, onBack, viewer = 'seller', className }: DealRoomHeaderProps) {
+function DealRoomHeader({ deal, buyerPoolCount, seatedBuyerCount, onBack, viewer = 'seller', className }: DealRoomHeaderProps) {
   return (
     <div className={cn('shrink-0 border-b border-border bg-main px-6 pt-5 pb-4', className)}>
       {onBack && (
@@ -57,13 +58,13 @@ function DealRoomHeader({ deal, buyerPoolCount, onBack, viewer = 'seller', class
           </p>
         </div>
 
-        {viewer !== 'buyer' && (
-          <DealMetricsBar
-            currentStage={deal.currentStage}
-            buyerPoolCount={buyerPoolCount ?? deal.matchedBuyerCount}
-            className="shrink-0"
-          />
-        )}
+        <DealMetricsBar
+          currentStage={deal.currentStage}
+          buyerPoolCount={buyerPoolCount ?? deal.matchedBuyerCount}
+          seatedBuyerCount={viewer === 'buyer' ? seatedBuyerCount : undefined}
+          mode={viewer === 'buyer' ? 'buy' : 'sell'}
+          className="shrink-0"
+        />
       </div>
     </div>
   )

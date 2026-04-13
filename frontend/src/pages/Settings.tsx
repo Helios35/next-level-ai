@@ -32,10 +32,10 @@ interface SettingsProps {
 }
 
 function isBuyerRole(role: UserRole): boolean {
-  return role === 'buyer' || role === 'both' || role === 'broker'
+  return role === 'principal' || role === 'broker'
 }
 function isSellerRole(role: UserRole): boolean {
-  return role === 'seller' || role === 'both'
+  return role === 'seller'
 }
 
 interface NotificationGroupProps {
@@ -108,7 +108,7 @@ export default function Settings({ userRole }: SettingsProps) {
   const handleBuyerChange = (next: NotificationPrefs) => {
     setBuyerPrefs(next)
     console.log('[Settings] Notification preference updated:', {
-      role: 'buyer',
+      role: 'principal',
       enabled: next.enabled,
       cadence: next.cadence,
     })
