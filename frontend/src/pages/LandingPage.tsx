@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { PreAuthBackground } from '@/components/ui/pre-auth-background'
 
 interface LandingPageProps {
   onSellerCTA: () => void
@@ -14,7 +15,8 @@ export default function LandingPage({ onSellerCTA, onBuyerCTA, onLogin }: Landin
   }, [])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="relative min-h-screen flex flex-col">
+      <PreAuthBackground />
       {/* Logo */}
       <div className="px-6 py-4">
         <span className="text-lg font-semibold text-foreground">NextLevel</span>

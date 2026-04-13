@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { PreAuthBackground } from '@/components/ui/pre-auth-background'
 
 interface OnboardingShellProps {
   children: ReactNode
@@ -17,7 +18,8 @@ export default function OnboardingShell({ children, step, totalSteps }: Onboardi
   }, [])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="relative min-h-screen flex flex-col">
+      <PreAuthBackground />
       {/* Top bar — logo only during onboarding */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <span className="text-lg font-semibold text-foreground">NextLevel</span>

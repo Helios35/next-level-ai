@@ -7,6 +7,7 @@ interface DealMetricsBarProps {
   currentStage: DealRoomStage
   buyerPoolCount: number
   size?: 'sm' | 'default'
+  mode?: 'sell' | 'buy'
   className?: string
 }
 
@@ -14,9 +15,11 @@ export default function DealMetricsBar({
   currentStage,
   buyerPoolCount,
   size = 'default',
+  mode = 'sell',
   className,
 }: DealMetricsBarProps) {
   const isSmall = size === 'sm'
+  const isBuy = mode === 'buy'
 
   return (
     <div
@@ -26,12 +29,13 @@ export default function DealMetricsBar({
       )}
     >
       <div className={isSmall ? 'flex-1 min-w-0' : 'w-44'}>
-        <StageProgressBar currentStage={currentStage} />
+        <StageProgressBar currentStage={currentStage} buyerView={isBuy} />
       </div>
       <div className="h-8 w-px bg-border shrink-0" />
       <div
         className={cn(
-          'flex items-center gap-1.5 shrink-0 rounded-md bg-mode-sell/15 text-mode-sell',
+          'flex items-center gap-1.5 shrink-0 rounded-md',
+          isBuy ? 'bg-mode-buy/15 text-mode-buy' : 'bg-mode-sell/15 text-mode-sell',
           isSmall ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
         )}
       >
