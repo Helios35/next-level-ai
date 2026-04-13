@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '@/utils/cn'
-import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
+import { ASSET_SUBTYPE_LABELS, formatPrice, getDealStageLabel } from '@/utils/dealFormatters'
 import { Building2, Home, DollarSign, HardHat, MapPin } from 'lucide-react'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { BuyerCtaState } from '@shared/types/buyerStrategy'
@@ -51,7 +51,7 @@ export default function DealCard({
   const AssetIcon = deal.assetSubType === 'sfr_portfolio' ? Home : Building2
   const subtypeLabel = ASSET_SUBTYPE_LABELS[deal.assetSubType]
   const unitCount = getUnitCount(deal)
-  const stageLabel = DEAL_STAGE_LABELS[deal.shared.dealStage]
+  const stageLabel = getDealStageLabel(deal)
 
   const priceBlurred = isBuy && buyerCtaState !== 'enter_deal_room'
 
@@ -118,38 +118,39 @@ export default function DealCard({
           <span className="truncate">{subtypeLabel}{unitCount ? ` · ${unitCount}` : ''}</span>
         </InfoPopover>
         <div className="h-8 w-px bg-border shrink-0" />
-        <InfoPopover
-          label="Price"
-          value={formatPrice(deal)}
-          icon={<DollarSign size={12} />}
-          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
-        >
-          <DollarSign size={12} className="shrink-0" />
-          <span className={cn('truncate', priceBlurred && 'blur-sm select-none pointer-events-none')}>
-            {formatPrice(deal)}
-          </span>
-        </InfoPopover>
+        {priceBlurred ? (
+          <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0">
+            <DollarSign size={12} className="shrink-0" />
+            <span className="truncate blur-sm select-none pointer-events-none">
+              {formatPrice(deal)}
+            </span>
+          </div>
+        ) : (
+          <InfoPopover
+            label="Price"
+            value={formatPrice(deal)}
+            icon={<DollarSign size={12} />}
+            className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
+          >
+            <DollarSign size={12} className="shrink-0" />
+            <span className="truncate">{formatPrice(deal)}</span>
+          </InfoPopover>
+        )}
         <div className="h-8 w-px bg-border shrink-0" />
-        <InfoPopover
-          label="Development Stage"
-          value={stageLabel}
-          icon={<HardHat size={12} />}
-          className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0"
-        >
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 text-muted-foreground">
           <HardHat size={12} className="shrink-0" />
           <span className="truncate">{stageLabel}</span>
-        </InfoPopover>
+        </div>
       </div>
 
-      {/* Deal metrics — seller only */}
-      {!isBuy && (
-        <DealMetricsBar
-          currentStage={deal.currentStage}
-          buyerPoolCount={deal.matchedBuyerCount}
-          size="sm"
-          className="mt-5"
-        />
-      )}
+      {/* Deal metrics */}
+      <DealMetricsBar
+        currentStage={deal.currentStage}
+        buyerPoolCount={deal.matchedBuyerCount}
+        size="sm"
+        mode={isBuy ? 'buy' : 'sell'}
+        className="mt-5"
+      />
 
       {/* Action buttons */}
       <div className="mt-5 flex gap-2">
