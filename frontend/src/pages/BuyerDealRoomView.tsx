@@ -14,7 +14,6 @@ import type { Offer } from '@shared/types/offer'
 import DealRoomHeader from '@/components/DealRoomHeader'
 import BuyerPoolPanel from '@/components/BuyerPoolPanel'
 import OfferSubmissionForm from '@/components/OfferSubmissionForm'
-import { SectionCard } from '@/components/ui/section-card'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
 import { Button } from '@/components/ui/button'
 
@@ -53,12 +52,11 @@ export const BUYER_DEAL_ROOM_CHAT = MOCK_CHAT_BUYER_DR001
 interface BuyerDealRoomViewProps {
   dealId: string
   onBack: () => void
-  onSendMessage?: (text: string) => void
 }
 
 type OfferIntent = 'undecided' | 'interested' | 'passed'
 
-export default function BuyerDealRoomView({ dealId, onBack, onSendMessage }: BuyerDealRoomViewProps) {
+export default function BuyerDealRoomView({ dealId, onBack }: BuyerDealRoomViewProps) {
   const deal = MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId) ?? MOCK_SELLER_DEAL_ROOMS[0]
   const documents = DOCUMENTS_BY_DEAL[dealId] ?? []
   const buyers = BUYER_POOL_BY_DEAL[dealId] ?? []
@@ -112,122 +110,129 @@ export default function BuyerDealRoomView({ dealId, onBack, onSendMessage }: Buy
         </div>
       )}
 
-      {/* Get Deal Summary action */}
-      {onSendMessage && (
-        <div className="px-6 pt-4">
-          <Button
-            className="w-full bg-mode-buy text-white hover:bg-mode-buy/80"
-            onClick={() => onSendMessage('Give me a summary of this deal')}
-          >
-            Get Deal Summary
-          </Button>
-        </div>
-      )}
-
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
         {/* Section 2 — Document Package (read-only) */}
-        <SectionCard icon={FileText} iconClassName="text-mode-buy" title="Document Package">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FileText size={16} className="text-mode-buy" />
+            <h3 className="text-sm font-semibold text-foreground">Document Package</h3>
+          </div>
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Uploaded Documents
+          </h4>
           <DocumentListGroup>
-            {documents.map((doc) => (
-              <DocumentListItem
-                key={doc.id}
-                variant="uploaded"
-                icon={Check}
-                title={doc.label}
-                description={doc.fileName}
-                primaryAction={{ label: 'View', icon: Eye }}
-              />
-            ))}
+            {documents.map((doc) => {
+              const dateStr = doc.uploadedAt
+                ? new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : ''
+
+              return (
+                <DocumentListItem
+                  key={doc.id}
+                  variant="uploaded"
+                  icon={Check}
+                  title={doc.label}
+                  description={`${doc.fileName} · Uploaded ${dateStr}`}
+                  primaryAction={{ label: 'View', icon: Eye }}
+                />
+              )
+            })}
           </DocumentListGroup>
-        </SectionCard>
+          <p className="text-xs italic text-muted-foreground">
+            Documents are read-only. Contact the Disposition Specialist with questions.
+          </p>
+        </div>
 
         {/* Section 3 — Buyer Pool Panel */}
         <BuyerPoolPanel buyers={buyers} />
 
         {/* Section 4 — Offer Round (visible only at Stage 8) */}
         {deal.currentStage >= 8 && (
-          <SectionCard icon={Send} iconClassName="text-mode-buy" title="Offer Round">
-            <div className="space-y-4">
-              {/* Round status — always visible */}
-              <div className="flex items-baseline justify-between">
-                <p className="text-sm text-foreground">Round 1 of 3</p>
-                <p className="text-xs text-muted-foreground">Closes in 36 hours</p>
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Send size={16} className="text-mode-buy" />
+              <h3 className="text-sm font-semibold text-foreground">Offer Round</h3>
+            </div>
 
-              {/* Intent gate — only when undecided */}
-              {offerIntent === 'undecided' && (
-                <OfferIntentGate
-                  dealName={deal.name}
-                  onInterestedInOffering={() => {
-                    recordOfferIntent(dealId, 'mock-buyer-id')
-                    setOfferIntent('interested')
-                  }}
-                  onPass={() => setWatchPassOpen(true)}
-                />
-              )}
+            {/* Round status — always visible */}
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm text-foreground">Round 1 of 3</p>
+              <p className="text-xs text-muted-foreground">Closes in 36 hours</p>
+            </div>
 
-              {/* Offer form entry — only after indicating interest */}
-              {offerIntent === 'interested' && (
-                <>
-                  {currentOffer ? (
-                    <>
-                      <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Offer</p>
+            {/* Intent gate — only when undecided */}
+            {offerIntent === 'undecided' && (
+              <OfferIntentGate
+                dealName={deal.name}
+                onInterestedInOffering={() => {
+                  recordOfferIntent(dealId, 'mock-buyer-id')
+                  setOfferIntent('interested')
+                }}
+                onPass={() => setWatchPassOpen(true)}
+              />
+            )}
 
-                        <p className="text-2xl font-bold text-foreground">{formatCurrency(currentOffer.amount)}</p>
+            {/* Offer form entry — only after indicating interest */}
+            {offerIntent === 'interested' && (
+              <>
+                {currentOffer ? (
+                  <>
+                    <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Offer</p>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Earnest Money</p>
-                            <p className="text-sm font-semibold text-foreground">{formatCurrency(currentOffer.earnestMoneyAmount)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Close In</p>
-                            <p className="text-sm font-semibold text-foreground">{currentOffer.closingTimelineDays} days</p>
-                            <p className="text-xs text-muted-foreground">{currentOffer.closingTimelineDays === 30 ? 'Standard' : 'Custom'}</p>
-                          </div>
+                      <p className="text-2xl font-bold text-foreground">{formatCurrency(currentOffer.amount)}</p>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Earnest Money</p>
+                          <p className="text-sm font-semibold text-foreground">{formatCurrency(currentOffer.earnestMoneyAmount)}</p>
                         </div>
-
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Financing</span>
-                          <span className="font-medium text-foreground">{currentOffer.financingType === 'cash' ? 'Cash' : 'Financed'}</span>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Close In</p>
+                          <p className="text-sm font-semibold text-foreground">{currentOffer.closingTimelineDays} days</p>
+                          <p className="text-xs text-muted-foreground">{currentOffer.closingTimelineDays === 30 ? 'Standard' : 'Custom'}</p>
                         </div>
-
-                        {currentOffer.terms ? (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Notes</span>
-                            <span className="font-medium text-foreground truncate max-w-[60%] text-right">{currentOffer.terms}</span>
-                          </div>
-                        ) : null}
                       </div>
 
-                      <Button
-                        className="w-full bg-mode-buy text-white hover:bg-mode-buy/80"
-                        onClick={() => setOfferFormOpen(true)}
-                      >
-                        Update Offer
-                      </Button>
-                    </>
-                  ) : (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Financing</span>
+                        <span className="font-medium text-foreground">{currentOffer.financingType === 'cash' ? 'Cash' : 'Financed'}</span>
+                      </div>
+
+                      {currentOffer.terms ? (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Notes</span>
+                          <span className="font-medium text-foreground truncate max-w-[60%] text-right">{currentOffer.terms}</span>
+                        </div>
+                      ) : null}
+                    </div>
+
                     <Button
                       className="w-full bg-mode-buy text-white hover:bg-mode-buy/80"
                       onClick={() => setOfferFormOpen(true)}
                     >
-                      Submit Offer
+                      Update Offer
                     </Button>
-                  )}
-                </>
-              )}
+                  </>
+                ) : (
+                  <Button
+                    className="w-full bg-mode-buy text-white hover:bg-mode-buy/80"
+                    onClick={() => setOfferFormOpen(true)}
+                  >
+                    Submit Offer
+                  </Button>
+                )}
+              </>
+            )}
 
-              {/* Passed state */}
-              {offerIntent === 'passed' && (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  You have passed on this deal. Your seat has been released.
-                </p>
-              )}
-            </div>
-          </SectionCard>
+            {/* Passed state */}
+            {offerIntent === 'passed' && (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                You have passed on this deal. Your seat has been released.
+              </p>
+            )}
+          </div>
         )}
 
         {/* Offer form sheet */}

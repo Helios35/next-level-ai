@@ -311,10 +311,12 @@ Apply the same layout: `flex flex-col items-center justify-center py-20 text-cen
 - Documents are viewable — no upload controls. Buyer is read-only on documents.
 
 **Buyer Pool Panel:**
-- Shows other seated buyers as anonymized credentials only: "Investor #1042", "Investor #2087".
-- Buyer's own entry labeled "You — Seat X of 3".
+- Shows **seated buyers only** — pending, passed, and recent activity sections are not rendered in buyer view (seller-only, per Business Rule E.12).
+- Other seated buyers shown as anonymized credentials: "Investor #1042", "Investor #2087".
+- Buyer's own entry labeled "You — Investor #XXXX" with highlighted border.
+- Each buyer row uses `SeatedBuyerItem` with rank badge, qualification badge, match score ring (buy-colored), and equity range.
 - Never shows names, companies, or offer details. Per Guardrail G-1, G-3 in `AGENT_BUYER_DEAL_ROOM_v1_0.md`.
-- Design: `section-card` from `components/ui/section-card.tsx` as container. Each buyer row uses `item` component.
+- Design: flat section heading (icon + title), no card wrapper. Matches seller deal room tab content layout.
 
 **"Get Deal Summary" Button:**
 - Prominent `bg-mode-buy text-white` button placed above the Document Section, below the inactivity nudge.

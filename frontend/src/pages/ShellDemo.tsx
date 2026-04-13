@@ -25,6 +25,8 @@ import { postLoginRoute } from '@/utils/postLoginRoute'
 import type { User } from '@shared/types/user'
 import type { UserRole } from '@shared/types/enums'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
+import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
+import type { AiTip } from '@/components/ui/ai-tip-card'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -435,10 +437,16 @@ export default function ShellDemo() {
       }
     }
     if (page.mode === 'buy' && page.view === 'dealRoom') {
+      const dealRoomTips: AiTip[] = [
+        { id: 'summary', icon: Sparkles, label: 'Get Deal Summary', description: 'AI overview of key deal metrics and terms', prompt: 'Give me a summary of this deal', featured: true },
+        { id: 'docs', icon: FileSearch, label: 'Ask About the Documents', description: 'Questions about uploaded deal docs', prompt: 'Ask about the documents' },
+        { id: 'offer', icon: HelpCircle, label: 'How Does the Offer Process Work?', description: 'Rounds, timing, and submission rules', prompt: 'How does the offer process work?' },
+        { id: 'competition', icon: Users, label: 'What Is My Competition?', description: 'Anonymized buyer pool insights', prompt: 'What is my competition?' },
+      ]
       return {
         messages: buyerDealRoomMessages,
         contextLabel: getDealName(page.dealId),
-        skills: ['Get deal summary', 'Ask about the documents', 'How does the offer process work?', 'What is my competition?'],
+        tips: dealRoomTips,
       }
     }
     if (page.mode === 'buy') {
@@ -624,7 +632,6 @@ export default function ShellDemo() {
         <BuyerDealRoomView
           dealId={page.dealId}
           onBack={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
-          onSendMessage={handleBuyerDealRoomMessage}
         />
       )}
       {page.mode === 'strategy' && page.view === 'yourStrategies' && (

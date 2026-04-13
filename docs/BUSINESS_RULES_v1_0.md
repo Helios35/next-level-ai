@@ -424,6 +424,8 @@ When the DS steps in, the handoff is transparent — the seller is informed.
 
 **E.11** *(Added April 2026)* If a buyer selects "Indicate Interest to Offer," the offer form is revealed. The `recordOfferIntent` stub is called. The intent gate collapses and does not re-render for this session.
 
+**E.12** *(Added April 2026)* Buyers can only see **seated** buyers in the Buyer Pool panel. Pending buyers, passed buyers, and the recent activity timeline are seller-only views. This prevents buyers from inferring deal momentum or competitive dynamics beyond their immediate cohort.
+
 ---
 
 ## Open Questions

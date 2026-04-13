@@ -16,10 +16,11 @@ interface SeatedBuyerItemProps {
   score: number
   equity: string
   activity: string
+  colorMode?: 'sell' | 'buy'
   className?: string
 }
 
-function SeatedBuyerItem({ label, rank, qualified, score, equity, activity, className }: SeatedBuyerItemProps) {
+function SeatedBuyerItem({ label, rank, qualified, score, equity, activity, colorMode = 'sell', className }: SeatedBuyerItemProps) {
   return (
     <Item variant="outline" className={className ?? 'flex-nowrap px-4 py-3'}>
       <ItemMedia variant="icon">
@@ -36,7 +37,7 @@ function SeatedBuyerItem({ label, rank, qualified, score, equity, activity, clas
               Qualified
             </Badge>
           )}
-          <Badge size="sm" className="border-transparent bg-mode-sell/15 text-mode-sell">
+          <Badge size="sm" className={colorMode === 'buy' ? 'border-transparent bg-mode-buy/15 text-mode-buy' : 'border-transparent bg-mode-sell/15 text-mode-sell'}>
             Seated
           </Badge>
         </ItemTitle>
@@ -48,7 +49,7 @@ function SeatedBuyerItem({ label, rank, qualified, score, equity, activity, clas
           <p className="text-xs text-muted-foreground">Equity</p>
           <p className="text-xs font-medium text-foreground">{equity}</p>
         </div>
-        <MatchScoreRing score={score} size={36} strokeWidth={2.5} />
+        <MatchScoreRing score={score} size={36} strokeWidth={2.5} colorMode={colorMode} />
       </ItemActions>
     </Item>
   )
