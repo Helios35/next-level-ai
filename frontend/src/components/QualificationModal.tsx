@@ -27,9 +27,9 @@ export default function QualificationModal({
 
   const isAccessRequest = trigger === 'access_request'
 
-  const title = isAccessRequest ? 'Strengthen Your Position' : 'Complete Your Buyer Profile'
+  const title = isAccessRequest ? 'Strengthen Your Position' : 'Complete Your Buyer Qualification'
   const body = isAccessRequest
-    ? 'You can request access without a completed profile, but qualified buyers are prioritized by our Disposition Specialists for seat allocation.'
+    ? 'You can request access without a completed qualification, but qualified buyers are prioritized by our Disposition Specialists for seat allocation.'
     : 'Qualified buyers rank higher for seat allocation. It takes less than 2 minutes.'
   const skipLabel = isAccessRequest ? 'Request Access Anyway' : 'Maybe Later'
   const skipVariant: 'outline' | 'ghost' = isAccessRequest ? 'outline' : 'ghost'
@@ -52,7 +52,7 @@ export default function QualificationModal({
             className="bg-mode-buy hover:bg-mode-buy/90 text-white"
             onClick={onCompleteProfile}
           >
-            Complete My Profile
+            Complete My Qualification
           </Button>
         </DialogFooter>
       </DialogContent>

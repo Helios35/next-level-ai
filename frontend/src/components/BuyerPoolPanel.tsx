@@ -1,7 +1,9 @@
 import { Users } from 'lucide-react'
 import type { BuyerPoolEntry } from '@shared/types/buyerPool'
-import { SectionCard } from '@/components/ui/section-card'
-import { Item, ItemContent, ItemTitle, ItemDescription } from '@/components/ui/item'
+import { cn } from '@/utils/cn'
+import { Badge } from '@/components/ui/badge'
+import { InfoCallout } from '@/components/ui/info-callout'
+import SeatedBuyerItem from '@/components/SeatedBuyerItem'
 
 interface BuyerPoolPanelProps {
   buyers: BuyerPoolEntry[]
@@ -9,34 +11,47 @@ interface BuyerPoolPanelProps {
 }
 
 export default function BuyerPoolPanel({ buyers, className }: BuyerPoolPanelProps) {
-  const seatedBuyers = buyers
-    .filter((b) => b.seatStatus === 'seated')
-    .sort((a, b) => (a.aiRankPosition ?? 99) - (b.aiRankPosition ?? 99))
-
-  const seatedCount = seatedBuyers.length
+  const seated = buyers.filter((b) => b.seatStatus === 'seated')
 
   return (
-    <SectionCard icon={Users} iconClassName="text-mode-buy" title="Buyers in Room" className={className}>
-      <div className="space-y-1">
-        {seatedBuyers.map((buyer, index) => {
-          const label = buyer.isCurrentUser
-            ? `You \u2014 Seat ${index + 1} of ${seatedCount}`
-            : `Investor #${buyer.buyerId.slice(-4)}`
-
-          return (
-            <Item key={buyer.id} size="sm">
-              <ItemContent>
-                <ItemTitle className={buyer.isCurrentUser ? 'text-mode-buy font-semibold' : undefined}>
-                  {label}
-                </ItemTitle>
-                <ItemDescription>
-                  Seat {index + 1} of {seatedCount}
-                </ItemDescription>
-              </ItemContent>
-            </Item>
-          )
-        })}
+    <div className={cn('space-y-4', className)}>
+      {/* Section heading */}
+      <div className="flex items-center gap-2">
+        <Users size={16} className="text-mode-buy" />
+        <h3 className="text-sm font-semibold text-foreground">Buyer Pool</h3>
       </div>
-    </SectionCard>
+
+      {/* Seats badge */}
+      <Badge size="sm" className="border-transparent bg-mode-buy/15 text-mode-buy">
+        {seated.length} of 3 Seats Filled
+      </Badge>
+
+      {/* Seated buyers */}
+      {seated.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {seated.map((buyer) => (
+            <SeatedBuyerItem
+              key={buyer.id}
+              label={buyer.isCurrentUser ? `You — ${buyer.anonymizedLabel}` : buyer.anonymizedLabel}
+              rank={buyer.aiRankPosition ?? 0}
+              qualified={buyer.qualificationStatus === 'qualified'}
+              score={buyer.matchScore}
+              equity={buyer.equityCheckSize}
+              activity={`Match score ${buyer.matchScore} · ${buyer.equityCheckSize} equity`}
+              colorMode="buy"
+              className={cn(
+                'flex-nowrap px-4 py-3',
+                buyer.isCurrentUser && 'border-mode-buy/40',
+              )}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Info callout */}
+      <InfoCallout>
+        Seat allocation is managed by the Disposition Specialist. Buyers are seated based on match quality, qualification status, and DS judgment. Maximum 3 concurrent seats.
+      </InfoCallout>
+    </div>
   )
 }

@@ -6,6 +6,8 @@ import StageProgressBar from './StageProgressBar'
 interface DealMetricsBarProps {
   currentStage: DealRoomStage
   buyerPoolCount: number
+  seatedBuyerCount?: number
+  maxSeats?: number
   size?: 'sm' | 'default'
   mode?: 'sell' | 'buy'
   className?: string
@@ -14,6 +16,8 @@ interface DealMetricsBarProps {
 export default function DealMetricsBar({
   currentStage,
   buyerPoolCount,
+  seatedBuyerCount,
+  maxSeats = 3,
   size = 'default',
   mode = 'sell',
   className,
@@ -32,17 +36,31 @@ export default function DealMetricsBar({
         <StageProgressBar currentStage={currentStage} buyerView={isBuy} />
       </div>
       <div className="h-8 w-px bg-border shrink-0" />
-      <div
-        className={cn(
-          'flex items-center gap-1.5 shrink-0 rounded-md',
-          isBuy ? 'bg-mode-buy/15 text-mode-buy' : 'bg-mode-sell/15 text-mode-sell',
-          isSmall ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
-        )}
-      >
-        <Users size={isSmall ? 13 : 15} />
-        <span className="font-bold tabular-nums">{buyerPoolCount}</span>
-        <span className="font-medium">Buyer Pool</span>
-      </div>
+      {isBuy && seatedBuyerCount !== undefined ? (
+        <div
+          className={cn(
+            'flex items-center gap-1.5 shrink-0 rounded-md',
+            'bg-mode-buy/15 text-mode-buy',
+            isSmall ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
+          )}
+        >
+          <Users size={isSmall ? 13 : 15} />
+          <span className="font-bold tabular-nums">{seatedBuyerCount}</span>
+          <span className="font-medium">Buyers in Deal</span>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            'flex items-center gap-1.5 shrink-0 rounded-md',
+            isBuy ? 'bg-mode-buy/15 text-mode-buy' : 'bg-mode-sell/15 text-mode-sell',
+            isSmall ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
+          )}
+        >
+          <Users size={isSmall ? 13 : 15} />
+          <span className="font-bold tabular-nums">{buyerPoolCount}</span>
+          <span className="font-medium">Buyer Pool</span>
+        </div>
+      )}
     </div>
   )
 }

@@ -20,12 +20,13 @@ import Onboarding from '@/pages/Onboarding'
 import Profile from '@/pages/Profile'
 import Settings from '@/pages/Settings'
 import { MOCK_CURRENT_USER } from '@/data/mock/users'
-import SuccessFeeModal from '@/components/SuccessFeeModal'
 import CreditsModal from '@/components/CreditsModal'
 import { postLoginRoute } from '@/utils/postLoginRoute'
 import type { User } from '@shared/types/user'
 import type { UserRole } from '@shared/types/enums'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
+import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
+import type { AiTip } from '@/components/ui/ai-tip-card'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -118,9 +119,6 @@ export default function ShellDemo() {
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null)
 
-  // Success fee gate state
-  const [successFeeAcknowledged, setSuccessFeeAcknowledged] = useState<Set<string>>(new Set())
-
   // Credits modal state
   const [creditsModalOpen, setCreditsModalOpen] = useState(false)
 
@@ -134,6 +132,35 @@ export default function ShellDemo() {
     formState: StrategyFormState
     step: number
   } | null>(null)
+
+  // Buyer deal room chat state
+  const [buyerDealRoomMessages, setBuyerDealRoomMessages] = useState<
+    { role: 'ai' | 'user'; text: string; time: string }[]
+  >([])
+
+  // Initialize buyer deal room messages from mock data when entering a buyer deal room
+  useEffect(() => {
+    if (page.mode === 'buy' && page.view === 'dealRoom') {
+      setBuyerDealRoomMessages(
+        BUYER_DEAL_ROOM_CHAT.map((m) => ({
+          role: m.senderRole === 'buyer' ? 'user' as const : 'ai' as const,
+          text: m.content,
+          time: new Date(m.timestamp).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+          }),
+        })),
+      )
+    }
+  }, [pageKey(page)])
+
+  const handleBuyerDealRoomMessage = useCallback((text: string) => {
+    const now = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    setBuyerDealRoomMessages((prev) => [
+      ...prev,
+      { role: 'user', text, time: now },
+      { role: 'ai', text: "Great question \u2014 I've flagged this for our team and you'll hear back shortly.", time: now },
+    ])
+  }, [])
 
   const getDealName = (dealId: string) =>
     MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId)?.name ?? 'Deal Room'
@@ -410,16 +437,16 @@ export default function ShellDemo() {
       }
     }
     if (page.mode === 'buy' && page.view === 'dealRoom') {
+      const dealRoomTips: AiTip[] = [
+        { id: 'summary', icon: Sparkles, label: 'Get Deal Summary', description: 'AI overview of key deal metrics and terms', prompt: 'Give me a summary of this deal', featured: true },
+        { id: 'docs', icon: FileSearch, label: 'Ask About the Documents', description: 'Questions about uploaded deal docs', prompt: 'Ask about the documents' },
+        { id: 'offer', icon: HelpCircle, label: 'How Does the Offer Process Work?', description: 'Rounds, timing, and submission rules', prompt: 'How does the offer process work?' },
+        { id: 'competition', icon: Users, label: 'What Is My Competition?', description: 'Anonymized buyer pool insights', prompt: 'What is my competition?' },
+      ]
       return {
-        messages: BUYER_DEAL_ROOM_CHAT.map((m) => ({
-          role: m.senderRole === 'buyer' ? 'user' as const : 'ai' as const,
-          text: m.content,
-          time: new Date(m.timestamp).toLocaleString('en-US', {
-            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
-          }),
-        })),
+        messages: buyerDealRoomMessages,
         contextLabel: getDealName(page.dealId),
-        skills: ['Ask about docs', 'How does this work?', 'Offer process'],
+        tips: dealRoomTips,
       }
     }
     if (page.mode === 'buy') {
@@ -450,10 +477,11 @@ export default function ShellDemo() {
       }
     }
     return undefined
-  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload, strategyWizardMessages])
+  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload, strategyWizardMessages, buyerDealRoomMessages])
 
   const isCreateListing = page.mode === 'sell' && page.view === 'createListing'
   const isCreateStrategy = page.mode === 'strategy' && page.view === 'createStrategy'
+  const isBuyerDealRoom = page.mode === 'buy' && page.view === 'dealRoom'
 
   // Map current page to sidebar nav index (sell mode: 0=Listings, 1=Create, 2=Drafts)
   const activeNavIndex = useMemo(() => {
@@ -486,7 +514,7 @@ export default function ShellDemo() {
     return (
       <LandingPage
         onSellerCTA={() => navigateTo({ mode: 'auth', view: 'signup', role: 'seller' })}
-        onBuyerCTA={() => navigateTo({ mode: 'auth', view: 'signup', role: 'buyer' })}
+        onBuyerCTA={() => navigateTo({ mode: 'auth', view: 'signup' })}
         onLogin={() => navigateTo({ mode: 'auth', view: 'login' })}
       />
     )
@@ -560,7 +588,7 @@ export default function ShellDemo() {
       canGoBack={historyIndex > 0}
       canGoForward={historyIndex < history.length - 1}
       chatContext={chatContext}
-      onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : undefined}
+      onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : isBuyerDealRoom ? handleBuyerDealRoomMessage : undefined}
       onCreditsClick={() => setCreditsModalOpen(true)}
       onAvatarClick={() => navigateTo({ mode: 'global', view: 'profile' })}
       onSettingsClick={() => navigateTo({ mode: 'global', view: 'settings' })}
@@ -601,18 +629,10 @@ export default function ShellDemo() {
         <AccessRequested onOpenDealRoom={(id) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId: id })} />
       )}
       {page.mode === 'buy' && page.view === 'dealRoom' && (
-        <>
-          <SuccessFeeModal
-            open={!successFeeAcknowledged.has(page.dealId)}
-            dealName={getDealName(page.dealId)}
-            onAccept={() => setSuccessFeeAcknowledged((prev) => new Set([...prev, page.dealId]))}
-            onDecline={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
-          />
-          <BuyerDealRoomView
-            dealId={page.dealId}
-            onBack={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
-          />
-        </>
+        <BuyerDealRoomView
+          dealId={page.dealId}
+          onBack={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
+        />
       )}
       {page.mode === 'strategy' && page.view === 'yourStrategies' && (
         <YourStrategies

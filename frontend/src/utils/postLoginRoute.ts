@@ -10,11 +10,7 @@ export function postLoginRoute(user: User): PostAuthPage {
   if (user.role === 'seller') {
     return { mode: 'sell', view: 'createListing' }
   }
-  if (user.role === 'buyer' || user.role === 'broker') {
-    return { mode: 'buy', view: 'activation' }
-  }
-  if (user.role === 'both') {
-    // Both: buyer activation first — strategy delivers immediate value per Rule 1.5
+  if (user.role === 'principal' || user.role === 'broker') {
     return { mode: 'buy', view: 'activation' }
   }
   // Fallback

@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { BuyerCtaState } from '@shared/types/buyerStrategy'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
+import { MOCK_BUYER_POOL_DR001, MOCK_BUYER_POOL_DR002, MOCK_BUYER_POOL_DR005 } from '@/data/mock/buyerPool'
 import DealCard from '@/components/DealCard'
 import DealPreviewModal from '@/components/DealPreviewModal'
 import BuyerEmptyState from '@/components/BuyerEmptyState'
@@ -63,6 +64,15 @@ const FILTER_LABEL_MAP: Record<string, string> = {
 }
 
 // ── Local buyer mock mapping ────────────────────────────────────────────────
+
+// Derive seated buyer counts from mock buyer pool data
+const ALL_BUYER_POOL = [...MOCK_BUYER_POOL_DR001, ...MOCK_BUYER_POOL_DR002, ...MOCK_BUYER_POOL_DR005]
+const SEATED_COUNT_MAP: Record<string, number> = ALL_BUYER_POOL.reduce((acc, entry) => {
+  if (entry.seatStatus === 'seated') {
+    acc[entry.dealRoomId] = (acc[entry.dealRoomId] ?? 0) + 1
+  }
+  return acc
+}, {} as Record<string, number>)
 
 const BUYER_DEAL_MAP: Record<string, { buyerCtaState: BuyerCtaState; matchScore: number }> = {
   dr_001: { buyerCtaState: 'enter_deal_room', matchScore: 94 },
@@ -270,6 +280,8 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
                 mode="buy"
                 buyerCtaState={effectiveCtaState}
                 matchScore={buyerInfo?.matchScore}
+                seatedBuyerCount={SEATED_COUNT_MAP[deal.id] ?? 0}
+                maxSeats={3}
                 onViewDetails={(e) => {
                   triggerRef.current = e.currentTarget as HTMLButtonElement
                   setPreviewDeal(deal)

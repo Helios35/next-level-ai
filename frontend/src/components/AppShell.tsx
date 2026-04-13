@@ -35,6 +35,7 @@ import {
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
+import { AiTipList, type AiTip } from '@/components/ui/ai-tip-card'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,6 +153,7 @@ export interface ChatContext {
   messages: { role: 'ai' | 'user'; text: string; time: string; attachment?: { docName: string; fileName: string } }[]
   contextLabel: string
   skills?: string[]
+  tips?: AiTip[]
   onAttach?: (docName: string, fileName: string) => void
   pendingDocs?: { name: string; status: string; fileName?: string }[]
 }
@@ -608,19 +610,35 @@ export default function AppShell({
                     )}
                   </div>
 
-                  {/* Skills bar */}
-                  {(chatContext?.skills ?? SKILLS).length > 0 && (
+                  {/* AI tips (rich cards) or skills chips (plain text) */}
+                  {chatContext?.tips && chatContext.tips.length > 0 ? (
+                    <AiTipList
+                      tips={chatContext.tips}
+                      accentClass={config.accent}
+                      onTipClick={onSendMessage}
+                      disabled={!onSendMessage}
+                    />
+                  ) : (chatContext?.skills ?? SKILLS).length > 0 ? (
                     <div className="flex gap-2 overflow-x-auto px-3 pb-2 scrollbar-none">
                       {(chatContext?.skills ?? SKILLS).map((skill) => (
                         <button
                           key={skill}
-                          className={cn('shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors', config.chatSkill)}
+                          onClick={() => {
+                            if (onSendMessage) {
+                              onSendMessage(skill)
+                            }
+                          }}
+                          className={cn(
+                            'shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors',
+                            onSendMessage ? 'cursor-pointer' : 'cursor-default opacity-50',
+                            config.chatSkill,
+                          )}
                         >
                           {skill}
                         </button>
                       ))}
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Chat input — elevated card */}
                   <div className="p-3">

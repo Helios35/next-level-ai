@@ -176,7 +176,7 @@ export default function OfferSubmissionForm({
                     className="pl-6"
                   />
                 </div>
-                <FieldDescription>3% of offer · editable</FieldDescription>
+                <FieldDescription>Suggested default · adjust as needed</FieldDescription>
               </Field>
 
               {/* 5. Additional Notes */}

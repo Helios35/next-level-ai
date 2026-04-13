@@ -5,7 +5,7 @@ export const MOCK_CURRENT_USER: User = {
   name: 'Marcus Webb',
   email: 'marcus.webb@trianglecap.com',
   company: 'Triangle Capital Group',
-  role: 'both',
+  role: 'principal',
   brokerFlag: false,
   phone: '(704) 555-0192',
   location: 'Charlotte, NC',

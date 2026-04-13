@@ -32,6 +32,8 @@ interface DealCardProps {
   mode?: 'sell' | 'buy'
   buyerCtaState?: BuyerCtaState
   matchScore?: number
+  seatedBuyerCount?: number
+  maxSeats?: number
 }
 
 export default function DealCard({
@@ -43,6 +45,8 @@ export default function DealCard({
   mode = 'sell',
   buyerCtaState,
   matchScore,
+  seatedBuyerCount,
+  maxSeats = 3,
 }: DealCardProps) {
   const isBuy = mode === 'buy'
   const [optimisticLabel, setOptimisticLabel] = useState<string | null>(null)
@@ -147,6 +151,8 @@ export default function DealCard({
       <DealMetricsBar
         currentStage={deal.currentStage}
         buyerPoolCount={deal.matchedBuyerCount}
+        seatedBuyerCount={isBuy ? seatedBuyerCount : undefined}
+        maxSeats={maxSeats}
         size="sm"
         mode={isBuy ? 'buy' : 'sell'}
         className="mt-5"

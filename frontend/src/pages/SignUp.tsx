@@ -18,9 +18,7 @@ const roleParam = searchParams.get('role')
 // ── Role options ───────────────────────────────────────────────────────────
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'buyer', label: 'Buyer' },
-  { value: 'seller', label: 'Seller' },
-  { value: 'both', label: 'Both' },
+  { value: 'principal', label: 'Principal' },
   { value: 'broker', label: 'Broker' },
 ]
 
@@ -34,7 +32,7 @@ interface SignUpProps {
 
 export default function SignUp({ initialRole: propRole, onComplete, onLogin }: SignUpProps) {
   const isSourced = srcToken !== null
-  const initialRole: UserRole = propRole ?? (isSourced ? 'seller' : (roleParam as UserRole) ?? 'buyer')
+  const initialRole: UserRole = propRole ?? (isSourced ? 'seller' : (roleParam as UserRole) ?? 'principal')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -135,28 +133,30 @@ export default function SignUp({ initialRole: propRole, onComplete, onLogin }: S
             />
           </Field>
 
-          <Field>
-            <FieldLabel>I am a...</FieldLabel>
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              value={role}
-              onValueChange={(val) => { if (val && !isSourced) setRole(val as UserRole) }}
-              disabled={isSourced}
-              className="w-full"
-            >
-              {ROLE_OPTIONS.map((opt) => (
-                <ToggleGroupItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="flex-1"
-                  disabled={isSourced}
-                >
-                  {opt.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </Field>
+          {!propRole && (
+            <Field>
+              <FieldLabel>I am a...</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={role}
+                onValueChange={(val) => { if (val && !isSourced) setRole(val as UserRole) }}
+                disabled={isSourced}
+                className="w-full"
+              >
+                {ROLE_OPTIONS.map((opt) => (
+                  <ToggleGroupItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="flex-1"
+                    disabled={isSourced}
+                  >
+                    {opt.label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Field>
+          )}
         </FieldGroup>
 
         <Button type="submit" className="w-full">

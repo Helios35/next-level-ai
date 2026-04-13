@@ -1,4 +1,4 @@
-export type UserRole = 'buyer' | 'seller' | 'both' | 'broker'
+export type UserRole = 'principal' | 'seller' | 'broker'
 
 export type InternalRole = 'admin' | 'analyst' | 'ds'
 
