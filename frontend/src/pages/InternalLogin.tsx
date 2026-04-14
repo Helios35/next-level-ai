@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -13,6 +13,11 @@ export default function InternalLogin({ onSuccess }: InternalLoginProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+
+  // Internal portal is always dark mode
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,6 +91,27 @@ export default function InternalLogin({ onSuccess }: InternalLoginProps) {
           <Button type="submit" className="w-full bg-slate-600 hover:bg-slate-500 text-white">
             Sign In
           </Button>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">Demo accounts (any password):</p>
+            <div className="space-y-1">
+              {[
+                { email: 'rachel.torres@nextlevel.io', role: 'DS' },
+                { email: 'david.chen@nextlevel.io', role: 'Analyst' },
+                { email: 'sarah.mitchell@nextlevel.io', role: 'Admin' },
+              ].map((acct) => (
+                <button
+                  key={acct.email}
+                  type="button"
+                  onClick={() => setEmail(acct.email)}
+                  className="flex w-full items-center justify-between rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <span className="font-mono">{acct.email}</span>
+                  <span className="text-[10px] uppercase tracking-wide opacity-60">{acct.role}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </form>
       </div>
     </div>

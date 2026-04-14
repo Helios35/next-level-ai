@@ -31,7 +31,11 @@ import {
   Upload,
   CheckCircle2,
   Paperclip,
+  User,
+  Info,
+  X,
 } from 'lucide-react'
+import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from '@/components/ui/item'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
@@ -149,6 +153,12 @@ const CHAT_COLLAPSED_W = 32
 
 export type { Mode }
 
+export interface SpecialistCard {
+  name: string
+  role: string
+  description: string
+}
+
 export interface ChatContext {
   messages: { role: 'ai' | 'user'; text: string; time: string; attachment?: { docName: string; fileName: string } }[]
   contextLabel: string
@@ -156,6 +166,13 @@ export interface ChatContext {
   tips?: AiTip[]
   onAttach?: (docName: string, fileName: string) => void
   pendingDocs?: { name: string; status: string; fileName?: string }[]
+  /** Specialist channel support */
+  specialistCard?: SpecialistCard
+  specialistMessages?: { sender: string; text: string; time: string }[]
+  activeChannel?: 'ai' | 'specialist'
+  onChannelChange?: (channel: 'ai' | 'specialist') => void
+  unreadSpecialist?: boolean
+  unreadAi?: boolean
 }
 
 interface AppShellProps {
@@ -219,6 +236,7 @@ export default function AppShell({
   const chatFileInputRef = useRef<HTMLInputElement>(null)
   const pendingDocLabelRef = useRef('')
   const [attachPopoverOpen, setAttachPopoverOpen] = useState(false)
+  const [roleDescOpen, setRoleDescOpen] = useState(false)
 
   // Apply dark class to html
   useEffect(() => {
@@ -537,9 +555,110 @@ export default function AppShell({
                 </div>
               </div>
 
+              {/* Specialist Identity Card + Channel Toggle */}
+              {chatContext?.specialistCard && (
+                <div className="border-b border-border bg-background px-3 py-2.5">
+                  {/* Identity Card */}
+                  <Item variant="outline" size="sm">
+                    <ItemMedia variant="icon">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-600 text-white">
+                        <User size={14} />
+                      </div>
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle className="text-xs">{chatContext.specialistCard.name}</ItemTitle>
+                      <ItemDescription className="!text-[11px]">{chatContext.specialistCard.role}</ItemDescription>
+                    </ItemContent>
+                    <ItemActions>
+                      <button
+                        onClick={() => setRoleDescOpen(true)}
+                        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </ItemActions>
+                  </Item>
+
+                  {/* Channel Toggle */}
+                  <div className="mt-2 flex rounded-lg border border-border bg-muted/30 p-0.5">
+                    <button
+                      onClick={() => chatContext.onChannelChange?.('ai')}
+                      className={cn(
+                        'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors relative',
+                        chatContext.activeChannel === 'ai'
+                          ? cn('bg-background text-foreground shadow-sm')
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      AI Channel
+                      {chatContext.unreadAi && chatContext.activeChannel !== 'ai' && (
+                        <span className="absolute top-1 right-1.5 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => chatContext.onChannelChange?.('specialist')}
+                      className={cn(
+                        'flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors relative',
+                        chatContext.activeChannel === 'specialist'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      Specialist
+                      {chatContext.unreadSpecialist && chatContext.activeChannel !== 'specialist' && (
+                        <span className="absolute top-1 right-1.5 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Role Description Modal */}
+                  {roleDescOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setRoleDescOpen(false)}>
+                      <div className="w-80 rounded-xl border border-border bg-background p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-foreground">Disposition Specialist</h3>
+                          <button onClick={() => setRoleDescOpen(false)} className="rounded-md p-1 text-muted-foreground hover:text-foreground transition-colors">
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {chatContext.specialistCard.description}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Chat body — centered in fullscreen */}
               <div className="flex flex-1 flex-col overflow-hidden min-h-0">
                 <div className={cn('flex flex-1 flex-col overflow-hidden min-h-0', chatFullscreen && 'mx-auto w-full max-w-3xl')}>
+
+                  {/* Specialist channel — read-only slate bubbles */}
+                  {chatContext?.activeChannel === 'specialist' && chatContext.specialistMessages ? (
+                    <>
+                      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+                        {chatContext.specialistMessages.map((msg, i) => (
+                          <div key={i} className="flex flex-col items-start">
+                            <div className="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed bg-slate-600 text-white rounded-bl-sm">
+                              {msg.text}
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-1.5 px-1">
+                              <span className="text-[10px] font-medium text-muted-foreground">{msg.sender}</span>
+                              <span className="text-[10px] text-muted-foreground/50">{msg.time}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Read-only notice — no compose area */}
+                      <div className="border-t border-border px-4 py-3">
+                        <p className="text-center text-xs text-muted-foreground">
+                          This channel is read-only. Your specialist will reach out when needed.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
                   {/* Chat messages */}
                   <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
                     {(chatContext?.messages ?? CHAT_MESSAGES).map((msg, i) => (
@@ -733,6 +852,8 @@ export default function AppShell({
                       </div>
                     </div>
                   </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

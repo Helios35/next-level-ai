@@ -28,6 +28,7 @@ import type { UserRole } from '@shared/types/enums'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
 import type { AiTip } from '@/components/ui/ai-tip-card'
+import { MOCK_SPECIALIST_SELLER_DR001, MOCK_SPECIALIST_BUYER_DR001 } from '@/data/mock/chat'
 import InternalLogin from '@/pages/InternalLogin'
 import InternalShell from '@/components/InternalShell'
 import DSShell, { DSHeaderNav } from '@/pages/ds/DSShell'
@@ -41,6 +42,24 @@ import DSSellerProfile from '@/pages/ds/DSSellerProfile'
 import DSBuyerProfile from '@/pages/ds/DSBuyerProfile'
 import type { InternalUser } from '@shared/types/internalUser'
 import type { InternalRole } from '@shared/types/enums'
+
+// Analyst portal imports
+import AnalystShell, { AnalystSidebar, type AnalystView } from '@/pages/analyst/AnalystShell'
+import AnalystPortal from '@/pages/analyst/AnalystPortal'
+import AnalystReviewView from '@/pages/analyst/AnalystReviewView'
+import AnalystCompleted from '@/pages/analyst/AnalystCompleted'
+import AnalystPipeline from '@/pages/analyst/AnalystPipeline'
+
+// Admin portal imports
+import AdminShellComp, { AdminSidebar, type AdminView } from '@/pages/admin/AdminShell'
+import AdminPortalPage from '@/pages/admin/AdminPortal'
+import AdminExceptions from '@/pages/admin/AdminExceptions'
+import AdminDealView from '@/pages/admin/AdminDealView'
+import AdminPipelinePage from '@/pages/admin/AdminPipeline'
+import AdminClients from '@/pages/admin/AdminClients'
+import AdminClientProfile from '@/pages/admin/AdminClientProfile'
+import AdminStaff from '@/pages/admin/AdminStaff'
+import AdminStaffCreate from '@/pages/admin/AdminStaffCreate'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -65,10 +84,16 @@ type Page =
   | { mode: 'global'; view: 'profile' }
   | { mode: 'global'; view: 'settings' }
   | { mode: 'internal'; view: 'login' }
-  | { mode: 'internal'; view: 'portal'; role: InternalRole; dsView?: DsView }
+  | { mode: 'internal'; view: 'portal'; role: InternalRole; dsView?: DsView; analystView?: AnalystView; adminView?: AdminView }
   | { mode: 'internal'; view: 'deal'; role: 'ds'; dealId: string; dealTab?: string }
   | { mode: 'internal'; view: 'seller-profile'; role: 'ds'; sellerId: string }
   | { mode: 'internal'; view: 'buyer-profile'; role: 'ds'; buyerId: string }
+  // Analyst portal views
+  | { mode: 'internal'; view: 'analyst-review'; memoId: string }
+  // Admin portal views
+  | { mode: 'internal'; view: 'admin-deal'; dealId: string }
+  | { mode: 'internal'; view: 'admin-client'; clientId: string }
+  | { mode: 'internal'; view: 'admin-staff-create' }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -77,8 +102,14 @@ function pageKey(p: Page) {
   if (p.mode === 'strategy' && p.view === 'createStrategy' && p.strategyId) {
     return `strategy:createStrategy:${p.strategyId}`
   }
-  if (p.mode === 'internal' && p.view === 'portal' && p.dsView) {
+  if (p.mode === 'internal' && p.view === 'portal' && 'dsView' in p && p.dsView) {
     return `internal:portal:${p.role}:${p.dsView}`
+  }
+  if (p.mode === 'internal' && p.view === 'portal' && 'analystView' in p && p.analystView) {
+    return `internal:portal:analyst:${p.analystView}`
+  }
+  if (p.mode === 'internal' && p.view === 'portal' && 'adminView' in p && p.adminView) {
+    return `internal:portal:admin:${p.adminView}`
   }
   if (p.mode === 'internal' && p.view === 'deal') {
     return `internal:deal:${p.dealId}:${p.dealTab ?? 'overview'}`
@@ -88,6 +119,18 @@ function pageKey(p: Page) {
   }
   if (p.mode === 'internal' && p.view === 'buyer-profile') {
     return `internal:buyer:${p.buyerId}`
+  }
+  if (p.mode === 'internal' && p.view === 'analyst-review') {
+    return `internal:analyst-review:${p.memoId}`
+  }
+  if (p.mode === 'internal' && p.view === 'admin-deal') {
+    return `internal:admin-deal:${p.dealId}`
+  }
+  if (p.mode === 'internal' && p.view === 'admin-client') {
+    return `internal:admin-client:${p.clientId}`
+  }
+  if (p.mode === 'internal' && p.view === 'admin-staff-create') {
+    return 'internal:admin-staff-create'
   }
   return `${p.mode}:${p.view}`
 }
@@ -173,6 +216,20 @@ export default function ShellDemo() {
     { role: 'ai' | 'user'; text: string; time: string }[]
   >([])
 
+  // Chat channel state (AI vs Specialist toggle)
+  const [chatChannel, setChatChannel] = useState<'ai' | 'specialist'>('ai')
+  const [unreadSpecialist, setUnreadSpecialist] = useState(true)
+
+  // Reset channel to AI when leaving deal rooms
+  useEffect(() => {
+    const isDealRoom = (page.mode === 'sell' && page.view === 'dealRoom') ||
+      (page.mode === 'buy' && page.view === 'dealRoom')
+    if (!isDealRoom) {
+      setChatChannel('ai')
+      setUnreadSpecialist(true)
+    }
+  }, [pageKey(page)])
+
   // Initialize buyer deal room messages from mock data when entering a buyer deal room
   useEffect(() => {
     if (page.mode === 'buy' && page.view === 'dealRoom') {
@@ -196,6 +253,35 @@ export default function ShellDemo() {
       { role: 'ai', text: "Great question \u2014 I've flagged this for our team and you'll hear back shortly.", time: now },
     ])
   }, [])
+
+  const handleChannelChange = useCallback((channel: 'ai' | 'specialist') => {
+    setChatChannel(channel)
+    if (channel === 'specialist') setUnreadSpecialist(false)
+  }, [])
+
+  const SPECIALIST_CARD = {
+    name: 'Rachel Torres',
+    role: 'Disposition Specialist',
+    description: 'Your Disposition Specialist manages buyer outreach, coordinates Q&A between parties, monitors deal activity, and guides pricing strategy. They are your primary human point of contact throughout the deal lifecycle.',
+  }
+
+  const sellerSpecialistMessages = useMemo(() =>
+    MOCK_SPECIALIST_SELLER_DR001.map((m) => ({
+      sender: m.senderLabel,
+      text: m.content,
+      time: new Date(m.timestamp).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+      }),
+    })), [])
+
+  const buyerSpecialistMessages = useMemo(() =>
+    MOCK_SPECIALIST_BUYER_DR001.map((m) => ({
+      sender: m.senderLabel,
+      text: m.content,
+      time: new Date(m.timestamp).toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+      }),
+    })), [])
 
   const getDealName = (dealId: string) =>
     MOCK_SELLER_DEAL_ROOMS.find((d) => d.id === dealId)?.name ?? 'Deal Room'
@@ -485,20 +571,30 @@ export default function ShellDemo() {
           time: m.time,
         })),
         contextLabel: 'Magnolia Farms BFR',
-        skills: ['Analyze deal', 'Buyer activity', 'Pricing guidance', 'Document status'],
+        skills: chatChannel === 'ai' ? ['Analyze deal', 'Buyer activity', 'Pricing guidance', 'Document status'] : [],
+        specialistCard: SPECIALIST_CARD,
+        specialistMessages: sellerSpecialistMessages,
+        activeChannel: chatChannel,
+        onChannelChange: handleChannelChange,
+        unreadSpecialist,
       }
     }
     if (page.mode === 'buy' && page.view === 'dealRoom') {
-      const dealRoomTips: AiTip[] = [
+      const dealRoomTips: AiTip[] = chatChannel === 'ai' ? [
         { id: 'summary', icon: Sparkles, label: 'Get Deal Summary', description: 'AI overview of key deal metrics and terms', prompt: 'Give me a summary of this deal', featured: true },
         { id: 'docs', icon: FileSearch, label: 'Ask About the Documents', description: 'Questions about uploaded deal docs', prompt: 'Ask about the documents' },
         { id: 'offer', icon: HelpCircle, label: 'How Does the Offer Process Work?', description: 'Rounds, timing, and submission rules', prompt: 'How does the offer process work?' },
         { id: 'competition', icon: Users, label: 'What Is My Competition?', description: 'Anonymized buyer pool insights', prompt: 'What is my competition?' },
-      ]
+      ] : []
       return {
         messages: buyerDealRoomMessages,
         contextLabel: getDealName(page.dealId),
         tips: dealRoomTips,
+        specialistCard: SPECIALIST_CARD,
+        specialistMessages: buyerSpecialistMessages,
+        activeChannel: chatChannel,
+        onChannelChange: handleChannelChange,
+        unreadSpecialist,
       }
     }
     if (page.mode === 'buy') {
@@ -529,7 +625,7 @@ export default function ShellDemo() {
       }
     }
     return undefined
-  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload, strategyWizardMessages, buyerDealRoomMessages])
+  }, [page, wizardMessages, wizardStep, wizardDocuments, handleDocumentUpload, strategyWizardMessages, buyerDealRoomMessages, chatChannel, handleChannelChange, unreadSpecialist, sellerSpecialistMessages, buyerSpecialistMessages])
 
   const isCreateListing = page.mode === 'sell' && page.view === 'createListing'
   const isCreateStrategy = page.mode === 'strategy' && page.view === 'createStrategy'
@@ -577,6 +673,7 @@ export default function ShellDemo() {
       <LoginPage
         onSuccess={() => navigateTo({ mode: 'sell', view: 'listings' })}
         onSignUp={() => navigateTo({ mode: 'auth', view: 'signup' })}
+        onInternalLogin={() => navigateTo({ mode: 'internal', view: 'login' })}
       />
     )
   }
@@ -706,6 +803,113 @@ export default function ShellDemo() {
     )
   }
 
+  // Analyst Review View — renders inside InternalShell with sidebar
+  if (page.mode === 'internal' && page.view === 'analyst-review' && internalUser) {
+    return (
+      <InternalShell
+        role="analyst"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        sidebar={
+          <AnalystSidebar
+            activeView="queue"
+            onNavigate={(view) =>
+              navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: view })
+            }
+          />
+        }
+      >
+        <AnalystReviewView
+          memoId={page.memoId}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'queue' })}
+        />
+      </InternalShell>
+    )
+  }
+
+  // Admin Deal View — renders inside InternalShell with sidebar
+  if (page.mode === 'internal' && page.view === 'admin-deal' && internalUser) {
+    return (
+      <InternalShell
+        role="admin"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        sidebar={
+          <AdminSidebar
+            activeView="exceptions"
+            onNavigate={(view) =>
+              navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: view })
+            }
+          />
+        }
+      >
+        <AdminDealView
+          dealId={page.dealId}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'exceptions' })}
+        />
+      </InternalShell>
+    )
+  }
+
+  // Admin Client Profile — renders inside InternalShell with sidebar
+  if (page.mode === 'internal' && page.view === 'admin-client' && internalUser) {
+    return (
+      <InternalShell
+        role="admin"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        sidebar={
+          <AdminSidebar
+            activeView="clients"
+            onNavigate={(view) =>
+              navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: view })
+            }
+          />
+        }
+      >
+        <AdminClientProfile
+          clientId={page.clientId}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'clients' })}
+        />
+      </InternalShell>
+    )
+  }
+
+  // Admin Staff Create — renders inside InternalShell with sidebar
+  if (page.mode === 'internal' && page.view === 'admin-staff-create' && internalUser) {
+    return (
+      <InternalShell
+        role="admin"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        sidebar={
+          <AdminSidebar
+            activeView="staff"
+            onNavigate={(view) =>
+              navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: view })
+            }
+          />
+        }
+      >
+        <AdminStaffCreate
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'staff' })}
+        />
+      </InternalShell>
+    )
+  }
+
   // Internal portal shell — renders outside AppShell
   if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
     const portalContent = (() => {
@@ -743,15 +947,82 @@ export default function ShellDemo() {
         )
       }
 
-      // Analyst / Admin — placeholder (future sprints)
-      return (
-        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-5">
-          <h1 className="text-2xl font-bold text-slate-500">
-            {page.role === 'analyst' ? 'Analyst Portal' : 'Admin Portal'}
-          </h1>
-          <p className="text-sm text-muted-foreground">Portal content will be built in subsequent sprints.</p>
-        </div>
-      )
+      // Analyst portal — sidebar nav
+      if (page.role === 'analyst') {
+        const analystView = page.analystView ?? 'queue'
+        return (
+          <AnalystShell>
+            {analystView === 'queue' && (
+              <AnalystPortal
+                onNavigateToReview={(memoId) =>
+                  navigateTo({ mode: 'internal', view: 'analyst-review', memoId })
+                }
+              />
+            )}
+            {analystView === 'completed' && <AnalystCompleted />}
+            {analystView === 'pipeline' && <AnalystPipeline />}
+            {analystView === 'settings' && (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">Analyst settings — coming soon.</p>
+              </div>
+            )}
+          </AnalystShell>
+        )
+      }
+
+      // Admin portal — sidebar nav
+      if (page.role === 'admin') {
+        const adminView = page.adminView ?? 'overview'
+        return (
+          <AdminShellComp>
+            {adminView === 'overview' && (
+              <AdminPortalPage
+                onNavigateToExceptions={() =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'exceptions' })
+                }
+                onNavigateToDeal={(dealId) =>
+                  navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
+                }
+              />
+            )}
+            {adminView === 'exceptions' && (
+              <AdminExceptions
+                onNavigateToDeal={(dealId) =>
+                  navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
+                }
+              />
+            )}
+            {adminView === 'pipeline' && (
+              <AdminPipelinePage
+                onNavigateToDeal={(dealId) =>
+                  navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
+                }
+              />
+            )}
+            {adminView === 'clients' && (
+              <AdminClients
+                onNavigateToClient={(clientId) =>
+                  navigateTo({ mode: 'internal', view: 'admin-client', clientId })
+                }
+              />
+            )}
+            {adminView === 'staff' && (
+              <AdminStaff
+                onNavigateToCreate={() =>
+                  navigateTo({ mode: 'internal', view: 'admin-staff-create' })
+                }
+              />
+            )}
+            {adminView === 'settings' && (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-muted-foreground">Admin settings — coming soon.</p>
+              </div>
+            )}
+          </AdminShellComp>
+        )
+      }
+
+      return null
     })()
 
     return (
@@ -774,6 +1045,27 @@ export default function ShellDemo() {
             )
             : undefined
         }
+        sidebar={
+          page.role === 'analyst'
+            ? (
+              <AnalystSidebar
+                activeView={page.analystView ?? 'queue'}
+                onNavigate={(view) =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: view })
+                }
+              />
+            )
+            : page.role === 'admin'
+            ? (
+              <AdminSidebar
+                activeView={page.adminView ?? 'overview'}
+                onNavigate={(view) =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: view })
+                }
+              />
+            )
+            : undefined
+        }
       >
         {portalContent}
       </InternalShell>
@@ -791,7 +1083,7 @@ export default function ShellDemo() {
       canGoBack={historyIndex > 0}
       canGoForward={historyIndex < history.length - 1}
       chatContext={chatContext}
-      onSendMessage={isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : isBuyerDealRoom ? handleBuyerDealRoomMessage : undefined}
+      onSendMessage={chatChannel === 'specialist' ? undefined : isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : isBuyerDealRoom ? handleBuyerDealRoomMessage : undefined}
       onCreditsClick={() => setCreditsModalOpen(true)}
       onAvatarClick={() => navigateTo({ mode: 'global', view: 'profile' })}
       onSettingsClick={() => navigateTo({ mode: 'global', view: 'settings' })}
