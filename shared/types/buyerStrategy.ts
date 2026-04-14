@@ -22,6 +22,8 @@ export interface BuyerStrategy {
   optionalCriteria?: Record<string, unknown>
   status: BuyerStrategyStatus
   matchCount: number
+  activeDealRoomCount: number
+  activeDealRoomIds?: string[]
   createdAt: string
   updatedAt: string
 }

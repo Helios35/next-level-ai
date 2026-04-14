@@ -20,6 +20,7 @@ import Onboarding from '@/pages/Onboarding'
 import Profile from '@/pages/Profile'
 import Settings from '@/pages/Settings'
 import { MOCK_CURRENT_USER } from '@/data/mock/users'
+import { MOCK_BUYER_STRATEGIES } from '@/data/mock/buyerStrategies'
 import CreditsModal from '@/components/CreditsModal'
 import { postLoginRoute } from '@/utils/postLoginRoute'
 import type { User } from '@shared/types/user'
@@ -42,7 +43,7 @@ type Page =
   | { mode: 'buy'; view: 'activation' }
   | { mode: 'buy'; view: 'qualification' }
   | { mode: 'strategy'; view: 'yourStrategies' }
-  | { mode: 'strategy'; view: 'createStrategy' }
+  | { mode: 'strategy'; view: 'createStrategy'; strategyId?: string }
   | { mode: 'strategy'; view: 'drafts' }
   | { mode: 'auth'; view: 'landing' }
   | { mode: 'auth'; view: 'login' }
@@ -54,6 +55,9 @@ type Page =
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
     return `auth:signup:${p.role}`
+  }
+  if (p.mode === 'strategy' && p.view === 'createStrategy' && p.strategyId) {
+    return `strategy:createStrategy:${p.strategyId}`
   }
   return `${p.mode}:${p.view}`
 }
@@ -211,7 +215,7 @@ export default function ShellDemo() {
       navigateTo({ mode: 'sell', view: 'listings' })
     } else if (label === 'Create Listing') {
       navigateTo({ mode: 'sell', view: 'createListing' })
-    } else if (label === 'Drafts') {
+    } else if (label === 'Drafts' && page.mode === 'sell') {
       navigateTo({ mode: 'sell', view: 'drafts' })
     }
     // Buy mode nav
@@ -413,6 +417,23 @@ export default function ShellDemo() {
     setStrategyWizardMessages((prev) => [...prev, userMsg, aiMsg])
     setStrategyWizardStep((prev) => prev + 1)
   }, [strategyWizardStep])
+
+  // Derive initialState for edit mode from mock data
+  const editStrategyInitialState = useMemo<StrategyFormState | undefined>(() => {
+    if (page.mode !== 'strategy' || page.view !== 'createStrategy' || !page.strategyId) return undefined
+    const s = MOCK_BUYER_STRATEGIES.find((b) => b.id === page.strategyId)
+    if (!s) return undefined
+    return {
+      name: s.name,
+      assetType: s.assetType,
+      assetSubType: s.assetSubType,
+      geography: (s.sharedCriteria?.geography as string) ?? '',
+      dealSizeMin: (s.sharedCriteria?.dealSizeMin as number) ?? 5_000_000,
+      dealSizeMax: (s.sharedCriteria?.dealSizeMax as number) ?? 25_000_000,
+      tier2Fields: { ...s.uniqueCriteria },
+      tier3Fields: { ...(s.optionalCriteria ?? {}) },
+    }
+  }, [page])
 
   // Build page-specific chat context
   const chatContext = useMemo<ChatContext | undefined>(() => {
@@ -637,7 +658,13 @@ export default function ShellDemo() {
       {page.mode === 'strategy' && page.view === 'yourStrategies' && (
         <YourStrategies
           onCreateStrategy={() => navigateTo({ mode: 'strategy', view: 'createStrategy' })}
-          onEditStrategy={(id) => console.log('edit strategy', id)}
+          onEditStrategy={(id) => {
+            // Reset wizard state before navigating to edit
+            setStrategyWizardStep(0)
+            setStrategyWizardMessages([])
+            navigateTo({ mode: 'strategy', view: 'createStrategy', strategyId: id })
+          }}
+          onOpenDealRoom={(dealId) => navigateTo({ mode: 'buy', view: 'dealRoom', dealId })}
         />
       )}
       {isCreateStrategy && (
@@ -645,7 +672,7 @@ export default function ShellDemo() {
           step={strategyWizardStep}
           onSubmit={() => navigateTo({ mode: 'strategy', view: 'yourStrategies' })}
           onSaveAsDraft={handleSaveStrategyAsDraft}
-          initialState={strategyResumeDraft?.formState}
+          initialState={editStrategyInitialState ?? strategyResumeDraft?.formState}
         />
       )}
       {page.mode === 'strategy' && page.view === 'drafts' && (
