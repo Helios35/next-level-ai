@@ -15,6 +15,8 @@ interface InternalShellProps {
   onSignOut: () => void
   /** Optional sidebar slot — DS portal opts out (uses top-bar tabs instead) */
   sidebar?: ReactNode
+  /** Optional center slot — replaces the role label in the header (used by DS for tab switcher) */
+  headerCenter?: ReactNode
 }
 
 export default function InternalShell({
@@ -23,6 +25,7 @@ export default function InternalShell({
   userName,
   onSignOut,
   sidebar,
+  headerCenter,
 }: InternalShellProps) {
   const [dark, setDark] = useState(true)
 
@@ -47,10 +50,12 @@ export default function InternalShell({
           <span className="ml-1.5 text-xs font-normal text-slate-500">internal</span>
         </span>
 
-        {/* Center — role label */}
-        <span className="text-sm font-medium text-slate-500">
-          {ROLE_LABELS[role]}
-        </span>
+        {/* Center — tab switcher (DS) or role label */}
+        {headerCenter ?? (
+          <span className="text-sm font-medium text-slate-500">
+            {ROLE_LABELS[role]}
+          </span>
+        )}
 
         {/* Right — user + sign out */}
         <div className="flex items-center gap-2">

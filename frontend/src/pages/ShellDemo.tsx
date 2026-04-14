@@ -30,7 +30,7 @@ import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
 import type { AiTip } from '@/components/ui/ai-tip-card'
 import InternalLogin from '@/pages/InternalLogin'
 import InternalShell from '@/components/InternalShell'
-import DSShell from '@/pages/ds/DSShell'
+import DSShell, { DSHeaderNav } from '@/pages/ds/DSShell'
 import type { DsView } from '@/pages/ds/DSShell'
 import DSTaskQueue from '@/pages/ds/DSTaskQueue'
 import DSPipeline from '@/pages/ds/DSPipeline'
@@ -637,12 +637,7 @@ export default function ShellDemo() {
       if (page.role === 'ds') {
         const dsView = page.dsView ?? 'tasks'
         return (
-          <DSShell
-            activeView={dsView}
-            onNavigate={(view) =>
-              navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: view })
-            }
-          >
+          <DSShell>
             {dsView === 'tasks' && (
               <DSTaskQueue
                 onNavigateToDeal={(dealId, tab) => {
@@ -687,6 +682,18 @@ export default function ShellDemo() {
           setInternalUser(null)
           navigateTo({ mode: 'internal', view: 'login' })
         }}
+        headerCenter={
+          page.role === 'ds'
+            ? (
+              <DSHeaderNav
+                activeView={page.dsView ?? 'tasks'}
+                onNavigate={(view) =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: view })
+                }
+              />
+            )
+            : undefined
+        }
       >
         {portalContent}
       </InternalShell>
