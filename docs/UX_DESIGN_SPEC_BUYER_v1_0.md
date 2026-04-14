@@ -322,11 +322,32 @@ Apply the same layout: `flex flex-col items-center justify-center py-20 text-cen
 - Prominent `bg-mode-buy text-white` button placed above the Document Section, below the inactivity nudge.
 - On click: sends `"Give me a summary of this deal"` to the AI chat panel via `onSendMessage`.
 
-**Chat Panel (AI Q&A):**
+**Chat Panel (AI Q&A + Specialist Messaging):**
+
+The deal room chat panel has three distinct elements stacked in order from top:
+
+**1. Specialist Identity Card**
+- Persistent card at the top of the chat panel — always visible regardless of active channel.
+- Uses the platform list item component: platform identity name (label TBD — branding sprint; placeholder: "Your Specialist") + last active relative timestamp (e.g., "Last seen 2 hours ago") + status indicator dot (active / away).
+- The "+" action opens a brief read-only identity card describing the role — it does not initiate a message. No email or direct contact info is shown.
+- Identity card does not scroll away with the message thread — it is fixed above the channel toggle.
+
+**2. Channel Toggle**
+- Two-state toggle below the identity card, above the message thread:
+  - **AI** — automated platform responses, deal Q&A, system messages
+  - **Specialist** — direct messages from the DS; DS-authorized outreach appears here
+- Each channel maintains an independent message thread.
+- Unread badge on the toggle button for whichever channel has new unread messages — clears on view.
+- Toggle labels are placeholders pending branding sprint. Do not use "Human" literally in shipped copy.
+- Default active channel on deal room entry: AI.
+
+**3. Message Thread + Compose**
 - Wired through `AppShell` chat panel — same panel used by seller wizard.
+- Thread renders the active channel's messages only — switching the toggle swaps the thread.
 - `chatContext.contextLabel` = deal name.
-- `chatContext.skills` = buyer-relevant quick actions: `["Get deal summary", "Ask about the documents", "How does the offer process work?", "What is my competition?"]`. Skills chips are wired to auto-send their text as a chat message when clicked.
+- `chatContext.skills` = buyer-relevant quick actions on the AI channel only: `["Get deal summary", "Ask about the documents", "How does the offer process work?", "What is my competition?"]`. Skills chips are not shown on the Specialist channel.
 - AI bubble color: `bg-mode-buy` (already configured in `AppShell` `MODE_CONFIG`).
+- Specialist bubble color: neutral/slate — visually distinct from the AI channel bubbles.
 
 **Offer Section (Offer Intent Gate):**
 - Visible only at Stage 8 (Offer Negotiation).
