@@ -35,6 +35,7 @@ import type { DsView } from '@/pages/ds/DSShell'
 import DSTaskQueue from '@/pages/ds/DSTaskQueue'
 import DSPipeline from '@/pages/ds/DSPipeline'
 import DSNotifications from '@/pages/ds/DSNotifications'
+import DSDealView from '@/pages/ds/DSDealView'
 import type { InternalUser } from '@shared/types/internalUser'
 import type { InternalRole } from '@shared/types/enums'
 
@@ -62,6 +63,7 @@ type Page =
   | { mode: 'global'; view: 'settings' }
   | { mode: 'internal'; view: 'login' }
   | { mode: 'internal'; view: 'portal'; role: InternalRole; dsView?: DsView }
+  | { mode: 'internal'; view: 'deal'; role: 'ds'; dealId: string; dealTab?: string }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -72,6 +74,9 @@ function pageKey(p: Page) {
   }
   if (p.mode === 'internal' && p.view === 'portal' && p.dsView) {
     return `internal:portal:${p.role}:${p.dsView}`
+  }
+  if (p.mode === 'internal' && p.view === 'deal') {
+    return `internal:deal:${p.dealId}:${p.dealTab ?? 'overview'}`
   }
   return `${p.mode}:${p.view}`
 }
@@ -630,6 +635,26 @@ export default function ShellDemo() {
     )
   }
 
+  // DS Deal View — renders inside InternalShell without tab nav
+  if (page.mode === 'internal' && page.view === 'deal' && internalUser) {
+    return (
+      <InternalShell
+        role="ds"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+      >
+        <DSDealView
+          dealId={page.dealId}
+          defaultTab={page.dealTab}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'pipeline' })}
+        />
+      </InternalShell>
+    )
+  }
+
   // Internal portal shell — renders outside AppShell
   if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
     const portalContent = (() => {
@@ -641,14 +666,14 @@ export default function ShellDemo() {
             {dsView === 'tasks' && (
               <DSTaskQueue
                 onNavigateToDeal={(dealId, tab) => {
-                  // Stub — deal view is IP-3
+                  navigateTo({ mode: 'internal', view: 'deal', role: 'ds', dealId, dealTab: tab })
                 }}
               />
             )}
             {dsView === 'pipeline' && (
               <DSPipeline
                 onNavigateToDeal={(dealId) => {
-                  // Stub — deal view is IP-3
+                  navigateTo({ mode: 'internal', view: 'deal', role: 'ds', dealId })
                 }}
               />
             )}
