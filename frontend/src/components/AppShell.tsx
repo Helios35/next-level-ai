@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import { cn } from '@/utils/cn'
+import SidebarNav from '@/components/SidebarNav'
 import {
   Settings,
   ArrowLeft,
@@ -24,8 +25,6 @@ import {
   Tag,
   ShoppingCart,
   Target,
-  PanelLeftOpen,
-  PanelLeftClose,
   Maximize2,
   Minimize2,
   Upload,
@@ -139,11 +138,6 @@ const CHAT_MESSAGES = [
 
 const SKILLS = ['Analyze deal', 'Compare strategies', 'Summarize activity', 'Show top matches']
 
-// ── Sidebar Collapse Width ─────────────────────────────────────────────────
-
-const SIDEBAR_COLLAPSED_W = 48
-const SIDEBAR_EXPANDED_W = 200
-
 // ── Chat Panel Constraints ─────────────────────────────────────────────────
 
 const CHAT_MIN_W = 280
@@ -220,7 +214,6 @@ export default function AppShell({
   onSettingsClick,
 }: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
   const [chatFullscreen, setChatFullscreen] = useState(false)
   const [dark, setDark] = useState(true)
@@ -280,7 +273,6 @@ export default function AppShell({
   }, [chatContext?.messages?.length])
 
   const config = MODE_CONFIG[mode]
-  const sidebarW = sidebarOpen ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W
   const effectiveChatW = chatOpen ? chatWidth : CHAT_COLLAPSED_W
 
   // ── Resize handler ──────────────────────────────────────────────────────
@@ -412,89 +404,34 @@ export default function AppShell({
 
       {/* ═══ BODY (sidebar + content + chat) ═══ */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ═══ LEFT SIDEBAR ═══ */}
-        <nav
-          style={{ width: sidebarW }}
-          className="hidden sm:flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
-        >
-          {/* Mode nav items */}
-          <div className="flex flex-1 flex-col gap-0.5 px-1.5 pt-2">
-            {config.navItems.map((item, i) => {
-              const Icon = item.icon
-              const isActive = i === activeNav
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => { setActiveNav(i); onNavChange?.(i, item.label) }}
-                  className={cn(
-                    'group relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
-                    isActive
-                      ? cn(config.accentBg, config.accent, 'font-medium')
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
-                >
-                  {/* Active left border indicator */}
-                  {isActive && (
-                    <span
-                      className={cn(
-                        'absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r',
-                        config.accentBorder,
-                        'bg-current',
-                      )}
-                    />
-                  )}
-                  <Icon size={18} className="shrink-0" />
-                  {sidebarOpen && (
-                    <span className="truncate whitespace-nowrap">{item.label}</span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Bottom persistent items */}
-          <div className="flex flex-col gap-0.5 border-t border-border px-1.5 py-2">
-            <button className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-              <Bell size={18} className="shrink-0" />
-              {sidebarOpen && <span className="truncate">Notifications</span>}
-            </button>
-            <button
-              onClick={onSettingsClick}
-              className="flex items-center gap-3 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Settings size={18} className="shrink-0" />
-              {sidebarOpen && <span className="truncate">Settings</span>}
-            </button>
-          </div>
-        </nav>
-
-        {/* ═══ CONTENT AREA ═══ */}
-        <div
-          className="relative flex overflow-hidden transition-[flex,opacity] duration-300 ease-in-out"
-          style={{
+        <SidebarNav
+          items={config.navItems}
+          activeIndex={activeNav}
+          onItemClick={(i) => { setActiveNav(i); onNavChange?.(i, config.navItems[i].label) }}
+          bottomItems={[
+            { icon: Bell, label: 'Notifications' },
+            { icon: Settings, label: 'Settings' },
+          ]}
+          onBottomItemClick={(i) => { if (i === 1) onSettingsClick?.() }}
+          accent={config.accent}
+          accentBg={config.accentBg}
+          accentBorder={config.accentBorder}
+          contentClassName="relative flex overflow-hidden transition-[flex,opacity] duration-300 ease-in-out"
+          contentStyle={{
             flex: chatFullscreen ? '0 0 0px' : '1 1 0%',
             opacity: chatFullscreen ? 0 : 1,
           }}
         >
-          {/* Sidebar toggle — outside the nav panel */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden sm:flex absolute left-2 top-2 z-10 h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            {sidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-          </button>
-          <main className="flex-1 overflow-y-auto bg-main pt-2 sm:pt-10">
-            <div key={mode} className="animate-in fade-in duration-300 ease-out h-full">
-              {children ?? (
-                <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-                  <FileText size={48} strokeWidth={1} className="opacity-30" />
-                  <p className="text-sm">No content yet.</p>
-                  <p className="text-xs opacity-60">This area will render the active page.</p>
-                </div>
-              )}
-            </div>
-          </main>
-        </div>
+          <div key={mode} className="animate-in fade-in duration-300 ease-out h-full">
+            {children ?? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                <FileText size={48} strokeWidth={1} className="opacity-30" />
+                <p className="text-sm">No content yet.</p>
+                <p className="text-xs opacity-60">This area will render the active page.</p>
+              </div>
+            )}
+          </div>
+        </SidebarNav>
 
         {/* ═══ RESIZE HANDLE ═══ */}
         {chatOpen && !chatFullscreen && (

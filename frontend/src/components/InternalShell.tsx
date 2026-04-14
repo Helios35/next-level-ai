@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { LogOut, Sun, Moon } from 'lucide-react'
 import type { InternalRole } from '@shared/types/enums'
+import SidebarNav, { type SidebarNavItem } from '@/components/SidebarNav'
 
 const ROLE_LABELS: Record<InternalRole, string> = {
   ds: 'Disposition Specialist',
@@ -13,10 +14,12 @@ interface InternalShellProps {
   role: InternalRole
   userName: string
   onSignOut: () => void
-  /** Optional sidebar slot — DS portal opts out (uses top-bar tabs instead) */
-  sidebar?: ReactNode
-  /** Optional center slot — replaces the role label in the header (used by DS for tab switcher) */
-  headerCenter?: ReactNode
+  navItems: SidebarNavItem[]
+  activeNavIndex: number
+  onNavItemClick: (index: number) => void
+  bottomNavItems?: SidebarNavItem[]
+  activeBottomIndex?: number
+  onBottomNavItemClick?: (index: number) => void
 }
 
 export default function InternalShell({
@@ -24,8 +27,12 @@ export default function InternalShell({
   role,
   userName,
   onSignOut,
-  sidebar,
-  headerCenter,
+  navItems,
+  activeNavIndex,
+  onNavItemClick,
+  bottomNavItems,
+  activeBottomIndex,
+  onBottomNavItemClick,
 }: InternalShellProps) {
   const [dark, setDark] = useState(true)
 
@@ -50,12 +57,10 @@ export default function InternalShell({
           <span className="ml-1.5 text-xs font-normal text-slate-500">internal</span>
         </span>
 
-        {/* Center — tab switcher (DS) or role label */}
-        {headerCenter ?? (
-          <span className="text-sm font-medium text-slate-500">
-            {ROLE_LABELS[role]}
-          </span>
-        )}
+        {/* Center — role label */}
+        <span className="text-sm font-medium text-slate-500">
+          {ROLE_LABELS[role]}
+        </span>
 
         {/* Right — user + sign out */}
         <div className="flex items-center gap-2">
@@ -81,17 +86,16 @@ export default function InternalShell({
 
       {/* ═══ BODY ═══ */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Optional sidebar */}
-        {sidebar && (
-          <nav className="hidden sm:flex w-52 flex-col border-r border-border bg-background">
-            {sidebar}
-          </nav>
-        )}
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-main">
+        <SidebarNav
+          items={navItems}
+          activeIndex={activeNavIndex}
+          onItemClick={onNavItemClick}
+          bottomItems={bottomNavItems}
+          activeBottomIndex={activeBottomIndex}
+          onBottomItemClick={onBottomNavItemClick}
+        >
           {children}
-        </main>
+        </SidebarNav>
       </div>
     </div>
   )
