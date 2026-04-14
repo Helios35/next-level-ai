@@ -36,6 +36,9 @@ import DSTaskQueue from '@/pages/ds/DSTaskQueue'
 import DSPipeline from '@/pages/ds/DSPipeline'
 import DSNotifications from '@/pages/ds/DSNotifications'
 import DSDealView from '@/pages/ds/DSDealView'
+import DSClients from '@/pages/ds/DSClients'
+import DSSellerProfile from '@/pages/ds/DSSellerProfile'
+import DSBuyerProfile from '@/pages/ds/DSBuyerProfile'
 import type { InternalUser } from '@shared/types/internalUser'
 import type { InternalRole } from '@shared/types/enums'
 
@@ -64,6 +67,8 @@ type Page =
   | { mode: 'internal'; view: 'login' }
   | { mode: 'internal'; view: 'portal'; role: InternalRole; dsView?: DsView }
   | { mode: 'internal'; view: 'deal'; role: 'ds'; dealId: string; dealTab?: string }
+  | { mode: 'internal'; view: 'seller-profile'; role: 'ds'; sellerId: string }
+  | { mode: 'internal'; view: 'buyer-profile'; role: 'ds'; buyerId: string }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -77,6 +82,12 @@ function pageKey(p: Page) {
   }
   if (p.mode === 'internal' && p.view === 'deal') {
     return `internal:deal:${p.dealId}:${p.dealTab ?? 'overview'}`
+  }
+  if (p.mode === 'internal' && p.view === 'seller-profile') {
+    return `internal:seller:${p.sellerId}`
+  }
+  if (p.mode === 'internal' && p.view === 'buyer-profile') {
+    return `internal:buyer:${p.buyerId}`
   }
   return `${p.mode}:${p.view}`
 }
@@ -655,6 +666,46 @@ export default function ShellDemo() {
     )
   }
 
+  // DS Seller Profile — renders inside InternalShell without tab nav
+  if (page.mode === 'internal' && page.view === 'seller-profile' && internalUser) {
+    return (
+      <InternalShell
+        role="ds"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+      >
+        <DSSellerProfile
+          sellerId={page.sellerId}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'clients' })}
+          onNavigateToDeal={(dealId) => navigateTo({ mode: 'internal', view: 'deal', role: 'ds', dealId })}
+        />
+      </InternalShell>
+    )
+  }
+
+  // DS Buyer Profile — renders inside InternalShell without tab nav
+  if (page.mode === 'internal' && page.view === 'buyer-profile' && internalUser) {
+    return (
+      <InternalShell
+        role="ds"
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+      >
+        <DSBuyerProfile
+          buyerId={page.buyerId}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'clients' })}
+          onNavigateToDeal={(dealId) => navigateTo({ mode: 'internal', view: 'deal', role: 'ds', dealId })}
+        />
+      </InternalShell>
+    )
+  }
+
   // Internal portal shell — renders outside AppShell
   if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
     const portalContent = (() => {
@@ -679,10 +730,14 @@ export default function ShellDemo() {
             )}
             {dsView === 'notifications' && <DSNotifications />}
             {dsView === 'clients' && (
-              <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-20">
-                <h2 className="text-xl font-bold text-slate-500">Clients</h2>
-                <p className="text-sm text-muted-foreground">Client views will be built in IP-4.</p>
-              </div>
+              <DSClients
+                onNavigateToSellerProfile={(sellerId) =>
+                  navigateTo({ mode: 'internal', view: 'seller-profile', role: 'ds', sellerId })
+                }
+                onNavigateToBuyerProfile={(buyerId) =>
+                  navigateTo({ mode: 'internal', view: 'buyer-profile', role: 'ds', buyerId })
+                }
+              />
             )}
           </DSShell>
         )
