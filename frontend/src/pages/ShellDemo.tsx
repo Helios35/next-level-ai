@@ -30,6 +30,11 @@ import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
 import type { AiTip } from '@/components/ui/ai-tip-card'
 import InternalLogin from '@/pages/InternalLogin'
 import InternalShell from '@/components/InternalShell'
+import DSShell from '@/pages/ds/DSShell'
+import type { DsView } from '@/pages/ds/DSShell'
+import DSTaskQueue from '@/pages/ds/DSTaskQueue'
+import DSPipeline from '@/pages/ds/DSPipeline'
+import DSNotifications from '@/pages/ds/DSNotifications'
 import type { InternalUser } from '@shared/types/internalUser'
 import type { InternalRole } from '@shared/types/enums'
 
@@ -56,7 +61,7 @@ type Page =
   | { mode: 'global'; view: 'profile' }
   | { mode: 'global'; view: 'settings' }
   | { mode: 'internal'; view: 'login' }
-  | { mode: 'internal'; view: 'portal'; role: InternalRole }
+  | { mode: 'internal'; view: 'portal'; role: InternalRole; dsView?: DsView }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -64,6 +69,9 @@ function pageKey(p: Page) {
   }
   if (p.mode === 'strategy' && p.view === 'createStrategy' && p.strategyId) {
     return `strategy:createStrategy:${p.strategyId}`
+  }
+  if (p.mode === 'internal' && p.view === 'portal' && p.dsView) {
+    return `internal:portal:${p.role}:${p.dsView}`
   }
   return `${p.mode}:${p.view}`
 }
@@ -612,7 +620,7 @@ export default function ShellDemo() {
         onSuccess={(user) => {
           setInternalUser(user)
           const roleRouteMap: Record<InternalRole, Page> = {
-            ds: { mode: 'internal', view: 'portal', role: 'ds' },
+            ds: { mode: 'internal', view: 'portal', role: 'ds', dsView: 'tasks' },
             analyst: { mode: 'internal', view: 'portal', role: 'analyst' },
             admin: { mode: 'internal', view: 'portal', role: 'admin' },
           }
@@ -624,6 +632,53 @@ export default function ShellDemo() {
 
   // Internal portal shell — renders outside AppShell
   if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
+    const portalContent = (() => {
+      // DS portal — uses top-bar tab switcher
+      if (page.role === 'ds') {
+        const dsView = page.dsView ?? 'tasks'
+        return (
+          <DSShell
+            activeView={dsView}
+            onNavigate={(view) =>
+              navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: view })
+            }
+          >
+            {dsView === 'tasks' && (
+              <DSTaskQueue
+                onNavigateToDeal={(dealId, tab) => {
+                  // Stub — deal view is IP-3
+                }}
+              />
+            )}
+            {dsView === 'pipeline' && (
+              <DSPipeline
+                onNavigateToDeal={(dealId) => {
+                  // Stub — deal view is IP-3
+                }}
+              />
+            )}
+            {dsView === 'notifications' && <DSNotifications />}
+            {dsView === 'clients' && (
+              <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-20">
+                <h2 className="text-xl font-bold text-slate-500">Clients</h2>
+                <p className="text-sm text-muted-foreground">Client views will be built in IP-4.</p>
+              </div>
+            )}
+          </DSShell>
+        )
+      }
+
+      // Analyst / Admin — placeholder (future sprints)
+      return (
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-5">
+          <h1 className="text-2xl font-bold text-slate-500">
+            {page.role === 'analyst' ? 'Analyst Portal' : 'Admin Portal'}
+          </h1>
+          <p className="text-sm text-muted-foreground">Portal content will be built in subsequent sprints.</p>
+        </div>
+      )
+    })()
+
     return (
       <InternalShell
         role={page.role}
@@ -633,12 +688,7 @@ export default function ShellDemo() {
           navigateTo({ mode: 'internal', view: 'login' })
         }}
       >
-        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-5">
-          <h1 className="text-2xl font-bold text-slate-500">
-            {page.role === 'ds' ? 'DS Portal' : page.role === 'analyst' ? 'Analyst Portal' : 'Admin Portal'}
-          </h1>
-          <p className="text-sm text-muted-foreground">Portal content will be built in subsequent sprints.</p>
-        </div>
+        {portalContent}
       </InternalShell>
     )
   }
