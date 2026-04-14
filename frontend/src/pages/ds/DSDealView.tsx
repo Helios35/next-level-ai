@@ -27,7 +27,7 @@ import {
   ArrowLeft, Users, FileText, BarChart3, MessageSquare, Flag,
   CheckCircle2, Circle, Clock, AlertCircle, Send, Plus, Search, Shield,
   Calendar, ChevronDown, ChevronRight, Eye, Edit3, Award,
-  TrendingUp, MapPin, DollarSign, Building2, User,
+  TrendingUp, MapPin, DollarSign, Building2, User, Sparkles, X,
 } from 'lucide-react'
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -127,8 +127,8 @@ const SELLER_NAMES: Record<string, { name: string; email: string; phone: string 
 // TAB 1 — OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════
 
-function OverviewTab({ deal, buyerPool, milestones }: {
-  deal: DealRoom; buyerPool: BuyerPoolEntry[]; milestones: MilestoneItem[]
+function OverviewTab({ deal, buyerPool, milestones, onNavigateTab }: {
+  deal: DealRoom; buyerPool: BuyerPoolEntry[]; milestones: MilestoneItem[]; onNavigateTab: (tab: string) => void
 }) {
   const [pricingAuthorized, setPricingAuthorized] = useState(false)
   const [escalationResolved, setEscalationResolved] = useState(false)
@@ -181,6 +181,27 @@ function OverviewTab({ deal, buyerPool, milestones }: {
           </div>
         </div>
       </div>
+
+      {/* Quick links to pending actions */}
+      {(() => {
+        const links: { label: string; tab: string }[] = []
+        if (pendingCount > 0) links.push({ label: `${pendingCount} seat${pendingCount !== 1 ? 's' : ''} pending approval`, tab: 'seat_allocation' })
+        if (deal.currentStage >= 8) links.push({ label: 'Review offer rounds', tab: 'offer_rounds' })
+        if (deal.status === 'closed' || deal.currentStage === 9) links.push({ label: 'Log milestones', tab: 'milestones' })
+        return links.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {links.map((link) => (
+              <button
+                key={link.tab}
+                onClick={() => onNavigateTab(link.tab)}
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                {link.label} →
+              </button>
+            ))}
+          </div>
+        ) : null
+      })()}
 
       {/* Stage timeline */}
       <div className="rounded-xl border border-border bg-card p-4">
@@ -605,6 +626,24 @@ function MarketIntelTab({ data }: { data?: MarketIntelData }) {
         </div>
       )}
 
+      {/* Buyer Q&A Themes */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Buyer Q&A Themes</h3>
+        <div className="space-y-2">
+          {[
+            { theme: 'Lease-up timeline & stabilization projections', mentions: 4 },
+            { theme: 'Cap rate assumptions & NOI validation', mentions: 3 },
+            { theme: 'Construction schedule vs. occupancy discrepancies', mentions: 2 },
+            { theme: 'Environmental & zoning compliance', mentions: 1 },
+          ].map((item) => (
+            <div key={item.theme} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5">
+              <span className="text-sm text-foreground">{item.theme}</span>
+              <span className="text-xs text-muted-foreground">{item.mentions} mention{item.mentions !== 1 ? 's' : ''}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Interest signals (mock) */}
       <div>
         <h3 className="mb-3 text-sm font-semibold text-foreground">Coming Soon Interest Signals</h3>
@@ -634,6 +673,37 @@ function MarketIntelTab({ data }: { data?: MarketIntelData }) {
         </div>
         <p className="text-sm text-muted-foreground leading-relaxed">{data.summary}</p>
       </div>
+    </div>
+  )
+}
+
+// ── Milestone log form (date + notes) ────────────────────────────────────
+
+function MilestoneLogForm({ index, onLog }: { index: number; onLog: (i: number, date: string, notes: string) => void }) {
+  const [date, setDate] = useState('')
+  const [notes, setNotes] = useState('')
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <input
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="rounded border border-border bg-main px-2 py-1 text-xs text-foreground"
+      />
+      <input
+        type="text"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes (optional)"
+        className="rounded border border-border bg-main px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+      />
+      <Button
+        size="xs"
+        onClick={() => onLog(index, date || new Date().toLocaleDateString(), notes)}
+      >
+        Log
+      </Button>
     </div>
   )
 }
@@ -693,19 +763,7 @@ function MilestonesTab({ deal }: { deal: DealRoom }) {
               </div>
 
               {!isLogged && prevLogged && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    className="rounded border border-border bg-main px-2 py-1 text-xs text-foreground"
-                    onChange={() => {}}
-                  />
-                  <Button
-                    size="xs"
-                    onClick={() => handleLog(i, new Date().toLocaleDateString(), '')}
-                  >
-                    Log
-                  </Button>
-                </div>
+                <MilestoneLogForm index={i} onLog={handleLog} />
               )}
             </div>
           </div>
@@ -892,6 +950,91 @@ function MessagesTab({ conversations }: { conversations: DsConversationThread[] 
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// AI CHAT PANEL — deal-scoped, accessible from all tabs
+// ══════════════════════════════════════════════════════════════════════════
+
+function DealAiChatPanel({ dealName }: { dealName: string }) {
+  const [open, setOpen] = useState(false)
+  const [messages, setMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([
+    { role: 'ai', text: `I'm your AI assistant for ${dealName}. Ask me about deal activity, buyer signals, market context, or anything else about this deal.` },
+  ])
+  const [input, setInput] = useState('')
+
+  const handleSend = () => {
+    if (!input.trim()) return
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', text: input.trim() },
+      { role: 'ai', text: 'This is a mock response. In production, I would surface real-time deal intelligence, buyer activity summaries, and market context.' },
+    ])
+    setInput('')
+  }
+
+  return (
+    <>
+      {/* Floating toggle button */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-slate-200 shadow-lg hover:bg-slate-600 transition-colors"
+          title="AI Assistant"
+        >
+          <Sparkles size={20} />
+        </button>
+      )}
+
+      {/* Chat panel */}
+      {open && (
+        <div className="fixed bottom-6 right-6 z-50 flex h-[420px] w-[340px] flex-col rounded-xl border border-border bg-background shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-slate-400" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">NextLevel AI</span>
+            </div>
+            <button onClick={() => setOpen(false)} className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] rounded-lg px-3 py-2 text-xs ${
+                  msg.role === 'user'
+                    ? 'bg-slate-700 text-slate-100'
+                    : 'bg-muted text-foreground'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Compose */}
+          <div className="border-t border-border px-3 py-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Ask about this deal..."
+                className="flex-1 rounded-lg border border-border bg-main px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-slate-500"
+              />
+              <button onClick={handleSend} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                <Send size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -951,7 +1094,7 @@ export default function DSDealView({ dealId, onBack, defaultTab }: DSDealViewPro
         </div>
 
         <TabsContent value="overview">
-          <OverviewTab deal={deal} buyerPool={buyerPool} milestones={milestones} />
+          <OverviewTab deal={deal} buyerPool={buyerPool} milestones={milestones} onNavigateTab={setTab} />
         </TabsContent>
         <TabsContent value="seat_allocation">
           <SeatAllocationTab buyerPool={buyerPool} />
@@ -972,6 +1115,9 @@ export default function DSDealView({ dealId, onBack, defaultTab }: DSDealViewPro
           <MessagesTab conversations={conversations} />
         </TabsContent>
       </Tabs>
+
+      {/* AI chat panel — deal-scoped, accessible from all tabs */}
+      <DealAiChatPanel dealName={deal.name} />
     </div>
   )
 }
