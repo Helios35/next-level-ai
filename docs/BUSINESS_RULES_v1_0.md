@@ -314,7 +314,7 @@ DS-invited buyers always take priority over self-requested buyers, regardless of
 
 When the DS steps in, the handoff is transparent — the seller is informed.
 
-**12.6** The DS is represented to external buyers as "NextLevel AI" in MVP. Buyers interact with what they believe is a bot. This is intentional platform design.
+**12.6** *(Updated April 2026)* The buyer deal room chat panel presents two distinct channels via a toggle: an AI channel (automated platform responses) and a Specialist channel (DS-composed and DS-authorized messages). Buyers can see which channel they are on at all times. The platform identity label for the Specialist channel is TBD pending the branding sprint — it will not explicitly expose the DS's name or say "Human," but it makes clear that a human specialist is involved. The prior pattern of representing the DS as a fully automated system is retired. This aligns with the rebranding direction documented in `INTERNAL_INTERFACE_v1_0.md` Section 5.2.
 
 **12.7** The AI Chat Script Spec must exist before Stage 7 buyer Q&A and Stage 6 buyer-facing behavior can be implemented. Frontend components can be built without it. AI routing behavior cannot be implemented until the spec is complete.
 

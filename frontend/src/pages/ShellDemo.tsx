@@ -28,6 +28,10 @@ import type { UserRole } from '@shared/types/enums'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Sparkles, FileSearch, HelpCircle, Users } from 'lucide-react'
 import type { AiTip } from '@/components/ui/ai-tip-card'
+import InternalLogin from '@/pages/InternalLogin'
+import InternalShell from '@/components/InternalShell'
+import type { InternalUser } from '@shared/types/internalUser'
+import type { InternalRole } from '@shared/types/enums'
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -51,6 +55,8 @@ type Page =
   | { mode: 'auth'; view: 'onboarding' }
   | { mode: 'global'; view: 'profile' }
   | { mode: 'global'; view: 'settings' }
+  | { mode: 'internal'; view: 'login' }
+  | { mode: 'internal'; view: 'portal'; role: InternalRole }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -122,6 +128,7 @@ export default function ShellDemo() {
 
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [internalUser, setInternalUser] = useState<InternalUser | null>(null)
 
   // Credits modal state
   const [creditsModalOpen, setCreditsModalOpen] = useState(false)
@@ -595,6 +602,44 @@ export default function ShellDemo() {
         onComplete={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
         onSkip={() => navigateTo({ mode: 'buy', view: 'yourDeals' })}
       />
+    )
+  }
+
+  // Internal login — renders outside both shells
+  if (page.mode === 'internal' && page.view === 'login') {
+    return (
+      <InternalLogin
+        onSuccess={(user) => {
+          setInternalUser(user)
+          const roleRouteMap: Record<InternalRole, Page> = {
+            ds: { mode: 'internal', view: 'portal', role: 'ds' },
+            analyst: { mode: 'internal', view: 'portal', role: 'analyst' },
+            admin: { mode: 'internal', view: 'portal', role: 'admin' },
+          }
+          navigateTo(roleRouteMap[user.role])
+        }}
+      />
+    )
+  }
+
+  // Internal portal shell — renders outside AppShell
+  if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
+    return (
+      <InternalShell
+        role={page.role}
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+      >
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-5">
+          <h1 className="text-2xl font-bold text-slate-500">
+            {page.role === 'ds' ? 'DS Portal' : page.role === 'analyst' ? 'Analyst Portal' : 'Admin Portal'}
+          </h1>
+          <p className="text-sm text-muted-foreground">Portal content will be built in subsequent sprints.</p>
+        </div>
+      </InternalShell>
     )
   }
 
