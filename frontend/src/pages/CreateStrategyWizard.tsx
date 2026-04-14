@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,9 @@ import {
   SlidersHorizontal,
   ClipboardCheck,
   FileText,
+  DoorOpen,
 } from 'lucide-react'
+import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -401,6 +403,31 @@ export default function CreateStrategyWizard({
     },
   })
 
+  // ── Dynamic match computation ────────────────────────────────────────────
+  // Normalize asset type for comparison (strategy uses 'residential', deals use 'residential_income')
+  const normalizedAssetType = assetType === 'residential_income' ? 'residential_income' : assetType === 'residential' ? 'residential_income' : assetType
+  // Normalize sub-type (strategy may use 'bfr', deals use 'build_for_rent')
+  const normalizedSubType = assetSubType === 'bfr' ? 'build_for_rent' : assetSubType
+
+  const { matchCount, activeDealRoomCount } = useMemo(() => {
+    if (!assetType) return { matchCount: 0, activeDealRoomCount: 0 }
+
+    const matched = MOCK_SELLER_DEAL_ROOMS.filter((d) => {
+      if (d.assetType !== normalizedAssetType) return false
+      if (assetSubType && d.assetSubType !== normalizedSubType) return false
+      if (geography) {
+        const dealMsa = (d.shared?.geography as { msa?: string })?.msa ?? ''
+        if (!dealMsa.toLowerCase().includes(geography.split(',')[0].toLowerCase())) return false
+      }
+      return true
+    })
+
+    return {
+      matchCount: matched.length,
+      activeDealRoomCount: matched.filter((d) => d.currentStage >= 6).length,
+    }
+  }, [assetType, normalizedAssetType, assetSubType, normalizedSubType, geography])
+
   const subtypeOptions = SUBTYPE_BY_TYPE[assetType] ?? []
   const isLand = assetType === 'land'
   const isResidential = assetType === 'residential_income'
@@ -436,9 +463,19 @@ export default function CreateStrategyWizard({
           ))}
         </div>
 
-        {/* ── Save as Draft action ─────────────────────────────────── */}
-        {step >= 1 && (
-          <div className="flex justify-end">
+        {/* ── Dynamic stats + Save as Draft ──────────────────────── */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-mode-strategy">{matchCount}</span>
+              <span className="text-xs text-muted-foreground">{matchCount === 1 ? 'match' : 'matches'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-mode-strategy">
+              <DoorOpen size={12} />
+              <span>{activeDealRoomCount} active deal room{activeDealRoomCount !== 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          {step >= 1 && (
             <Button
               variant="outline"
               onClick={() => onSaveAsDraft(getFormSnapshot(), step)}
@@ -446,8 +483,8 @@ export default function CreateStrategyWizard({
               <FileText data-icon="inline-start" />
               Save as Draft
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* ── Step 1: Core Criteria (Tier 1) ──────────────────────── */}
         <SectionCard

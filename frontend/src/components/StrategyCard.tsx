@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn'
+import { Building2, Home, Mountain, MapPin, DollarSign, Clock, DoorOpen } from 'lucide-react'
 import type { BuyerStrategy } from '@shared/types/buyerStrategy'
 
 // ── Status badge config ────────────────────────────────────────────────────
@@ -37,6 +38,27 @@ function formatDealSize(min?: number, max?: number): string {
   return '—'
 }
 
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  const diffHrs = Math.floor(diffMin / 60)
+  if (diffHrs < 24) return `${diffHrs}h ago`
+  const diffDays = Math.floor(diffHrs / 24)
+  if (diffDays < 30) return `${diffDays}d ago`
+  const diffMonths = Math.floor(diffDays / 30)
+  return `${diffMonths}mo ago`
+}
+
+function getAssetIcon(assetSubType: string) {
+  if (assetSubType === 'sfr_portfolio') return Home
+  if (assetSubType === 'land') return Mountain
+  return Building2
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 interface StrategyCardProps {
@@ -44,6 +66,7 @@ interface StrategyCardProps {
   onEdit?: () => void
   onPause?: () => void
   onResume?: () => void
+  onViewDealRooms?: () => void
   className?: string
 }
 
@@ -52,6 +75,7 @@ export default function StrategyCard({
   onEdit,
   onPause,
   onResume,
+  onViewDealRooms,
   className,
 }: StrategyCardProps) {
   const badge = STATUS_BADGE[strategy.status] ?? STATUS_BADGE.draft
@@ -60,46 +84,88 @@ export default function StrategyCard({
   const geography = (strategy.sharedCriteria?.geography as string) ?? '—'
   const dealSizeMin = strategy.sharedCriteria?.dealSizeMin as number | undefined
   const dealSizeMax = strategy.sharedCriteria?.dealSizeMax as number | undefined
+  const AssetIcon = getAssetIcon(strategy.assetSubType)
 
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-muted/30 shadow-sm p-5 transition-colors hover:border-mode-strategy/30',
+        'flex flex-col rounded-lg border border-border bg-card shadow-sm p-5 transition-colors hover:border-mode-strategy/30',
         className,
       )}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col min-w-0">
-          <h3 className="text-sm font-semibold text-foreground leading-snug truncate">
-            {strategy.name}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{assetTypeLabel}</p>
+      {/* Header — icon, name, asset type, status badge */}
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mode-strategy/10">
+          <AssetIcon size={16} className="text-mode-strategy" />
         </div>
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0',
-            badge.classes,
-          )}
+        <div className="flex flex-1 flex-col min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground leading-snug truncate">
+              {strategy.name}
+            </h3>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0',
+                badge.classes,
+              )}
+            >
+              {badge.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-muted-foreground">{assetTypeLabel}</span>
+            <span className="inline-flex items-center rounded-full bg-mode-strategy/10 px-2 py-0.5 text-xs font-medium text-mode-strategy">
+              {subtypeLabel}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Labeled metadata fields */}
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="flex items-start gap-2">
+          <DollarSign size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Price Range</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {formatDealSize(dealSizeMin, dealSizeMax)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Geography</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {geography.split(',')[0]}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Match count + last updated */}
+      <div className="mt-4 flex items-end justify-between">
+        <div>
+          <span className="text-2xl font-bold text-mode-strategy">{strategy.matchCount}</span>
+          <span className="ml-1.5 text-xs text-muted-foreground">matches</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Clock size={12} />
+          <span>{formatRelativeTime(strategy.updatedAt)}</span>
+        </div>
+      </div>
+
+      {/* Active deal rooms */}
+      {strategy.activeDealRoomCount > 0 && (
+        <button
+          onClick={onViewDealRooms}
+          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-mode-strategy hover:underline transition-colors"
         >
-          {badge.label}
-        </span>
-      </div>
-
-      {/* Metadata row */}
-      <div className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
-        <span className="flex-1 text-center truncate">{subtypeLabel}</span>
-        <div className="h-8 w-px bg-border shrink-0" />
-        <span className="flex-1 text-center truncate">{geography.split(',')[0]}</span>
-        <div className="h-8 w-px bg-border shrink-0" />
-        <span className="flex-1 text-center truncate">{formatDealSize(dealSizeMin, dealSizeMax)}</span>
-      </div>
-
-      {/* Match count */}
-      <div className="mt-4">
-        <span className="text-2xl font-bold text-mode-strategy">{strategy.matchCount}</span>
-        <span className="ml-1.5 text-xs text-muted-foreground">matches</span>
-      </div>
+          <DoorOpen size={12} />
+          <span>{strategy.activeDealRoomCount} active deal room{strategy.activeDealRoomCount !== 1 ? 's' : ''}</span>
+          <span className="text-muted-foreground">— View Deal Rooms</span>
+        </button>
+      )}
 
       {/* Actions */}
       <div className="mt-5 flex gap-2">
