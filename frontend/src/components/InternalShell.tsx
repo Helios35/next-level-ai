@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, ArrowLeft, ArrowRight } from 'lucide-react'
 import type { InternalRole } from '@shared/types/enums'
+import { cn } from '@/utils/cn'
 import SidebarNav, { type SidebarNavItem } from '@/components/SidebarNav'
 import { UserMenu } from '@/components/ui/user-menu'
 
@@ -17,6 +18,11 @@ interface InternalShellProps {
   onSignOut: () => void
   onProfileClick: () => void
   onSettingsClick: () => void
+  /** History navigation — back arrow in the header */
+  onBack?: () => void
+  onForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
   navItems: SidebarNavItem[]
   activeNavIndex: number
   onNavItemClick: (index: number) => void
@@ -32,6 +38,10 @@ export default function InternalShell({
   onSignOut,
   onProfileClick,
   onSettingsClick,
+  onBack,
+  onForward,
+  canGoBack = false,
+  canGoForward = false,
   navItems,
   activeNavIndex,
   onNavItemClick,
@@ -56,10 +66,38 @@ export default function InternalShell({
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
       {/* ═══ TOP BAR ═══ */}
       <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-background px-4">
-        {/* Left — wordmark */}
-        <span className="text-base font-bold tracking-tight text-foreground">
-          NextLevel
-        </span>
+        {/* Left cluster — wordmark + back/forward */}
+        <div className="flex items-center gap-1">
+          <span className="text-base font-bold tracking-tight text-foreground">
+            NextLevel
+          </span>
+          <button
+            onClick={onBack}
+            disabled={!canGoBack}
+            className={cn(
+              'hidden sm:flex rounded-md p-2 transition-colors ml-2',
+              canGoBack
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <button
+            onClick={onForward}
+            disabled={!canGoForward}
+            className={cn(
+              'hidden sm:flex rounded-md p-2 transition-colors',
+              canGoForward
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+            aria-label="Go forward"
+          >
+            <ArrowRight size={18} />
+          </button>
+        </div>
 
         {/* Right — theme toggle + user menu */}
         <div className="flex items-center gap-2">

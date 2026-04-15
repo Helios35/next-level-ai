@@ -12,8 +12,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { DocumentListGroup, DocumentListItem } from '@/components/ui/document-list-item'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import {
-  ArrowLeft,
   CheckCircle,
   RotateCcw,
   FileText,
@@ -113,22 +113,21 @@ export default function AdminDealView({ dealId, onBack }: AdminDealViewProps) {
   return (
     <>
       <div className="mx-auto max-w-4xl px-6 py-8">
+        <Breadcrumbs
+          className="mb-4"
+          items={[
+            { label: 'Tasks', onClick: onBack },
+            { label: exception.dealName },
+          ]}
+        />
         {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{exception.dealName}</h1>
-            <p className="text-xs text-muted-foreground">
-              {exception.assetType} &middot; {exception.assetSubType} &middot;{' '}
-              {exception.sellerName} &middot; Received at Stage 3:{' '}
-              {formatDate(exception.dateSubmittedToStage3)}
-            </p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-foreground">{exception.dealName}</h1>
+          <p className="text-xs text-muted-foreground">
+            {exception.assetType} &middot; {exception.assetSubType} &middot;{' '}
+            {exception.sellerName} &middot; Received at Stage 3:{' '}
+            {formatDate(exception.dateSubmittedToStage3)}
+          </p>
         </div>
 
         {/* AI Completeness Report */}

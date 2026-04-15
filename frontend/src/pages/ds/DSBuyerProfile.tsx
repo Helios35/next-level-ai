@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { ArrowLeft, Mail, Phone, User, Shield, Target, BarChart3 } from 'lucide-react'
+import { Mail, Phone, User, Shield, Target, BarChart3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { MOCK_BUYER_POOL_DR001, MOCK_BUYER_POOL_DR002, MOCK_BUYER_POOL_DR005 } from '@/data/mock/buyerPool'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_BUYER_STRATEGIES } from '@/data/mock/buyerStrategies'
@@ -101,7 +102,7 @@ export default function DSBuyerProfile({ buyerId, onBack, onNavigateToDeal }: DS
       <div className="flex h-full flex-col items-center justify-center gap-3 py-20">
         <p className="text-lg font-medium text-slate-500">Buyer not found.</p>
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft size={14} className="mr-1.5" /> Back to Buyers
+          Back to Buyers
         </Button>
       </div>
     )
@@ -109,9 +110,13 @@ export default function DSBuyerProfile({ buyerId, onBack, onNavigateToDeal }: DS
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-      <button onClick={onBack} className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={14} /> Back to Buyers
-      </button>
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: 'Clients', onClick: onBack },
+          { label: buyerName },
+        ]}
+      />
 
       <div className="mb-6 flex items-center gap-3">
         <h1 className="text-xl font-bold text-foreground">{buyerName}</h1>

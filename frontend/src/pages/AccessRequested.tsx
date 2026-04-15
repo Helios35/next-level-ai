@@ -1,5 +1,6 @@
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import BuyerEmptyState from '@/components/BuyerEmptyState'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import {
   Item,
   ItemContent,
@@ -52,8 +53,9 @@ export default function AccessRequested({ onOpenDealRoom }: AccessRequestedProps
 
   if (rows.length === 0) {
     return (
-      <div className="px-4 sm:px-6 py-5">
-        <h1 className="text-xl font-semibold text-foreground mb-5">Access Requested</h1>
+      <div className="px-4 sm:px-6 py-5 space-y-5">
+        <Breadcrumbs items={[{ label: 'Buy' }, { label: 'Access Requested' }]} />
+        <h1 className="text-xl font-semibold text-foreground">Access Requested</h1>
         <BuyerEmptyState variant="no-access-requests" />
       </div>
     )
@@ -61,6 +63,7 @@ export default function AccessRequested({ onOpenDealRoom }: AccessRequestedProps
 
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
+      <Breadcrumbs items={[{ label: 'Buy' }, { label: 'Access Requested' }]} />
       {/* Page heading */}
       <h1 className="text-xl font-semibold text-foreground">Access Requested</h1>
 

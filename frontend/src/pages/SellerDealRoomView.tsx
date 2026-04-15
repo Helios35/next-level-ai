@@ -17,6 +17,7 @@ import type { MarketIntelData } from '@/data/mock/marketIntel'
 import type { MilestoneItem } from '@/data/mock/milestones'
 import DealRoomHeader from '@/components/DealRoomHeader'
 import MarketTestedBanner from '@/components/MarketTestedBanner'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import MilestoneTimeline from '@/components/MilestoneTimeline'
 import SeatedBuyerItem from '@/components/SeatedBuyerItem'
 import SummaryCard from '@/components/SummaryCard'
@@ -119,6 +120,15 @@ export default function SellerDealRoomView({ dealId, onBack }: SellerDealRoomVie
 
   return (
     <div className="flex h-full flex-col">
+      <div className="px-6 pt-4">
+        <Breadcrumbs
+          items={[
+            { label: 'Sell' },
+            { label: 'Your Listings', onClick: onBack },
+            { label: deal.name },
+          ]}
+        />
+      </div>
       {/* ═══ DEAL HEADER ═══ */}
       <DealRoomHeader
         deal={deal}

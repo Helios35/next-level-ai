@@ -11,7 +11,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { ArrowLeft, CheckCircle, RotateCcw, XCircle, Send, Sparkles } from 'lucide-react'
+import { CheckCircle, RotateCcw, XCircle, Send, Sparkles } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 const FLAG_CONFIG: Record<AiFlagColor, { label: string; className: string }> = {
   green: {
@@ -137,14 +138,14 @@ export default function AnalystReviewView({ memoId, onBack }: AnalystReviewViewP
     <>
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-border bg-background px-6 py-3">
-          <button
-            onClick={onBack}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="flex items-center gap-3">
+        <div className="border-b border-border bg-background px-6 py-3">
+          <Breadcrumbs
+            items={[
+              { label: 'Tasks', onClick: onBack },
+              { label: memo.dealName },
+            ]}
+          />
+          <div className="mt-2 flex items-center gap-3">
             <h1 className="text-sm font-semibold text-foreground">{memo.dealName}</h1>
             <Badge variant="outline" className={flag.className}>
               {flag.label}

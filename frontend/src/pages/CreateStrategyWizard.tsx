@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { MultiSelect } from '@/components/ui/multi-select'
 import { SectionCard } from '@/components/ui/section-card'
 import { ReviewRow } from '@/components/ui/review-row'
@@ -441,6 +442,7 @@ export default function CreateStrategyWizard({
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-3xl px-6 py-6 flex flex-col gap-4">
+        <Breadcrumbs items={[{ label: 'Strategy' }, { label: 'Create Strategy' }]} />
         {/* ── Progress indicator ────────────────────────────────────── */}
         <div className="flex gap-3">
           {WIZARD_STEPS.map((label, i) => (

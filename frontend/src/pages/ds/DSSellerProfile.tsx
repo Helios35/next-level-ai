@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { ArrowLeft, Mail, Phone, User } from 'lucide-react'
+import { Mail, Phone, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { STAGE_LABELS } from '@/components/StageProgressBar'
 import { SELLER_CONTACTS } from './DSSellerClients'
@@ -46,7 +47,7 @@ export default function DSSellerProfile({ sellerId, onBack, onNavigateToDeal }: 
       <div className="flex h-full flex-col items-center justify-center gap-3 py-20">
         <p className="text-lg font-medium text-slate-500">Seller not found.</p>
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft size={14} className="mr-1.5" /> Back to Sellers
+          Back to Sellers
         </Button>
       </div>
     )
@@ -54,9 +55,13 @@ export default function DSSellerProfile({ sellerId, onBack, onNavigateToDeal }: 
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-      <button onClick={onBack} className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft size={14} /> Back to Sellers
-      </button>
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: 'Clients', onClick: onBack },
+          { label: contact.name },
+        ]}
+      />
 
       <h1 className="mb-6 text-xl font-bold text-foreground">{contact.name}</h1>
 

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { SectionCard } from '@/components/ui/section-card'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { DocumentListGroup, DocumentListItem } from '@/components/ui/document-list-item'
 import StageProgressBar, { STAGE_LABELS } from '@/components/StageProgressBar'
 import MilestoneTimeline from '@/components/MilestoneTimeline'
@@ -24,7 +25,7 @@ import type { DealRoomStage, DealRoomStatus } from '@shared/types/enums'
 import type { MarketIntelData } from '@/data/mock/marketIntel'
 import type { MilestoneItem } from '@/data/mock/milestones'
 import {
-  ArrowLeft, Users, FileText, BarChart3, MessageSquare, Flag,
+  Users, FileText, BarChart3, MessageSquare, Flag,
   CheckCircle2, Circle, Clock, AlertCircle, Send, Plus, Search, Shield,
   Calendar, ChevronDown, ChevronRight, Eye, Edit3, Award,
   TrendingUp, MapPin, DollarSign, Building2, User, Sparkles, X,
@@ -1053,7 +1054,6 @@ export default function DSDealView({ dealId, onBack, defaultTab }: DSDealViewPro
       <div className="flex h-full flex-col items-center justify-center gap-3 py-20">
         <p className="text-lg font-medium text-slate-500">Deal not found.</p>
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft size={14} className="mr-1.5" />
           Back to Pipeline
         </Button>
       </div>
@@ -1062,12 +1062,15 @@ export default function DSDealView({ dealId, onBack, defaultTab }: DSDealViewPro
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: 'Pipeline', onClick: onBack },
+          { label: deal.name },
+        ]}
+      />
       {/* Deal header */}
       <div className="mb-6">
-        <button onClick={onBack} className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft size={14} />
-          Back
-        </button>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-xl font-bold text-foreground">{deal.name}</h1>
           <Badge className={STATUS_BADGE[deal.status]}>{STATUS_LABELS[deal.status]}</Badge>

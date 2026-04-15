@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Home, Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
+import { Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
@@ -154,13 +155,7 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
       {/* Breadcrumb — below the sidebar toggle icon */}
-      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Home size={13} className="text-muted-foreground" />
-        <span>&gt;</span>
-        <span>Sell</span>
-        <span>&gt;</span>
-        <span className="text-foreground font-medium">Your Listings</span>
-      </nav>
+      <Breadcrumbs items={[{ label: 'Sell' }, { label: 'Your Listings' }]} />
 
       {/* Page header + stats */}
       <div className="space-y-4">

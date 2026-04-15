@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { Bell } from 'lucide-react'
 
 // ── Notification event types ──────────────────────────────────────────────
@@ -84,6 +85,7 @@ export default function AnalystNotifications() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Notifications' }]} />
       <div className="mb-4">
         <h1 className="text-lg font-bold text-foreground">Notifications</h1>
         <p className="text-sm text-muted-foreground">

@@ -7,6 +7,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 const ROLE_LABELS: Record<InternalRole, string> = {
   ds: 'Disposition Specialist',
@@ -71,6 +72,7 @@ export default function InternalProfile({ user }: InternalProfileProps) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Profile' }]} />
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="mb-6 flex items-center gap-4">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-600 text-xl font-semibold text-white">

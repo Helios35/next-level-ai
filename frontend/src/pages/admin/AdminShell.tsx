@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 
-export type AdminView = 'overview' | 'exceptions' | 'pipeline' | 'clients' | 'staff' | 'notifications' | 'settings'
+export type AdminView = 'overview' | 'pipeline' | 'clients' | 'tasks' | 'staff' | 'notifications' | 'settings'
 
 interface AdminShellProps {
   children: ReactNode

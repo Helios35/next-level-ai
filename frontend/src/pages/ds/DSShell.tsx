@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 
-export type DsView = 'tasks' | 'pipeline' | 'notifications' | 'clients'
+export type DsView = 'overview' | 'tasks' | 'pipeline' | 'clients' | 'notifications'
 
 // ── Shell content wrapper ─────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 
-export type AnalystView = 'queue' | 'completed' | 'pipeline' | 'notifications' | 'settings'
+export type AnalystView = 'overview' | 'pipeline' | 'clients' | 'tasks' | 'completed' | 'notifications' | 'settings'
 
 interface AnalystShellProps {
   children: ReactNode

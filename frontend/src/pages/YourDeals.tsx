@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { BuyerCtaState } from '@shared/types/buyerStrategy'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
@@ -183,6 +184,7 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
 
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
+      <Breadcrumbs items={[{ label: 'Buy' }, { label: 'Your Deals' }]} />
       {/* Page heading */}
       <div className="flex items-baseline justify-between">
         <h1 className="text-xl font-semibold text-foreground">Your Deals</h1>

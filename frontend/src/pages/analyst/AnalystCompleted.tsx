@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 type AnalystDecision = 'approve' | 'return' | 'reject'
 
@@ -67,6 +68,7 @@ function formatDate(iso: string): string {
 export default function AnalystCompleted() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Completed' }]} />
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">Completed Reviews</h1>
         <p className="mt-1 text-sm text-muted-foreground">

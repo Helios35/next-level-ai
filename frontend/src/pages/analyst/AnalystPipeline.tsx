@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Badge } from '@/components/ui/badge'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { DealRoomStatus } from '@shared/types/enums'
 
 const STAGE_LABELS: Record<number, string> = {
@@ -58,6 +59,7 @@ export default function AnalystPipeline() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Pipeline' }]} />
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">Pipeline</h1>
         <p className="mt-1 text-sm text-muted-foreground">

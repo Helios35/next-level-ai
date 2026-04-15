@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { MOCK_CLIENTS, type ClientRecord } from './AdminClients'
+import { MOCK_CLIENTS, type ClientRecord } from '@/data/mock/clients'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,7 +11,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import { ArrowLeft, Ban, CheckCircle } from 'lucide-react'
+import { Ban, CheckCircle } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 
 interface DealHistoryEntry {
   dealName: string
@@ -76,20 +77,19 @@ export default function AdminClientProfile({ clientId, onBack }: AdminClientProf
   return (
     <>
       <div className="mx-auto max-w-3xl px-6 py-8">
+        <Breadcrumbs
+          className="mb-4"
+          items={[
+            { label: 'Clients', onClick: onBack },
+            { label: client.name },
+          ]}
+        />
         {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{client.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {client.type === 'buyer' ? 'Buyer' : 'Seller'} account
-            </p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-foreground">{client.name}</h1>
+          <p className="text-xs text-muted-foreground">
+            {client.type === 'buyer' ? 'Buyer' : 'Seller'} account
+          </p>
         </div>
 
         {/* Contact Info */}

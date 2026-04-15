@@ -31,8 +31,7 @@ import type { AiTip } from '@/components/ui/ai-tip-card'
 import { MOCK_SPECIALIST_SELLER_DR001, MOCK_SPECIALIST_BUYER_DR001 } from '@/data/mock/chat'
 import {
   ClipboardList, BarChart3, Users as UsersIcon, Bell as BellIcon,
-  ClipboardCheck, CheckSquare,
-  LayoutDashboard, AlertTriangle, UserCog,
+  CheckSquare, LayoutDashboard, UserCog,
 } from 'lucide-react'
 import type { SidebarNavItem } from '@/components/SidebarNav'
 import InternalLogin from '@/pages/InternalLogin'
@@ -41,6 +40,7 @@ import InternalProfile from '@/pages/InternalProfile'
 import InternalSettings from '@/pages/InternalSettings'
 import DSShell from '@/pages/ds/DSShell'
 import type { DsView } from '@/pages/ds/DSShell'
+import DSOverview from '@/pages/ds/DSOverview'
 import DSTaskQueue from '@/pages/ds/DSTaskQueue'
 import DSPipeline from '@/pages/ds/DSPipeline'
 import DSNotifications from '@/pages/ds/DSNotifications'
@@ -53,7 +53,9 @@ import type { InternalRole } from '@shared/types/enums'
 
 // Analyst portal imports
 import AnalystShell, { type AnalystView } from '@/pages/analyst/AnalystShell'
-import AnalystPortal from '@/pages/analyst/AnalystPortal'
+import AnalystOverview from '@/pages/analyst/AnalystOverview'
+import AnalystTasks from '@/pages/analyst/AnalystTasks'
+import AnalystClients from '@/pages/analyst/AnalystClients'
 import AnalystReviewView from '@/pages/analyst/AnalystReviewView'
 import AnalystCompleted from '@/pages/analyst/AnalystCompleted'
 import AnalystPipeline from '@/pages/analyst/AnalystPipeline'
@@ -62,7 +64,7 @@ import AnalystNotifications from '@/pages/analyst/AnalystNotifications'
 // Admin portal imports
 import AdminShellComp, { type AdminView } from '@/pages/admin/AdminShell'
 import AdminPortalPage from '@/pages/admin/AdminPortal'
-import AdminExceptions from '@/pages/admin/AdminExceptions'
+import AdminTasks from '@/pages/admin/AdminTasks'
 import AdminDealView from '@/pages/admin/AdminDealView'
 import AdminPipelinePage from '@/pages/admin/AdminPipeline'
 import AdminClients from '@/pages/admin/AdminClients'
@@ -77,28 +79,32 @@ import AdminNotifications from '@/pages/admin/AdminNotifications'
 // Settings moved into the UserMenu dropdown (top-right).
 const INTERNAL_BOTTOM_NAV: SidebarNavItem[] = [{ icon: BellIcon, label: 'Notifications' }]
 
+// Unified order for every internal role: Overview · Pipeline · Clients · Tasks · (role extras)
 const DS_NAV_ITEMS: SidebarNavItem[] = [
-  { icon: ClipboardList, label: 'Tasks' },
+  { icon: LayoutDashboard, label: 'Overview' },
   { icon: BarChart3, label: 'Pipeline' },
   { icon: UsersIcon, label: 'Clients' },
+  { icon: ClipboardList, label: 'Tasks' },
 ]
-const DS_VIEW_BY_INDEX: DsView[] = ['tasks', 'pipeline', 'clients']
+const DS_VIEW_BY_INDEX: DsView[] = ['overview', 'pipeline', 'clients', 'tasks']
 
 const ANALYST_NAV_ITEMS: SidebarNavItem[] = [
-  { icon: ClipboardCheck, label: 'Review Queue' },
-  { icon: CheckSquare, label: 'Completed' },
+  { icon: LayoutDashboard, label: 'Overview' },
   { icon: BarChart3, label: 'Pipeline' },
+  { icon: UsersIcon, label: 'Clients' },
+  { icon: ClipboardList, label: 'Tasks' },
+  { icon: CheckSquare, label: 'Completed' },
 ]
-const ANALYST_VIEW_BY_INDEX: AnalystView[] = ['queue', 'completed', 'pipeline']
+const ANALYST_VIEW_BY_INDEX: AnalystView[] = ['overview', 'pipeline', 'clients', 'tasks', 'completed']
 
 const ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   { icon: LayoutDashboard, label: 'Overview' },
-  { icon: AlertTriangle, label: 'Exception Queue' },
   { icon: BarChart3, label: 'Pipeline' },
   { icon: UsersIcon, label: 'Clients' },
+  { icon: ClipboardList, label: 'Tasks' },
   { icon: UserCog, label: 'Staff' },
 ]
-const ADMIN_VIEW_BY_INDEX: AdminView[] = ['overview', 'exceptions', 'pipeline', 'clients', 'staff']
+const ADMIN_VIEW_BY_INDEX: AdminView[] = ['overview', 'pipeline', 'clients', 'tasks', 'staff']
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -363,6 +369,14 @@ export default function ShellDemo() {
       }
     }
   }, [history, historyIndex])
+
+  // Shared navigation props for back/forward arrows in both AppShell and InternalShell headers
+  const historyNavProps = {
+    onBack: goBack,
+    onForward: goForward,
+    canGoBack: historyIndex > 0,
+    canGoForward: historyIndex < history.length - 1,
+  }
 
   const handleModeChange = useCallback((mode: Mode) => {
     navigateTo(MODE_LANDING[mode])
@@ -775,9 +789,9 @@ export default function ShellDemo() {
         onSuccess={(user) => {
           setInternalUser(user)
           const roleRouteMap: Record<InternalRole, Page> = {
-            ds: { mode: 'internal', view: 'portal', role: 'ds', dsView: 'tasks' },
-            analyst: { mode: 'internal', view: 'portal', role: 'analyst' },
-            admin: { mode: 'internal', view: 'portal', role: 'admin' },
+            ds: { mode: 'internal', view: 'portal', role: 'ds', dsView: 'overview' },
+            analyst: { mode: 'internal', view: 'portal', role: 'analyst', analystView: 'overview' },
+            admin: { mode: 'internal', view: 'portal', role: 'admin', adminView: 'overview' },
           }
           navigateTo(roleRouteMap[user.role])
         }}
@@ -802,6 +816,7 @@ export default function ShellDemo() {
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
+        {...historyNavProps}
       >
         <DSDealView
           dealId={page.dealId}
@@ -829,6 +844,7 @@ export default function ShellDemo() {
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
+        {...historyNavProps}
       >
         <DSSellerProfile
           sellerId={page.sellerId}
@@ -856,6 +872,7 @@ export default function ShellDemo() {
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
+        {...historyNavProps}
       >
         <DSBuyerProfile
           buyerId={page.buyerId}
@@ -877,16 +894,17 @@ export default function ShellDemo() {
           navigateTo({ mode: 'internal', view: 'login' })
         }}
         navItems={ANALYST_NAV_ITEMS}
-        activeNavIndex={ANALYST_VIEW_BY_INDEX.indexOf('queue')}
+        activeNavIndex={ANALYST_VIEW_BY_INDEX.indexOf('tasks')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: ANALYST_VIEW_BY_INDEX[i] })}
         bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'analyst' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'analyst' })}
+        {...historyNavProps}
       >
         <AnalystReviewView
           memoId={page.memoId}
-          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'queue' })}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'tasks' })}
         />
       </InternalShell>
     )
@@ -903,16 +921,17 @@ export default function ShellDemo() {
           navigateTo({ mode: 'internal', view: 'login' })
         }}
         navItems={ADMIN_NAV_ITEMS}
-        activeNavIndex={ADMIN_VIEW_BY_INDEX.indexOf('exceptions')}
+        activeNavIndex={ADMIN_VIEW_BY_INDEX.indexOf('tasks')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] })}
         bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
+        {...historyNavProps}
       >
         <AdminDealView
           dealId={page.dealId}
-          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'exceptions' })}
+          onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'tasks' })}
         />
       </InternalShell>
     )
@@ -935,6 +954,7 @@ export default function ShellDemo() {
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
+        {...historyNavProps}
       >
         <AdminClientProfile
           clientId={page.clientId}
@@ -961,6 +981,7 @@ export default function ShellDemo() {
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
+        {...historyNavProps}
       >
         <AdminStaffCreate
           onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'staff' })}
@@ -1004,6 +1025,7 @@ export default function ShellDemo() {
         }}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role })}
+        {...historyNavProps}
         {...nav}
         bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={bottomNotifView}
@@ -1048,6 +1070,7 @@ export default function ShellDemo() {
         }}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role })}
+        {...historyNavProps}
         {...nav}
         bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={bottomNotifView}
@@ -1060,11 +1083,21 @@ export default function ShellDemo() {
   // Internal portal shell — renders outside AppShell
   if (page.mode === 'internal' && page.view === 'portal' && internalUser) {
     const portalContent = (() => {
-      // DS portal — uses top-bar tab switcher
+      // DS portal
       if (page.role === 'ds') {
-        const dsView = page.dsView ?? 'tasks'
+        const dsView = page.dsView ?? 'overview'
         return (
           <DSShell>
+            {dsView === 'overview' && (
+              <DSOverview
+                onNavigateToTasks={() =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'tasks' })
+                }
+                onNavigateToDeal={(dealId, tab) =>
+                  navigateTo({ mode: 'internal', view: 'deal', role: 'ds', dealId, dealTab: tab })
+                }
+              />
+            )}
             {dsView === 'tasks' && (
               <DSTaskQueue
                 onNavigateToDeal={(dealId, tab) => {
@@ -1096,18 +1129,29 @@ export default function ShellDemo() {
 
       // Analyst portal — sidebar nav
       if (page.role === 'analyst') {
-        const analystView = page.analystView ?? 'queue'
+        const analystView = page.analystView ?? 'overview'
         return (
           <AnalystShell>
-            {analystView === 'queue' && (
-              <AnalystPortal
+            {analystView === 'overview' && (
+              <AnalystOverview
+                onNavigateToTasks={() =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'tasks' })
+                }
+                onNavigateToReview={(memoId) =>
+                  navigateTo({ mode: 'internal', view: 'analyst-review', memoId })
+                }
+              />
+            )}
+            {analystView === 'pipeline' && <AnalystPipeline />}
+            {analystView === 'clients' && <AnalystClients />}
+            {analystView === 'tasks' && (
+              <AnalystTasks
                 onNavigateToReview={(memoId) =>
                   navigateTo({ mode: 'internal', view: 'analyst-review', memoId })
                 }
               />
             )}
             {analystView === 'completed' && <AnalystCompleted />}
-            {analystView === 'pipeline' && <AnalystPipeline />}
             {analystView === 'notifications' && <AnalystNotifications />}
             {analystView === 'settings' && <InternalSettings role="analyst" />}
           </AnalystShell>
@@ -1121,16 +1165,9 @@ export default function ShellDemo() {
           <AdminShellComp>
             {adminView === 'overview' && (
               <AdminPortalPage
-                onNavigateToExceptions={() =>
-                  navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'exceptions' })
+                onNavigateToTasks={() =>
+                  navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'tasks' })
                 }
-                onNavigateToDeal={(dealId) =>
-                  navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
-                }
-              />
-            )}
-            {adminView === 'exceptions' && (
-              <AdminExceptions
                 onNavigateToDeal={(dealId) =>
                   navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
                 }
@@ -1147,6 +1184,13 @@ export default function ShellDemo() {
               <AdminClients
                 onNavigateToClient={(clientId) =>
                   navigateTo({ mode: 'internal', view: 'admin-client', clientId })
+                }
+              />
+            )}
+            {adminView === 'tasks' && (
+              <AdminTasks
+                onNavigateToDeal={(dealId) =>
+                  navigateTo({ mode: 'internal', view: 'admin-deal', dealId })
                 }
               />
             )}
@@ -1169,7 +1213,7 @@ export default function ShellDemo() {
     // Compute nav props based on role
     const navProps = (() => {
       if (page.role === 'ds') {
-        const dsView = page.dsView ?? 'tasks'
+        const dsView = page.dsView ?? 'overview'
         const mainIdx = DS_VIEW_BY_INDEX.indexOf(dsView as (typeof DS_VIEW_BY_INDEX)[number])
         return {
           navItems: DS_NAV_ITEMS,
@@ -1181,7 +1225,7 @@ export default function ShellDemo() {
         }
       }
       if (page.role === 'analyst') {
-        const analystView = page.analystView ?? 'queue'
+        const analystView = page.analystView ?? 'overview'
         const mainIdx = ANALYST_VIEW_BY_INDEX.indexOf(analystView as (typeof ANALYST_VIEW_BY_INDEX)[number])
         return {
           navItems: ANALYST_NAV_ITEMS,
@@ -1215,6 +1259,7 @@ export default function ShellDemo() {
         }}
         onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: page.role })}
         onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: page.role })}
+        {...historyNavProps}
         {...navProps}
       >
         {portalContent}

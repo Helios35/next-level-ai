@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MOCK_INTERNAL_USERS } from '@/data/mock/internalUsers'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ export default function AdminStaff({ onNavigateToCreate }: AdminStaffProps) {
   return (
     <>
       <div className="mx-auto max-w-5xl px-6 py-8">
+        <Breadcrumbs className="mb-4" items={[{ label: 'Staff' }]} />
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-foreground">Staff</h1>

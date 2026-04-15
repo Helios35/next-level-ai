@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { DealRoomStatus } from '@shared/types/enums'
 
@@ -111,6 +112,7 @@ export default function DSPipeline({ onNavigateToDeal }: DSPipelineProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Pipeline' }]} />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-foreground">Pipeline</h1>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import DSSellerClients from './DSSellerClients'
 import DSBuyerQueue from './DSBuyerQueue'
 
@@ -13,6 +14,7 @@ export default function DSClients({ onNavigateToSellerProfile, onNavigateToBuyer
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <Breadcrumbs className="mb-4" items={[{ label: 'Clients' }]} />
       <div className="mb-5 flex items-center justify-between">
         <h1 className="text-lg font-bold text-foreground">Clients</h1>
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'sellers' | 'buyers')}>

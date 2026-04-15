@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { InternalRole } from '@shared/types/enums'
 
 const ROLE_OPTIONS: { value: InternalRole; label: string }[] = [
@@ -48,19 +49,18 @@ export default function AdminStaffCreate({ onBack }: AdminStaffCreateProps) {
 
   return (
     <div className="mx-auto max-w-lg px-6 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Add Staff Member</h1>
-          <p className="text-xs text-muted-foreground">
-            Provision a new internal user account.
-          </p>
-        </div>
+      <Breadcrumbs
+        className="mb-4"
+        items={[
+          { label: 'Staff', onClick: onBack },
+          { label: 'Add Staff Member' },
+        ]}
+      />
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-foreground">Add Staff Member</h1>
+        <p className="text-xs text-muted-foreground">
+          Provision a new internal user account.
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
