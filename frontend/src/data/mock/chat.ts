@@ -262,6 +262,57 @@ export const MOCK_CHAT_BUYER_DR001: ChatMessage[] = [
 
 // ── Buyer Feedback — dr_001 ────────────────────────────────────────────────
 
+// ── Specialist channel messages — Seller dr_001 ──────────────────────────
+// These appear in the Specialist tab of the chat panel (read-only for client)
+
+export const MOCK_SPECIALIST_SELLER_DR001: ChatMessage[] = [
+  {
+    id: 'spec_s_001',
+    dealRoomId: 'dr_001',
+    senderId: 'ds_001',
+    senderRole: 'ds',
+    senderLabel: 'Rachel Torres',
+    content: 'Hi Marcus — I\'ve reviewed the buyer feedback so far. The lease-up velocity answer you gave looks solid. I\'ll monitor for pricing-related questions and keep you posted.',
+    messageType: 'message',
+    timestamp: '2026-02-06T09:30:00Z',
+  },
+  {
+    id: 'spec_s_002',
+    dealRoomId: 'dr_001',
+    senderId: 'ds_001',
+    senderRole: 'ds',
+    senderLabel: 'Rachel Torres',
+    content: 'Quick update — Buyer #2041 opened the offer form today. No submission yet, but it\'s a strong signal. I\'ll reach out if anything needs your attention before the round opens.',
+    messageType: 'message',
+    timestamp: '2026-03-01T10:15:00Z',
+  },
+]
+
+// ── Specialist channel messages — Buyer dr_001 ───────────────────────────
+
+export const MOCK_SPECIALIST_BUYER_DR001: ChatMessage[] = [
+  {
+    id: 'spec_b_001',
+    dealRoomId: 'dr_001',
+    senderId: 'ds_001',
+    senderRole: 'ds',
+    senderLabel: 'Rachel Torres',
+    content: 'Welcome to Magnolia Farms. I\'m your Disposition Specialist — I\'ll be available here if you have questions that go beyond what the AI can answer from the documents. Feel free to reach out anytime.',
+    messageType: 'message',
+    timestamp: '2026-02-04T09:00:00Z',
+  },
+  {
+    id: 'spec_b_002',
+    dealRoomId: 'dr_001',
+    senderId: 'ds_001',
+    senderRole: 'ds',
+    senderLabel: 'Rachel Torres',
+    content: 'I saw your question about pricing competitiveness — good instinct. I\'ve pulled some comps and the ask is in line with recent BFR trades in Charlotte. Happy to discuss further if you\'d like.',
+    messageType: 'message',
+    timestamp: '2026-02-04T14:30:00Z',
+  },
+]
+
 export const MOCK_BUYER_FEEDBACK_DR001: BuyerFeedbackItem[] = [
   {
     id: 'feedback_001',

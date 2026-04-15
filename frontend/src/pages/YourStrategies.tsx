@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import StrategyCard from '@/components/StrategyCard'
 import ActiveDealRoomsCallout from '@/components/ActiveDealRoomsCallout'
 import BuyerEmptyState from '@/components/BuyerEmptyState'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { MOCK_BUYER_STRATEGIES } from '@/data/mock/buyerStrategies'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 
@@ -32,7 +33,8 @@ export default function YourStrategies({ onCreateStrategy, onEditStrategy, onOpe
   if (strategies.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="px-6 py-5">
+        <div className="px-6 py-5 space-y-3">
+          <Breadcrumbs items={[{ label: 'Strategy' }, { label: 'Your Strategies' }]} />
           <h1 className="text-xl font-semibold text-foreground">Your Strategies</h1>
         </div>
         <BuyerEmptyState variant="no-strategies" onCTA={onCreateStrategy} accentMode="strategy" />
@@ -42,7 +44,8 @@ export default function YourStrategies({ onCreateStrategy, onEditStrategy, onOpe
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <div className="px-6 py-5">
+      <div className="px-6 py-5 space-y-3">
+        <Breadcrumbs items={[{ label: 'Strategy' }, { label: 'Your Strategies' }]} />
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-foreground">Your Strategies</h1>
           <button

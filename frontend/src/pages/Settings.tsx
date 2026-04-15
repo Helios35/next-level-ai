@@ -4,6 +4,7 @@ import type { UserRole } from '@shared/types/enums'
 import { SectionCard } from '@/components/ui/section-card'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Toggle } from '@/components/ui/toggle'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import {
   Select,
   SelectContent,
@@ -129,6 +130,7 @@ export default function Settings({ userRole }: SettingsProps) {
 
   return (
     <div className="px-6 py-5 space-y-5">
+      <Breadcrumbs items={[{ label: 'Settings' }]} />
       <h1 className="text-xl font-semibold text-foreground">Settings</h1>
 
       <SectionCard icon={Bell} title="Notifications">

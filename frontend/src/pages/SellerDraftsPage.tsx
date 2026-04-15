@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import SellerListingsEmpty from '@/components/SellerListingsEmpty'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { Trash2, ArrowRight } from 'lucide-react'
 import type { ListingDraft } from '@/pages/CreateListingWizard'
 
@@ -23,7 +24,8 @@ export default function SellerDraftsPage({ drafts, onContinue, onDelete }: Selle
   if (drafts.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="px-6 py-5">
+        <div className="px-6 py-5 space-y-3">
+          <Breadcrumbs items={[{ label: 'Sell' }, { label: 'Drafts' }]} />
           <h1 className="text-lg font-semibold text-foreground">Drafts</h1>
         </div>
         <SellerListingsEmpty variant="no-drafts" />
@@ -33,7 +35,8 @@ export default function SellerDraftsPage({ drafts, onContinue, onDelete }: Selle
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <div className="px-6 py-5">
+      <div className="px-6 py-5 space-y-3">
+        <Breadcrumbs items={[{ label: 'Sell' }, { label: 'Drafts' }]} />
         <h1 className="text-lg font-semibold text-foreground">Drafts</h1>
       </div>
       <div className="px-6 pb-6 space-y-3">

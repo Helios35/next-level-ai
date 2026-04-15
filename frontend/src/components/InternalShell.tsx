@@ -1,6 +1,9 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { LogOut, Sun, Moon } from 'lucide-react'
+import { Sun, Moon, ArrowLeft, ArrowRight } from 'lucide-react'
 import type { InternalRole } from '@shared/types/enums'
+import { cn } from '@/utils/cn'
+import SidebarNav, { type SidebarNavItem } from '@/components/SidebarNav'
+import { UserMenu } from '@/components/ui/user-menu'
 
 const ROLE_LABELS: Record<InternalRole, string> = {
   ds: 'Disposition Specialist',
@@ -13,8 +16,19 @@ interface InternalShellProps {
   role: InternalRole
   userName: string
   onSignOut: () => void
-  /** Optional sidebar slot — DS portal opts out (uses top-bar tabs instead) */
-  sidebar?: ReactNode
+  onProfileClick: () => void
+  onSettingsClick: () => void
+  /** History navigation — back arrow in the header */
+  onBack?: () => void
+  onForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
+  navItems: SidebarNavItem[]
+  activeNavIndex: number
+  onNavItemClick: (index: number) => void
+  bottomNavItems?: SidebarNavItem[]
+  activeBottomIndex?: number
+  onBottomNavItemClick?: (index: number) => void
 }
 
 export default function InternalShell({
@@ -22,7 +36,18 @@ export default function InternalShell({
   role,
   userName,
   onSignOut,
-  sidebar,
+  onProfileClick,
+  onSettingsClick,
+  onBack,
+  onForward,
+  canGoBack = false,
+  canGoForward = false,
+  navItems,
+  activeNavIndex,
+  onNavItemClick,
+  bottomNavItems,
+  activeBottomIndex,
+  onBottomNavItemClick,
 }: InternalShellProps) {
   const [dark, setDark] = useState(true)
 
@@ -41,18 +66,40 @@ export default function InternalShell({
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
       {/* ═══ TOP BAR ═══ */}
       <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-background px-4">
-        {/* Left — wordmark */}
-        <span className="text-base font-bold tracking-tight text-foreground">
-          NextLevel
-          <span className="ml-1.5 text-xs font-normal text-slate-500">internal</span>
-        </span>
+        {/* Left cluster — wordmark + back/forward */}
+        <div className="flex items-center gap-1">
+          <span className="text-base font-bold tracking-tight text-foreground">
+            NextLevel
+          </span>
+          <button
+            onClick={onBack}
+            disabled={!canGoBack}
+            className={cn(
+              'hidden sm:flex rounded-md p-2 transition-colors ml-2',
+              canGoBack
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+            aria-label="Go back"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <button
+            onClick={onForward}
+            disabled={!canGoForward}
+            className={cn(
+              'hidden sm:flex rounded-md p-2 transition-colors',
+              canGoForward
+                ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground/30 cursor-default',
+            )}
+            aria-label="Go forward"
+          >
+            <ArrowRight size={18} />
+          </button>
+        </div>
 
-        {/* Center — role label */}
-        <span className="text-sm font-medium text-slate-500">
-          {ROLE_LABELS[role]}
-        </span>
-
-        {/* Right — user + sign out */}
+        {/* Right — theme toggle + user menu */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDark(!dark)}
@@ -60,33 +107,33 @@ export default function InternalShell({
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-semibold text-white">
-            {initials}
-          </div>
-          <span className="hidden sm:inline text-sm text-muted-foreground">{userName}</span>
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
+          <UserMenu
+            initials={initials}
+            name={userName}
+            onProfileClick={onProfileClick}
+            onSettingsClick={onSettingsClick}
+            onSignOut={onSignOut}
+          />
         </div>
       </header>
 
       {/* ═══ BODY ═══ */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Optional sidebar */}
-        {sidebar && (
-          <nav className="hidden sm:flex w-52 flex-col border-r border-border bg-background">
-            {sidebar}
-          </nav>
-        )}
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-main">
+        <SidebarNav
+          items={navItems}
+          activeIndex={activeNavIndex}
+          onItemClick={onNavItemClick}
+          bottomItems={bottomNavItems}
+          activeBottomIndex={activeBottomIndex}
+          onBottomItemClick={onBottomNavItemClick}
+          header={
+            <div className="px-3 py-3 text-sm font-semibold text-foreground">
+              {ROLE_LABELS[role]}
+            </div>
+          }
+        >
           {children}
-        </main>
+        </SidebarNav>
       </div>
     </div>
   )

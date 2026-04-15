@@ -12,6 +12,7 @@ import type { DealDocument } from '@shared/types/document'
 import type { BuyerPoolEntry } from '@shared/types/buyerPool'
 import type { Offer } from '@shared/types/offer'
 import DealRoomHeader from '@/components/DealRoomHeader'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import BuyerPoolPanel from '@/components/BuyerPoolPanel'
 import OfferSubmissionForm from '@/components/OfferSubmissionForm'
 import { DocumentListItem, DocumentListGroup } from '@/components/ui/document-list-item'
@@ -95,6 +96,15 @@ export default function BuyerDealRoomView({ dealId, onBack }: BuyerDealRoomViewP
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
+      <div className="px-6 pt-4">
+        <Breadcrumbs
+          items={[
+            { label: 'Buy' },
+            { label: 'Your Deals', onClick: onBack },
+            { label: deal.name },
+          ]}
+        />
+      </div>
       {/* Section 1 — Header */}
       <DealRoomHeader deal={deal} viewer="buyer" seatedBuyerCount={seatedBuyers.length} onBack={onBack} />
 

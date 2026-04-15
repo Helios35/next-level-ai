@@ -3,6 +3,7 @@ import { User as UserIcon, BarChart3, Briefcase, ShieldCheck, CheckCircle2, Aler
 import type { User } from '@shared/types/user'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { SectionCard } from '@/components/ui/section-card'
+import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -131,6 +132,7 @@ export default function Profile({ user }: ProfileProps) {
 
   return (
     <div className="px-6 py-5">
+      <Breadcrumbs className="mb-3" items={[{ label: 'Profile' }]} />
       <h1 className="text-xl font-semibold text-foreground mb-5">Your Profile</h1>
 
       <Tabs defaultValue="overview" className="w-full">

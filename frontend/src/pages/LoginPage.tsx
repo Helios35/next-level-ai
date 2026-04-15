@@ -7,9 +7,10 @@ import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 interface LoginPageProps {
   onSuccess: () => void
   onSignUp: () => void
+  onInternalLogin?: () => void
 }
 
-export default function LoginPage({ onSuccess, onSignUp }: LoginPageProps) {
+export default function LoginPage({ onSuccess, onSignUp, onInternalLogin }: LoginPageProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -71,6 +72,18 @@ export default function LoginPage({ onSuccess, onSignUp }: LoginPageProps) {
               Sign up
             </button>
           </p>
+
+          {onInternalLogin && (
+            <p className="text-xs text-muted-foreground/60 text-center">
+              <button
+                type="button"
+                onClick={onInternalLogin}
+                className="text-muted-foreground/60 underline hover:text-muted-foreground transition-colors"
+              >
+                Internal Staff? Log in here
+              </button>
+            </p>
+          )}
         </form>
       </div>
     </OnboardingShell>
