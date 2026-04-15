@@ -1,35 +1,56 @@
 import { useState } from 'react'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { DataTableHeader } from '@/components/ui/data-table-header'
 import DSSellerClients from './DSSellerClients'
 import DSBuyerQueue from './DSBuyerQueue'
+
+type ClientsTab = 'sellers' | 'buyers'
+
+const CLIENT_TABS = [
+  { value: 'sellers', label: 'Sellers' },
+  { value: 'buyers', label: 'Buyers' },
+]
 
 interface DSClientsProps {
   onNavigateToSellerProfile: (sellerId: string) => void
   onNavigateToBuyerProfile: (buyerId: string) => void
 }
 
-export default function DSClients({ onNavigateToSellerProfile, onNavigateToBuyerProfile }: DSClientsProps) {
-  const [tab, setTab] = useState<'sellers' | 'buyers'>('sellers')
+export default function DSClients({
+  onNavigateToSellerProfile,
+  onNavigateToBuyerProfile,
+}: DSClientsProps) {
+  const [tab, setTab] = useState<ClientsTab>('sellers')
+  const [search, setSearch] = useState('')
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       <Breadcrumbs className="mb-4" items={[{ label: 'Clients' }]} />
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-foreground">Clients</h1>
-        <Tabs value={tab} onValueChange={(v) => setTab(v as 'sellers' | 'buyers')}>
-          <TabsList>
-            <TabsTrigger value="sellers">Sellers</TabsTrigger>
-            <TabsTrigger value="buyers">Buyers</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+
+      <DataTableHeader
+        title="Clients"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tab === 'sellers' ? 'Search sellers...' : 'Search buyers...'}
+        tabs={CLIENT_TABS}
+        activeTab={tab}
+        onTabChange={(v) => {
+          setTab(v as ClientsTab)
+          setSearch('')
+        }}
+      />
 
       {tab === 'sellers' && (
-        <DSSellerClients onNavigateToProfile={onNavigateToSellerProfile} />
+        <DSSellerClients
+          search={search}
+          onNavigateToProfile={onNavigateToSellerProfile}
+        />
       )}
       {tab === 'buyers' && (
-        <DSBuyerQueue onNavigateToProfile={onNavigateToBuyerProfile} />
+        <DSBuyerQueue
+          search={search}
+          onNavigateToProfile={onNavigateToBuyerProfile}
+        />
       )}
     </div>
   )

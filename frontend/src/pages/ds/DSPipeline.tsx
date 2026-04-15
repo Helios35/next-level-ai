@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableHeader } from '@/components/ui/data-table-header'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { usePagination } from '@/hooks/usePagination'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { DealRoomStatus } from '@shared/types/enums'
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────
 
 type PipelineFilter = 'all' | 'active' | 'market_tested' | 'dormant'
 
-const FILTER_LABELS: { value: PipelineFilter; label: string }[] = [
+const PIPELINE_TABS = [
   { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'market_tested', label: 'Market Tested' },
@@ -70,7 +74,7 @@ const SELLER_NAMES: Record<string, string> = {
 }
 
 function formatRelativeTime(iso: string): string {
-  const now = new Date('2026-04-14T12:00:00Z') // Mock "now" consistent with mock data
+  const now = new Date('2026-04-14T12:00:00Z')
   const then = new Date(iso)
   const diffMs = now.getTime() - then.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
@@ -81,7 +85,7 @@ function formatRelativeTime(iso: string): string {
   return `${diffMonths} mo ago`
 }
 
-function filterDeals(deals: DealRoom[], filter: PipelineFilter): DealRoom[] {
+function applyTabFilter(deals: DealRoom[], filter: PipelineFilter): DealRoom[] {
   switch (filter) {
     case 'active':
       return deals.filter(
@@ -96,7 +100,7 @@ function filterDeals(deals: DealRoom[], filter: PipelineFilter): DealRoom[] {
   }
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────
 
 interface DSPipelineProps {
   onNavigateToDeal?: (dealId: string) => void
@@ -104,122 +108,132 @@ interface DSPipelineProps {
 
 export default function DSPipeline({ onNavigateToDeal }: DSPipelineProps) {
   const [filter, setFilter] = useState<PipelineFilter>('all')
+  const [search, setSearch] = useState('')
 
-  const filteredDeals = useMemo(
-    () => filterDeals(MOCK_SELLER_DEAL_ROOMS, filter),
-    [filter],
+  const filtered = useMemo(() => {
+    const base = applyTabFilter(MOCK_SELLER_DEAL_ROOMS, filter)
+    const term = search.trim().toLowerCase()
+    if (!term) return base
+    return base.filter(
+      (d) =>
+        d.name.toLowerCase().includes(term) ||
+        (SELLER_NAMES[d.sellerId] ?? '').toLowerCase().includes(term),
+    )
+  }, [filter, search])
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filtered,
+    { pageSize: 25, resetKey: `${filter}|${search}` },
   )
+
+  const columns: Column<DealRoom>[] = [
+    {
+      key: 'name',
+      label: 'Deal Name',
+      sortable: true,
+      sortAccessor: (row) => row.name,
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onNavigateToDeal?.(row.id)
+          }}
+          className="font-medium text-foreground underline-offset-2 hover:underline"
+        >
+          {row.name}
+        </button>
+      ),
+    },
+    {
+      key: 'assetSubType',
+      label: 'Asset Type',
+      sortable: true,
+      sortAccessor: (row) => SUBTYPE_LABELS[row.assetSubType] ?? row.assetSubType,
+      hideBelow: 'md',
+      render: (row) => SUBTYPE_LABELS[row.assetSubType] ?? row.assetSubType,
+    },
+    {
+      key: 'seller',
+      label: 'Seller',
+      sortable: true,
+      sortAccessor: (row) => SELLER_NAMES[row.sellerId] ?? '',
+      hideBelow: 'lg',
+      render: (row) => SELLER_NAMES[row.sellerId] ?? 'Unknown',
+    },
+    {
+      key: 'currentStage',
+      label: 'Stage',
+      sortable: true,
+      sortAccessor: (row) => row.currentStage,
+      render: (row) => (
+        <>
+          <span className="font-medium text-foreground">{row.currentStage}</span>
+          <span className="ml-1 text-xs">{STAGE_LABELS[row.currentStage] ?? ''}</span>
+        </>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      sortAccessor: (row) => STATUS_LABELS[row.status],
+      render: (row) => (
+        <Badge className={STATUS_BADGE_CLASS[row.status]}>
+          {STATUS_LABELS[row.status]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'seats',
+      label: 'Seats',
+      hideBelow: 'lg',
+      sortable: true,
+      sortAccessor: (row) =>
+        row.currentStage >= 6 ? Math.min(row.matchedBuyerCount, 3) : -1,
+      render: (row) =>
+        row.currentStage >= 6 ? `${Math.min(row.matchedBuyerCount, 3)} / 3` : '—',
+    },
+    {
+      key: 'lastActivity',
+      label: 'Last Activity',
+      hideBelow: 'sm',
+      sortable: true,
+      sortAccessor: (row) => new Date(row.updatedAt),
+      render: (row) => formatRelativeTime(row.updatedAt),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
       <Breadcrumbs className="mb-4" items={[{ label: 'Pipeline' }]} />
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-foreground">Pipeline</h1>
-          <p className="text-sm text-muted-foreground">
-            {filteredDeals.length} deal{filteredDeals.length !== 1 ? 's' : ''}
-          </p>
-        </div>
 
-        {/* Filter tabs */}
-        <Tabs
-          value={filter}
-          onValueChange={(v) => setFilter(v as PipelineFilter)}
-        >
-          <TabsList>
-            {FILTER_LABELS.map((f) => (
-              <TabsTrigger key={f.value} value={f.value}>
-                {f.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
+      <DataTableHeader
+        title="Pipeline"
+        subtitle={`${totalCount} deal${totalCount !== 1 ? 's' : ''}`}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search deal or seller..."
+        tabs={PIPELINE_TABS}
+        activeTab={filter}
+        onTabChange={(v) => setFilter(v as PipelineFilter)}
+      />
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="px-4 py-3 font-medium text-muted-foreground">Deal Name</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">Asset Type</th>
-              <th className="hidden px-4 py-3 font-medium text-muted-foreground md:table-cell">Seller</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">Stage</th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
-              <th className="hidden px-4 py-3 font-medium text-muted-foreground lg:table-cell">Seats</th>
-              <th className="hidden px-4 py-3 font-medium text-muted-foreground sm:table-cell">Last Activity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDeals.map((deal) => {
-              const isDormant = deal.status === 'dormant'
-              const rowClass = isDormant ? 'opacity-50' : ''
+      <DataTable
+        columns={columns}
+        data={pagedData}
+        rowKey={(row) => row.id}
+        defaultSort={{ key: 'currentStage', direction: 'desc' }}
+        onRowClick={(row) => onNavigateToDeal?.(row.id)}
+        rowClassName={(row) => (row.status === 'dormant' ? 'opacity-50' : undefined)}
+        emptyMessage="No deals match this filter."
+      />
 
-              return (
-                <tr
-                  key={deal.id}
-                  className={`border-b border-border last:border-b-0 transition-colors hover:bg-muted/30 ${rowClass}`}
-                >
-                  {/* Deal Name — linked */}
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => onNavigateToDeal?.(deal.id)}
-                      className="font-medium text-foreground underline-offset-2 hover:underline"
-                    >
-                      {deal.name}
-                    </button>
-                  </td>
-
-                  {/* Asset Type / Subtype */}
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {SUBTYPE_LABELS[deal.assetSubType] ?? deal.assetSubType}
-                  </td>
-
-                  {/* Seller */}
-                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                    {SELLER_NAMES[deal.sellerId] ?? 'Unknown'}
-                  </td>
-
-                  {/* Stage */}
-                  <td className="px-4 py-3 text-muted-foreground">
-                    <span className="font-medium text-foreground">{deal.currentStage}</span>
-                    <span className="ml-1 text-xs">
-                      {STAGE_LABELS[deal.currentStage] ?? ''}
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-4 py-3">
-                    <Badge className={STATUS_BADGE_CLASS[deal.status]}>
-                      {STATUS_LABELS[deal.status]}
-                    </Badge>
-                  </td>
-
-                  {/* Seats */}
-                  <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
-                    {deal.currentStage >= 6
-                      ? `${Math.min(deal.matchedBuyerCount, 3)} / 3`
-                      : '—'}
-                  </td>
-
-                  {/* Last Activity */}
-                  <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                    {formatRelativeTime(deal.updatedAt)}
-                  </td>
-                </tr>
-              )
-            })}
-
-            {filteredDeals.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                  No deals match this filter.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTableFooter
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setPage}
+      />
     </div>
   )
 }

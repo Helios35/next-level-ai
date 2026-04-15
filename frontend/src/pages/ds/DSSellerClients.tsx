@@ -1,8 +1,12 @@
 import { useMemo } from 'react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { usePagination } from '@/hooks/usePagination'
 
 // Seller contact lookup — matches DSDealView and DSPipeline
-const SELLER_CONTACTS: Record<string, { name: string; email: string; phone: string }> = {
+export const SELLER_CONTACTS: Record<string, { name: string; email: string; phone: string }> = {
   user_001: { name: 'Marcus Webb', email: 'marcus.webb@trianglecap.com', phone: '(704) 555-0192' },
   user_009: { name: 'Jordan Fields', email: 'jordan@sunbeltdev.com', phone: '(615) 555-0314' },
   user_010: { name: 'Carol Tran', email: 'carol.tran@landmarkdev.com', phone: '(512) 555-0291' },
@@ -16,7 +20,12 @@ const SELLER_CONTACTS: Record<string, { name: string; email: string; phone: stri
   user_018: { name: 'Samira Hassan', email: 'samira@crescentgroup.com', phone: '(615) 555-0421' },
 }
 
-export { SELLER_CONTACTS }
+interface SellerRow {
+  sellerId: string
+  name: string
+  activeDeals: number
+  lastActivity: string
+}
 
 function formatRelativeTime(iso: string): string {
   const now = new Date('2026-04-14T12:00:00Z')
@@ -30,12 +39,17 @@ function formatRelativeTime(iso: string): string {
 }
 
 interface DSSellerClientsProps {
+  /** Search term owned by the parent DSClients page header */
+  search: string
   onNavigateToProfile: (sellerId: string) => void
 }
 
-export default function DSSellerClients({ onNavigateToProfile }: DSSellerClientsProps) {
-  const sellers = useMemo(() => {
-    const grouped = new Map<string, { sellerId: string; name: string; activeDeals: number; lastActivity: string }>()
+export default function DSSellerClients({
+  search,
+  onNavigateToProfile,
+}: DSSellerClientsProps) {
+  const sellers = useMemo<SellerRow[]>(() => {
+    const grouped = new Map<string, SellerRow>()
 
     for (const deal of MOCK_SELLER_DEAL_ROOMS) {
       const existing = grouped.get(deal.sellerId)
@@ -53,33 +67,63 @@ export default function DSSellerClients({ onNavigateToProfile }: DSSellerClients
       }
     }
 
-    return Array.from(grouped.values()).sort((a, b) => b.lastActivity.localeCompare(a.lastActivity))
+    return Array.from(grouped.values())
   }, [])
 
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return sellers
+    return sellers.filter((s) => s.name.toLowerCase().includes(term))
+  }, [sellers, search])
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filtered,
+    { pageSize: 25, resetKey: search },
+  )
+
+  const columns: Column<SellerRow>[] = [
+    {
+      key: 'name',
+      label: 'Seller Name',
+      sortable: true,
+      sortAccessor: (row) => row.name,
+      render: (row) => (
+        <span className="font-medium text-foreground">{row.name}</span>
+      ),
+    },
+    {
+      key: 'activeDeals',
+      label: 'Active Deals',
+      sortable: true,
+      sortAccessor: (row) => row.activeDeals,
+      align: 'right',
+      render: (row) => row.activeDeals,
+    },
+    {
+      key: 'lastActivity',
+      label: 'Last Activity',
+      sortable: true,
+      sortAccessor: (row) => new Date(row.lastActivity),
+      render: (row) => formatRelativeTime(row.lastActivity),
+    },
+  ]
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border bg-card text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Seller Name</th>
-            <th className="px-4 py-3 font-medium">Active Deals</th>
-            <th className="px-4 py-3 font-medium">Last Activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sellers.map((seller) => (
-            <tr
-              key={seller.sellerId}
-              onClick={() => onNavigateToProfile(seller.sellerId)}
-              className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-            >
-              <td className="px-4 py-3 font-medium text-foreground">{seller.name}</td>
-              <td className="px-4 py-3 text-muted-foreground">{seller.activeDeals}</td>
-              <td className="px-4 py-3 text-muted-foreground">{formatRelativeTime(seller.lastActivity)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <DataTable
+        columns={columns}
+        data={pagedData}
+        rowKey={(row) => row.sellerId}
+        defaultSort={{ key: 'lastActivity', direction: 'desc' }}
+        onRowClick={(row) => onNavigateToProfile(row.sellerId)}
+        emptyMessage="No sellers match your search."
+      />
+      <DataTableFooter
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setPage}
+      />
+    </>
   )
 }

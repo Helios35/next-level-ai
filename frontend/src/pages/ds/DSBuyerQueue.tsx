@@ -1,5 +1,9 @@
 import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { usePagination } from '@/hooks/usePagination'
 import { MOCK_BUYER_POOL_DR001, MOCK_BUYER_POOL_DR002, MOCK_BUYER_POOL_DR005 } from '@/data/mock/buyerPool'
 import { DS_BUYER_NAMES, DS_BUYER_FIRM_TYPES } from '@/data/mock/dsConversations'
 import type { BuyerPoolEntry } from '@shared/types/buyerPool'
@@ -24,8 +28,11 @@ const SEAT_BADGE: Record<string, string> = {
 }
 
 const SEAT_LABELS: Record<string, string> = {
-  seated: 'Seated', pending: 'Pending', invited: 'Invited',
-  accepted: 'Accepted', passed: 'Passed',
+  seated: 'Seated',
+  pending: 'Pending',
+  invited: 'Invited',
+  accepted: 'Accepted',
+  passed: 'Passed',
 }
 
 function formatRelativeTime(iso: string): string {
@@ -50,17 +57,26 @@ interface BuyerRow {
 }
 
 interface DSBuyerQueueProps {
+  /** Search term owned by the parent DSClients page header */
+  search: string
   onNavigateToProfile: (buyerId: string) => void
 }
 
-export default function DSBuyerQueue({ onNavigateToProfile }: DSBuyerQueueProps) {
-  const buyers = useMemo(() => {
+export default function DSBuyerQueue({
+  search,
+  onNavigateToProfile,
+}: DSBuyerQueueProps) {
+  const buyers = useMemo<BuyerRow[]>(() => {
     const grouped = new Map<string, BuyerRow>()
 
     for (const entry of ALL_BUYER_POOL) {
       const existing = grouped.get(entry.buyerId)
       const timestamp = entry.seatedAt ?? entry.accessRequestedAt ?? entry.passedAt ?? ''
-      const isActive = entry.seatStatus === 'seated' || entry.seatStatus === 'pending' || entry.seatStatus === 'invited' || entry.seatStatus === 'accepted'
+      const isActive =
+        entry.seatStatus === 'seated' ||
+        entry.seatStatus === 'pending' ||
+        entry.seatStatus === 'invited' ||
+        entry.seatStatus === 'accepted'
 
       if (existing) {
         if (isActive) existing.activeDeals++
@@ -81,49 +97,95 @@ export default function DSBuyerQueue({ onNavigateToProfile }: DSBuyerQueueProps)
       }
     }
 
-    return Array.from(grouped.values()).sort((a, b) => b.lastActivity.localeCompare(a.lastActivity))
+    return Array.from(grouped.values())
   }, [])
 
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return buyers
+    return buyers.filter(
+      (b) =>
+        b.name.toLowerCase().includes(term) ||
+        b.firmType.toLowerCase().includes(term),
+    )
+  }, [buyers, search])
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filtered,
+    { pageSize: 25, resetKey: search },
+  )
+
+  const columns: Column<BuyerRow>[] = [
+    {
+      key: 'name',
+      label: 'Buyer Name',
+      sortable: true,
+      sortAccessor: (row) => row.name,
+      render: (row) => (
+        <span className="font-medium text-foreground">{row.name}</span>
+      ),
+    },
+    {
+      key: 'firmType',
+      label: 'Firm Type',
+      sortable: true,
+      sortAccessor: (row) => row.firmType,
+      hideBelow: 'sm',
+      render: (row) => row.firmType,
+    },
+    {
+      key: 'qualificationStatus',
+      label: 'Qualification',
+      render: (row) => (
+        <Badge className={QUAL_BADGE[row.qualificationStatus] ?? ''}>
+          {row.qualificationStatus === 'qualified' ? 'Qualified' : 'Not Qualified'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'activeDeals',
+      label: 'Active Deals',
+      sortable: true,
+      sortAccessor: (row) => row.activeDeals,
+      align: 'right',
+      hideBelow: 'md',
+      render: (row) => row.activeDeals,
+    },
+    {
+      key: 'seatStatus',
+      label: 'Seat Status',
+      render: (row) => (
+        <Badge className={SEAT_BADGE[row.mostRecentSeatStatus] ?? ''}>
+          {SEAT_LABELS[row.mostRecentSeatStatus] ?? row.mostRecentSeatStatus}
+        </Badge>
+      ),
+    },
+    {
+      key: 'lastActivity',
+      label: 'Last Activity',
+      sortable: true,
+      sortAccessor: (row) => (row.lastActivity ? new Date(row.lastActivity) : new Date(0)),
+      hideBelow: 'lg',
+      render: (row) => (row.lastActivity ? formatRelativeTime(row.lastActivity) : '—'),
+    },
+  ]
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border bg-card text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Buyer Name</th>
-            <th className="hidden px-4 py-3 font-medium sm:table-cell">Firm Type</th>
-            <th className="px-4 py-3 font-medium">Qualification</th>
-            <th className="hidden px-4 py-3 font-medium md:table-cell">Active Deals</th>
-            <th className="px-4 py-3 font-medium">Seat Status</th>
-            <th className="hidden px-4 py-3 font-medium lg:table-cell">Last Activity</th>
-          </tr>
-        </thead>
-        <tbody>
-          {buyers.map((buyer) => (
-            <tr
-              key={buyer.buyerId}
-              onClick={() => onNavigateToProfile(buyer.buyerId)}
-              className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-            >
-              <td className="px-4 py-3 font-medium text-foreground">{buyer.name}</td>
-              <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">{buyer.firmType}</td>
-              <td className="px-4 py-3">
-                <Badge className={QUAL_BADGE[buyer.qualificationStatus] ?? ''}>
-                  {buyer.qualificationStatus === 'qualified' ? 'Qualified' : 'Not Qualified'}
-                </Badge>
-              </td>
-              <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{buyer.activeDeals}</td>
-              <td className="px-4 py-3">
-                <Badge className={SEAT_BADGE[buyer.mostRecentSeatStatus] ?? ''}>
-                  {SEAT_LABELS[buyer.mostRecentSeatStatus] ?? buyer.mostRecentSeatStatus}
-                </Badge>
-              </td>
-              <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
-                {buyer.lastActivity ? formatRelativeTime(buyer.lastActivity) : '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <DataTable
+        columns={columns}
+        data={pagedData}
+        rowKey={(row) => row.buyerId}
+        defaultSort={{ key: 'lastActivity', direction: 'desc' }}
+        onRowClick={(row) => onNavigateToProfile(row.buyerId)}
+        emptyMessage="No buyers match your search."
+      />
+      <DataTableFooter
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setPage}
+      />
+    </>
   )
 }

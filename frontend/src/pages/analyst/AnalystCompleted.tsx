@@ -1,6 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableHeader } from '@/components/ui/data-table-header'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { usePagination } from '@/hooks/usePagination'
 
 type AnalystDecision = 'approve' | 'return' | 'reject'
 
@@ -40,7 +45,8 @@ const MOCK_COMPLETED: CompletedReview[] = [
     dealName: 'Oakwood Portfolio — Dallas',
     decision: 'return',
     date: '2026-03-12T10:30:00Z',
-    notes: 'Cap rate analysis inconsistent with trailing NOI. Returned for pricing review with seller.',
+    notes:
+      'Cap rate analysis inconsistent with trailing NOI. Returned for pricing review with seller.',
   },
   {
     id: 'cr_003',
@@ -66,53 +72,88 @@ function formatDate(iso: string): string {
 }
 
 export default function AnalystCompleted() {
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return MOCK_COMPLETED
+    return MOCK_COMPLETED.filter(
+      (r) =>
+        r.dealName.toLowerCase().includes(term) ||
+        (r.notes ?? '').toLowerCase().includes(term),
+    )
+  }, [search])
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filtered,
+    { pageSize: 25, resetKey: search },
+  )
+
+  const columns: Column<CompletedReview>[] = [
+    {
+      key: 'dealName',
+      label: 'Deal Name',
+      sortable: true,
+      sortAccessor: (row) => row.dealName,
+      render: (row) => (
+        <span className="font-medium text-foreground">{row.dealName}</span>
+      ),
+    },
+    {
+      key: 'decision',
+      label: 'Decision',
+      sortable: true,
+      sortAccessor: (row) => row.decision,
+      render: (row) => {
+        const decision = DECISION_CONFIG[row.decision]
+        return (
+          <Badge variant="outline" className={decision.className}>
+            {decision.label}
+          </Badge>
+        )
+      },
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      sortable: true,
+      sortAccessor: (row) => new Date(row.date),
+      render: (row) => formatDate(row.date),
+    },
+    {
+      key: 'notes',
+      label: 'Notes',
+      render: (row) =>
+        row.notes ?? <span className="text-muted-foreground/50">—</span>,
+    },
+  ]
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
       <Breadcrumbs className="mb-4" items={[{ label: 'Completed' }]} />
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Completed Reviews</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Archive of all past analyst decisions.
-        </p>
-      </div>
 
-      {MOCK_COMPLETED.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-          <p className="text-sm font-medium text-slate-500">No completed reviews yet.</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Deal Name</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Decision</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_COMPLETED.map((review) => {
-                const decision = DECISION_CONFIG[review.decision]
-                return (
-                  <tr key={review.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 font-medium text-foreground">{review.dealName}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline" className={decision.className}>
-                        {decision.label}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(review.date)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {review.notes ?? <span className="text-muted-foreground/50">—</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTableHeader
+        title="Completed Reviews"
+        subtitle="Archive of all past analyst decisions."
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search deal or notes..."
+      />
+
+      <DataTable
+        columns={columns}
+        data={pagedData}
+        rowKey={(row) => row.id}
+        defaultSort={{ key: 'date', direction: 'desc' }}
+        emptyMessage="No completed reviews match your search."
+      />
+
+      <DataTableFooter
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setPage}
+      />
     </div>
   )
 }

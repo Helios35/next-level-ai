@@ -1,7 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { Badge } from '@/components/ui/badge'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableHeader } from '@/components/ui/data-table-header'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { usePagination } from '@/hooks/usePagination'
+import type { DealRoom } from '@shared/types/dealRoom'
 import type { DealRoomStatus } from '@shared/types/enums'
 
 const STAGE_LABELS: Record<number, string> = {
@@ -52,58 +58,95 @@ function formatDate(iso: string): string {
 }
 
 export default function AnalystPipeline() {
-  const deals = useMemo(
-    () => [...MOCK_SELLER_DEAL_ROOMS].sort((a, b) => b.currentStage - a.currentStage),
-    []
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return MOCK_SELLER_DEAL_ROOMS
+    return MOCK_SELLER_DEAL_ROOMS.filter(
+      (d) =>
+        d.name.toLowerCase().includes(term) ||
+        (SELLER_NAMES[d.sellerId] ?? '').toLowerCase().includes(term),
+    )
+  }, [search])
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filtered,
+    { pageSize: 25, resetKey: search },
   )
+
+  const columns: Column<DealRoom>[] = [
+    {
+      key: 'name',
+      label: 'Deal Name',
+      sortable: true,
+      sortAccessor: (row) => row.name,
+      render: (row) => (
+        <span className="font-medium text-foreground">{row.name}</span>
+      ),
+    },
+    {
+      key: 'currentStage',
+      label: 'Stage',
+      sortable: true,
+      sortAccessor: (row) => row.currentStage,
+      render: (row) =>
+        `Stage ${row.currentStage} — ${STAGE_LABELS[row.currentStage] ?? ''}`,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      sortAccessor: (row) => STATUS_LABELS[row.status],
+      render: (row) => (
+        <Badge variant="outline" className={STATUS_BADGE_CLASS[row.status]}>
+          {STATUS_LABELS[row.status]}
+        </Badge>
+      ),
+    },
+    {
+      key: 'seller',
+      label: 'Seller',
+      sortable: true,
+      sortAccessor: (row) => SELLER_NAMES[row.sellerId] ?? '',
+      render: (row) => SELLER_NAMES[row.sellerId] ?? 'Unknown',
+    },
+    {
+      key: 'lastActivity',
+      label: 'Last Activity',
+      sortable: true,
+      sortAccessor: (row) => new Date(row.updatedAt),
+      render: (row) => formatDate(row.updatedAt),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <Breadcrumbs className="mb-4" items={[{ label: 'Pipeline' }]} />
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Pipeline</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Full pipeline visibility across all stages. Read-only.
-        </p>
-      </div>
 
-      <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/50">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Deal Name</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Stage</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Seller</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Last Activity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deals.map((deal) => (
-              <tr
-                key={deal.id}
-                className={`border-b border-border last:border-0 ${
-                  deal.status === 'dormant' ? 'opacity-50' : ''
-                }`}
-              >
-                <td className="px-4 py-3 font-medium text-foreground">{deal.name}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  Stage {deal.currentStage} — {STAGE_LABELS[deal.currentStage] ?? ''}
-                </td>
-                <td className="px-4 py-3">
-                  <Badge variant="outline" className={STATUS_BADGE_CLASS[deal.status]}>
-                    {STATUS_LABELS[deal.status]}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {SELLER_NAMES[deal.sellerId] ?? 'Unknown'}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">{formatDate(deal.updatedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <DataTableHeader
+        title="Pipeline"
+        subtitle="Full pipeline visibility across all stages. Read-only."
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search deal or seller..."
+      />
+
+      <DataTable
+        columns={columns}
+        data={pagedData}
+        rowKey={(row) => row.id}
+        defaultSort={{ key: 'currentStage', direction: 'desc' }}
+        rowClassName={(row) => (row.status === 'dormant' ? 'opacity-50' : undefined)}
+        emptyMessage="No deals match your search."
+      />
+
+      <DataTableFooter
+        totalCount={totalCount}
+        pageSize={pageSize}
+        currentPage={currentPage}
+        onPageChange={setPage}
+      />
     </div>
   )
 }
