@@ -31,12 +31,14 @@ import type { AiTip } from '@/components/ui/ai-tip-card'
 import { MOCK_SPECIALIST_SELLER_DR001, MOCK_SPECIALIST_BUYER_DR001 } from '@/data/mock/chat'
 import {
   ClipboardList, BarChart3, Users as UsersIcon, Bell as BellIcon,
-  ClipboardCheck, CheckSquare, Settings as SettingsIcon,
+  ClipboardCheck, CheckSquare,
   LayoutDashboard, AlertTriangle, UserCog,
 } from 'lucide-react'
 import type { SidebarNavItem } from '@/components/SidebarNav'
 import InternalLogin from '@/pages/InternalLogin'
 import InternalShell from '@/components/InternalShell'
+import InternalProfile from '@/pages/InternalProfile'
+import InternalSettings from '@/pages/InternalSettings'
 import DSShell from '@/pages/ds/DSShell'
 import type { DsView } from '@/pages/ds/DSShell'
 import DSTaskQueue from '@/pages/ds/DSTaskQueue'
@@ -55,6 +57,7 @@ import AnalystPortal from '@/pages/analyst/AnalystPortal'
 import AnalystReviewView from '@/pages/analyst/AnalystReviewView'
 import AnalystCompleted from '@/pages/analyst/AnalystCompleted'
 import AnalystPipeline from '@/pages/analyst/AnalystPipeline'
+import AnalystNotifications from '@/pages/analyst/AnalystNotifications'
 
 // Admin portal imports
 import AdminShellComp, { type AdminView } from '@/pages/admin/AdminShell'
@@ -66,8 +69,13 @@ import AdminClients from '@/pages/admin/AdminClients'
 import AdminClientProfile from '@/pages/admin/AdminClientProfile'
 import AdminStaff from '@/pages/admin/AdminStaff'
 import AdminStaffCreate from '@/pages/admin/AdminStaffCreate'
+import AdminNotifications from '@/pages/admin/AdminNotifications'
 
 // ── Internal sidebar nav items ──────────────────────────────────────────────
+
+// All internal roles share the same bottom nav: Notifications.
+// Settings moved into the UserMenu dropdown (top-right).
+const INTERNAL_BOTTOM_NAV: SidebarNavItem[] = [{ icon: BellIcon, label: 'Notifications' }]
 
 const DS_NAV_ITEMS: SidebarNavItem[] = [
   { icon: ClipboardList, label: 'Tasks' },
@@ -75,7 +83,6 @@ const DS_NAV_ITEMS: SidebarNavItem[] = [
   { icon: UsersIcon, label: 'Clients' },
 ]
 const DS_VIEW_BY_INDEX: DsView[] = ['tasks', 'pipeline', 'clients']
-const DS_BOTTOM_NAV: SidebarNavItem[] = [{ icon: BellIcon, label: 'Notifications' }]
 
 const ANALYST_NAV_ITEMS: SidebarNavItem[] = [
   { icon: ClipboardCheck, label: 'Review Queue' },
@@ -83,7 +90,6 @@ const ANALYST_NAV_ITEMS: SidebarNavItem[] = [
   { icon: BarChart3, label: 'Pipeline' },
 ]
 const ANALYST_VIEW_BY_INDEX: AnalystView[] = ['queue', 'completed', 'pipeline']
-const ANALYST_BOTTOM_NAV: SidebarNavItem[] = [{ icon: SettingsIcon, label: 'Settings' }]
 
 const ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   { icon: LayoutDashboard, label: 'Overview' },
@@ -93,7 +99,6 @@ const ADMIN_NAV_ITEMS: SidebarNavItem[] = [
   { icon: UserCog, label: 'Staff' },
 ]
 const ADMIN_VIEW_BY_INDEX: AdminView[] = ['overview', 'exceptions', 'pipeline', 'clients', 'staff']
-const ADMIN_BOTTOM_NAV: SidebarNavItem[] = [{ icon: SettingsIcon, label: 'Settings' }]
 
 // ── Page identifiers ────────────────────────────────────────────────────────
 
@@ -128,6 +133,9 @@ type Page =
   | { mode: 'internal'; view: 'admin-deal'; dealId: string }
   | { mode: 'internal'; view: 'admin-client'; clientId: string }
   | { mode: 'internal'; view: 'admin-staff-create' }
+  // Internal profile/settings (accessible from UserMenu dropdown)
+  | { mode: 'internal'; view: 'profile'; role: InternalRole }
+  | { mode: 'internal'; view: 'settings'; role: InternalRole }
 
 function pageKey(p: Page) {
   if (p.mode === 'auth' && p.view === 'signup' && p.role) {
@@ -790,8 +798,10 @@ export default function ShellDemo() {
         navItems={DS_NAV_ITEMS}
         activeNavIndex={DS_VIEW_BY_INDEX.indexOf('pipeline')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] })}
-        bottomNavItems={DS_BOTTOM_NAV}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
       >
         <DSDealView
           dealId={page.dealId}
@@ -815,8 +825,10 @@ export default function ShellDemo() {
         navItems={DS_NAV_ITEMS}
         activeNavIndex={DS_VIEW_BY_INDEX.indexOf('clients')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] })}
-        bottomNavItems={DS_BOTTOM_NAV}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
       >
         <DSSellerProfile
           sellerId={page.sellerId}
@@ -840,8 +852,10 @@ export default function ShellDemo() {
         navItems={DS_NAV_ITEMS}
         activeNavIndex={DS_VIEW_BY_INDEX.indexOf('clients')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] })}
-        bottomNavItems={DS_BOTTOM_NAV}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
         onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'ds' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'ds' })}
       >
         <DSBuyerProfile
           buyerId={page.buyerId}
@@ -865,8 +879,10 @@ export default function ShellDemo() {
         navItems={ANALYST_NAV_ITEMS}
         activeNavIndex={ANALYST_VIEW_BY_INDEX.indexOf('queue')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: ANALYST_VIEW_BY_INDEX[i] })}
-        bottomNavItems={ANALYST_BOTTOM_NAV}
-        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'settings' })}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'analyst' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'analyst' })}
       >
         <AnalystReviewView
           memoId={page.memoId}
@@ -889,8 +905,10 @@ export default function ShellDemo() {
         navItems={ADMIN_NAV_ITEMS}
         activeNavIndex={ADMIN_VIEW_BY_INDEX.indexOf('exceptions')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] })}
-        bottomNavItems={ADMIN_BOTTOM_NAV}
-        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'settings' })}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
       >
         <AdminDealView
           dealId={page.dealId}
@@ -913,8 +931,10 @@ export default function ShellDemo() {
         navItems={ADMIN_NAV_ITEMS}
         activeNavIndex={ADMIN_VIEW_BY_INDEX.indexOf('clients')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] })}
-        bottomNavItems={ADMIN_BOTTOM_NAV}
-        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'settings' })}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
       >
         <AdminClientProfile
           clientId={page.clientId}
@@ -937,12 +957,102 @@ export default function ShellDemo() {
         navItems={ADMIN_NAV_ITEMS}
         activeNavIndex={ADMIN_VIEW_BY_INDEX.indexOf('staff')}
         onNavItemClick={(i) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] })}
-        bottomNavItems={ADMIN_BOTTOM_NAV}
-        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'settings' })}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: 'admin' })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: 'admin' })}
       >
         <AdminStaffCreate
           onBack={() => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'staff' })}
         />
+      </InternalShell>
+    )
+  }
+
+  // Internal Profile — accessible from UserMenu on every internal page
+  if (page.mode === 'internal' && page.view === 'profile' && internalUser) {
+    const role = page.role
+    const dsNav = {
+      navItems: DS_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] }),
+    }
+    const analystNav = {
+      navItems: ANALYST_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: ANALYST_VIEW_BY_INDEX[i] }),
+    }
+    const adminNav = {
+      navItems: ADMIN_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] }),
+    }
+    const nav = role === 'ds' ? dsNav : role === 'analyst' ? analystNav : adminNav
+    const bottomNotifView = role === 'ds'
+      ? () => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })
+      : role === 'analyst'
+      ? () => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'notifications' })
+      : () => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })
+
+    return (
+      <InternalShell
+        role={role}
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role })}
+        {...nav}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={bottomNotifView}
+      >
+        <InternalProfile user={internalUser} />
+      </InternalShell>
+    )
+  }
+
+  // Internal Settings — accessible from UserMenu on every internal page
+  if (page.mode === 'internal' && page.view === 'settings' && internalUser) {
+    const role = page.role
+    const dsNav = {
+      navItems: DS_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] }),
+    }
+    const analystNav = {
+      navItems: ANALYST_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: ANALYST_VIEW_BY_INDEX[i] }),
+    }
+    const adminNav = {
+      navItems: ADMIN_NAV_ITEMS,
+      activeNavIndex: -1,
+      onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] }),
+    }
+    const nav = role === 'ds' ? dsNav : role === 'analyst' ? analystNav : adminNav
+    const bottomNotifView = role === 'ds'
+      ? () => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' })
+      : role === 'analyst'
+      ? () => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'notifications' })
+      : () => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' })
+
+    return (
+      <InternalShell
+        role={role}
+        userName={internalUser.name}
+        onSignOut={() => {
+          setInternalUser(null)
+          navigateTo({ mode: 'internal', view: 'login' })
+        }}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role })}
+        {...nav}
+        bottomNavItems={INTERNAL_BOTTOM_NAV}
+        onBottomNavItemClick={bottomNotifView}
+      >
+        <InternalSettings role={role} />
       </InternalShell>
     )
   }
@@ -998,11 +1108,8 @@ export default function ShellDemo() {
             )}
             {analystView === 'completed' && <AnalystCompleted />}
             {analystView === 'pipeline' && <AnalystPipeline />}
-            {analystView === 'settings' && (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">Analyst settings — coming soon.</p>
-              </div>
-            )}
+            {analystView === 'notifications' && <AnalystNotifications />}
+            {analystView === 'settings' && <InternalSettings role="analyst" />}
           </AnalystShell>
         )
       }
@@ -1050,11 +1157,8 @@ export default function ShellDemo() {
                 }
               />
             )}
-            {adminView === 'settings' && (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">Admin settings — coming soon.</p>
-              </div>
-            )}
+            {adminView === 'notifications' && <AdminNotifications />}
+            {adminView === 'settings' && <InternalSettings role="admin" />}
           </AdminShellComp>
         )
       }
@@ -1071,7 +1175,7 @@ export default function ShellDemo() {
           navItems: DS_NAV_ITEMS,
           activeNavIndex: mainIdx === -1 ? -1 : mainIdx,
           onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: DS_VIEW_BY_INDEX[i] }),
-          bottomNavItems: DS_BOTTOM_NAV,
+          bottomNavItems: INTERNAL_BOTTOM_NAV,
           activeBottomIndex: dsView === 'notifications' ? 0 : undefined,
           onBottomNavItemClick: () => navigateTo({ mode: 'internal', view: 'portal', role: 'ds', dsView: 'notifications' }),
         }
@@ -1083,9 +1187,9 @@ export default function ShellDemo() {
           navItems: ANALYST_NAV_ITEMS,
           activeNavIndex: mainIdx === -1 ? -1 : mainIdx,
           onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: ANALYST_VIEW_BY_INDEX[i] }),
-          bottomNavItems: ANALYST_BOTTOM_NAV,
-          activeBottomIndex: analystView === 'settings' ? 0 : undefined,
-          onBottomNavItemClick: () => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'settings' }),
+          bottomNavItems: INTERNAL_BOTTOM_NAV,
+          activeBottomIndex: analystView === 'notifications' ? 0 : undefined,
+          onBottomNavItemClick: () => navigateTo({ mode: 'internal', view: 'portal', role: 'analyst', analystView: 'notifications' }),
         }
       }
       // admin
@@ -1095,9 +1199,9 @@ export default function ShellDemo() {
         navItems: ADMIN_NAV_ITEMS,
         activeNavIndex: mainIdx === -1 ? -1 : mainIdx,
         onNavItemClick: (i: number) => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: ADMIN_VIEW_BY_INDEX[i] }),
-        bottomNavItems: ADMIN_BOTTOM_NAV,
-        activeBottomIndex: adminView === 'settings' ? 0 : undefined,
-        onBottomNavItemClick: () => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'settings' }),
+        bottomNavItems: INTERNAL_BOTTOM_NAV,
+        activeBottomIndex: adminView === 'notifications' ? 0 : undefined,
+        onBottomNavItemClick: () => navigateTo({ mode: 'internal', view: 'portal', role: 'admin', adminView: 'notifications' }),
       }
     })()
 
@@ -1109,6 +1213,8 @@ export default function ShellDemo() {
           setInternalUser(null)
           navigateTo({ mode: 'internal', view: 'login' })
         }}
+        onProfileClick={() => navigateTo({ mode: 'internal', view: 'profile', role: page.role })}
+        onSettingsClick={() => navigateTo({ mode: 'internal', view: 'settings', role: page.role })}
         {...navProps}
       >
         {portalContent}
@@ -1129,8 +1235,19 @@ export default function ShellDemo() {
       chatContext={chatContext}
       onSendMessage={chatChannel === 'specialist' ? undefined : isCreateListing ? handleWizardSend : isCreateStrategy ? handleStrategyWizardSend : isBuyerDealRoom ? handleBuyerDealRoomMessage : undefined}
       onCreditsClick={() => setCreditsModalOpen(true)}
-      onAvatarClick={() => navigateTo({ mode: 'global', view: 'profile' })}
+      onProfileClick={() => navigateTo({ mode: 'global', view: 'profile' })}
       onSettingsClick={() => navigateTo({ mode: 'global', view: 'settings' })}
+      onSignOut={() => {
+        setCurrentUser(null)
+        navigateTo({ mode: 'auth', view: 'landing' })
+      }}
+      userName={(currentUser ?? MOCK_CURRENT_USER).name}
+      userInitials={(currentUser ?? MOCK_CURRENT_USER).name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)}
     >
       {page.mode === 'sell' && page.view === 'listings' && (
         <SellingList

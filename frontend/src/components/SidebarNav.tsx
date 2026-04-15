@@ -27,6 +27,8 @@ interface SidebarNavProps {
   accentBg?: string
   /** Active left-border colour class — default 'border-foreground' */
   accentBorder?: string
+  /** Optional header slot rendered at the top of the nav with a divider below. Visible only when expanded. */
+  header?: ReactNode
   /** Override the content wrapper className (default: 'relative flex flex-1 overflow-hidden') */
   contentClassName?: string
   /** Override the content wrapper inline style */
@@ -46,6 +48,7 @@ export default function SidebarNav({
   accent = 'text-foreground',
   accentBg = 'bg-muted',
   accentBorder = 'border-foreground',
+  header,
   contentClassName,
   contentStyle,
   children,
@@ -96,6 +99,11 @@ export default function SidebarNav({
         style={{ width: sidebarW }}
         className="hidden sm:flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
       >
+        {/* Optional header — only visible when expanded */}
+        {header && sidebarOpen && (
+          <div className="border-b border-border">{header}</div>
+        )}
+
         {/* Top nav items */}
         <div className="flex flex-1 flex-col gap-0.5 px-1.5 pt-2">
           {items.map((item, i) =>

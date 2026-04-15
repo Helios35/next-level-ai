@@ -1,7 +1,8 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { LogOut, Sun, Moon } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 import type { InternalRole } from '@shared/types/enums'
 import SidebarNav, { type SidebarNavItem } from '@/components/SidebarNav'
+import { UserMenu } from '@/components/ui/user-menu'
 
 const ROLE_LABELS: Record<InternalRole, string> = {
   ds: 'Disposition Specialist',
@@ -14,6 +15,8 @@ interface InternalShellProps {
   role: InternalRole
   userName: string
   onSignOut: () => void
+  onProfileClick: () => void
+  onSettingsClick: () => void
   navItems: SidebarNavItem[]
   activeNavIndex: number
   onNavItemClick: (index: number) => void
@@ -27,6 +30,8 @@ export default function InternalShell({
   role,
   userName,
   onSignOut,
+  onProfileClick,
+  onSettingsClick,
   navItems,
   activeNavIndex,
   onNavItemClick,
@@ -54,15 +59,9 @@ export default function InternalShell({
         {/* Left — wordmark */}
         <span className="text-base font-bold tracking-tight text-foreground">
           NextLevel
-          <span className="ml-1.5 text-xs font-normal text-slate-500">internal</span>
         </span>
 
-        {/* Center — role label */}
-        <span className="text-sm font-medium text-slate-500">
-          {ROLE_LABELS[role]}
-        </span>
-
-        {/* Right — user + sign out */}
+        {/* Right — theme toggle + user menu */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDark(!dark)}
@@ -70,17 +69,13 @@ export default function InternalShell({
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-semibold text-white">
-            {initials}
-          </div>
-          <span className="hidden sm:inline text-sm text-muted-foreground">{userName}</span>
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Sign out</span>
-          </button>
+          <UserMenu
+            initials={initials}
+            name={userName}
+            onProfileClick={onProfileClick}
+            onSettingsClick={onSettingsClick}
+            onSignOut={onSignOut}
+          />
         </div>
       </header>
 
@@ -93,6 +88,11 @@ export default function InternalShell({
           bottomItems={bottomNavItems}
           activeBottomIndex={activeBottomIndex}
           onBottomItemClick={onBottomNavItemClick}
+          header={
+            <div className="px-3 py-3 text-sm font-semibold text-foreground">
+              {ROLE_LABELS[role]}
+            </div>
+          }
         >
           {children}
         </SidebarNav>

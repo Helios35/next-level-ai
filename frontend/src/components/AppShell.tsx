@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import { cn } from '@/utils/cn'
 import SidebarNav from '@/components/SidebarNav'
+import { UserMenu } from '@/components/ui/user-menu'
 import {
-  Settings,
   ArrowLeft,
   ArrowRight,
   Sun,
@@ -191,10 +191,16 @@ interface AppShellProps {
   activeNavIndex?: number
   /** Called when the credits display in the top bar is clicked */
   onCreditsClick?: () => void
-  /** Called when the user avatar in the top bar is clicked */
-  onAvatarClick?: () => void
-  /** Called when the Settings gear in the sidebar footer is clicked */
+  /** Called when Profile is selected from the user menu */
+  onProfileClick?: () => void
+  /** Called when Settings is selected from the user menu */
   onSettingsClick?: () => void
+  /** Called when Sign out is selected from the user menu */
+  onSignOut?: () => void
+  /** Display name shown in the user menu */
+  userName?: string
+  /** User initials shown in the avatar */
+  userInitials?: string
 }
 
 export default function AppShell({
@@ -210,8 +216,11 @@ export default function AppShell({
   activeNavIndex,
   onSendMessage,
   onCreditsClick,
-  onAvatarClick,
+  onProfileClick,
   onSettingsClick,
+  onSignOut,
+  userName = 'Jane Doe',
+  userInitials = 'JD',
 }: AppShellProps & { activeMode?: Mode }) {
   const [mode, setMode] = useState<Mode>('sell')
   const [chatOpen, setChatOpen] = useState(true)
@@ -393,12 +402,13 @@ export default function AppShell({
             </div>
             <span className="hidden sm:inline">400 Credits</span>
           </button>
-          <button
-            onClick={onAvatarClick}
-            className="ml-1 flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground hover:ring-2 hover:ring-border transition-all"
-          >
-            JD
-          </button>
+          <UserMenu
+            initials={userInitials}
+            name={userName}
+            onProfileClick={() => onProfileClick?.()}
+            onSettingsClick={() => onSettingsClick?.()}
+            onSignOut={() => onSignOut?.()}
+          />
         </div>
       </header>
 
@@ -410,9 +420,7 @@ export default function AppShell({
           onItemClick={(i) => { setActiveNav(i); onNavChange?.(i, config.navItems[i].label) }}
           bottomItems={[
             { icon: Bell, label: 'Notifications' },
-            { icon: Settings, label: 'Settings' },
           ]}
-          onBottomItemClick={(i) => { if (i === 1) onSettingsClick?.() }}
           accent={config.accent}
           accentBg={config.accentBg}
           accentBorder={config.accentBorder}
