@@ -1,15 +1,22 @@
-import { useRef, useState } from 'react'
-import { Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
-import { cn } from '@/utils/cn'
+import { useMemo, useRef, useState } from 'react'
+import { X, Building2, Home, MapPin, DollarSign, HardHat, Users } from 'lucide-react'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
 import type { DealRoom } from '@shared/types/dealRoom'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
 import { MOCK_SELLER_PERFORMANCE } from '@/data/mock/users'
 import DealCard from '@/components/DealCard'
-import DealCardList from '@/components/DealCardList'
 import DealPreviewModal from '@/components/DealPreviewModal'
 import SellerListingsEmpty from '@/components/SellerListingsEmpty'
+import StatusBadge from '@/components/StatusBadge'
+import StageProgressBar from '@/components/StageProgressBar'
 import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableHeader } from '@/components/ui/data-table-header'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
+import { usePagination } from '@/hooks/usePagination'
+import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import FilterModal, {
   type FilterState,
   EMPTY_FILTERS,
@@ -95,6 +102,10 @@ function matchesFilters(deal: DealRoom, filters: FilterState): boolean {
   return true
 }
 
+function priceSortKey(deal: DealRoom): number {
+  return deal.shared.exactPrice ?? deal.shared.priceRange?.min ?? 0
+}
+
 const STATS = [
   { label: 'Deal Rooms Open', value: MOCK_SELLER_PERFORMANCE.dealRoomsOpen },
   { label: 'Deals Started', value: MOCK_SELLER_PERFORMANCE.disposStarted },
@@ -108,7 +119,7 @@ interface SellingListProps {
 }
 
 export default function SellingList({ onOpenDealRoom, onCreateListing }: SellingListProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<FilterState>(EMPTY_FILTERS)
@@ -119,10 +130,7 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
   const chips = hasFilters ? getActiveChips(activeFilters) : []
 
   const filteredDeals = MOCK_SELLER_DEAL_ROOMS.filter((deal) => {
-    // Filter match
     if (!matchesFilters(deal, activeFilters)) return false
-
-    // Search match
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       const name = deal.name.toLowerCase()
@@ -133,9 +141,141 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
         return false
       }
     }
-
     return true
   })
+
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filteredDeals,
+    { pageSize: 12, resetKey: `${searchQuery}|${JSON.stringify(activeFilters)}` },
+  )
+
+  // ── Seller columns ──────────────────────────────────────────────────────
+  const sellerColumns: Column<DealRoom>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        label: 'Listing',
+        sortable: true,
+        sortAccessor: (row) => row.name,
+        width: '260px',
+        render: (row) => {
+          const AssetIcon = row.assetSubType === 'sfr_portfolio' ? Home : Building2
+          return (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <AssetIcon size={16} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-foreground leading-snug truncate">
+                  {row.name}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                  <MapPin size={10} className="shrink-0" />
+                  {row.shared.geography.msa.split(',')[0]}
+                </span>
+              </div>
+            </div>
+          )
+        },
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        sortAccessor: (row) => row.status,
+        render: (row) => <StatusBadge status={row.status} />,
+      },
+      {
+        key: 'assetSubType',
+        label: 'Asset Type',
+        sortable: true,
+        sortAccessor: (row) => ASSET_SUBTYPE_LABELS[row.assetSubType],
+        hideBelow: 'sm',
+        render: (row) => (
+          <span className="inline-flex items-center gap-1">
+            <Building2 size={12} className="shrink-0" />
+            {ASSET_SUBTYPE_LABELS[row.assetSubType]}
+          </span>
+        ),
+      },
+      {
+        key: 'price',
+        label: 'Price',
+        sortable: true,
+        sortAccessor: priceSortKey,
+        align: 'right',
+        render: (row) => (
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <DollarSign size={12} className="shrink-0" />
+            {formatPrice(row)}
+          </span>
+        ),
+      },
+      {
+        key: 'dealStage',
+        label: 'Dev Stage',
+        sortable: true,
+        sortAccessor: (row) => DEAL_STAGE_LABELS[row.shared.dealStage],
+        hideBelow: 'md',
+        render: (row) => (
+          <span className="inline-flex items-center gap-1">
+            <HardHat size={12} className="shrink-0" />
+            {DEAL_STAGE_LABELS[row.shared.dealStage]}
+          </span>
+        ),
+      },
+      {
+        key: 'progress',
+        label: 'Progress',
+        sortable: true,
+        sortAccessor: (row) => row.currentStage,
+        hideBelow: 'lg',
+        render: (row) => <StageProgressBar currentStage={row.currentStage} showLabel={false} />,
+      },
+      {
+        key: 'buyers',
+        label: 'Buyers',
+        sortable: true,
+        sortAccessor: (row) => row.matchedBuyerCount,
+        align: 'center',
+        render: (row) => (
+          <span className="inline-flex items-center gap-1">
+            <Users size={13} className="shrink-0 text-muted-foreground" />
+            <span className="font-semibold text-foreground">{row.matchedBuyerCount}</span>
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        label: '',
+        align: 'right',
+        render: (row) => (
+          <div className="flex items-center gap-2 justify-end">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                triggerRef.current = e.currentTarget as HTMLButtonElement
+                setPreviewDeal(row)
+              }}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap"
+            >
+              View Details
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenDealRoom?.(row)
+              }}
+              className="rounded-lg bg-mode-sell px-3 py-1.5 text-xs font-medium text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+            >
+              Open Deal Room
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [onOpenDealRoom],
+  )
 
   function removeChip(key: keyof FilterState, value: string | number) {
     if (key === 'priceRange') {
@@ -154,7 +294,7 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
 
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
-      {/* Breadcrumb — below the sidebar toggle icon */}
+      {/* Breadcrumb */}
       <Breadcrumbs items={[{ label: 'Sell' }, { label: 'Your Listings' }]} />
 
       {/* Page header + stats */}
@@ -167,67 +307,15 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
         </StatTileGrid>
       </div>
 
-      {/* Search + filter bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          {/* Search input */}
-          <div className="relative flex-1 sm:flex-none sm:w-64">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search your listings..."
-              className="w-full rounded-lg border border-border bg-main py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-mode-sell/50 transition-colors"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Filters button */}
-          <button
-            onClick={() => setIsFilterOpen(true)}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors',
-              hasFilters
-                ? 'border-mode-sell/50 text-mode-sell bg-mode-sell/5'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <SlidersHorizontal size={15} />
-            Filters
-            {hasFilters && (
-              <span className="ml-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-mode-sell text-[10px] font-semibold text-white">
-                {chips.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* View toggle */}
-        <div className="flex items-center rounded-lg border border-border">
-          <button
-            onClick={() => setViewMode('grid')}
-            className={cn(
-              'flex items-center justify-center rounded-l-lg p-2 transition-colors',
-              viewMode === 'grid'
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={cn(
-              'flex items-center justify-center rounded-r-lg p-2 transition-colors',
-              viewMode === 'list'
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <List size={16} />
-          </button>
-        </div>
-      </div>
+      {/* Toolbar: search + filters + view toggle */}
+      <DataTableHeader
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search your listings..."
+        filterCount={chips.length}
+        onOpenFilters={() => setIsFilterOpen(true)}
+        actions={<ViewToggle value={viewMode} onChange={setViewMode} />}
+      />
 
       {/* Filter chips */}
       {hasFilters && (
@@ -255,68 +343,50 @@ export default function SellingList({ onOpenDealRoom, onCreateListing }: Selling
         </div>
       )}
 
-      {/* Deal cards */}
+      {/* Content */}
       {MOCK_SELLER_DEAL_ROOMS.length === 0 ? (
         <SellerListingsEmpty variant="no-listings" onCTA={onCreateListing} />
       ) : filteredDeals.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredDeals.map((deal) => (
-              <DealCard
-                key={deal.id}
-                deal={deal}
-                onViewDetails={(e) => { triggerRef.current = e.currentTarget as HTMLButtonElement; setPreviewDeal(deal) }}
-                onOpenDealRoom={
-                  onOpenDealRoom
-                    ? () => onOpenDealRoom(deal)
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="flex flex-col gap-2 min-w-fit">
-              {filteredDeals.map((deal) => (
-                <DealCardList
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {pagedData.map((deal) => (
+                <DealCard
                   key={deal.id}
                   deal={deal}
-                  onViewDetails={(e) => { triggerRef.current = e.currentTarget as HTMLButtonElement; setPreviewDeal(deal) }}
+                  onViewDetails={(e) => {
+                    triggerRef.current = e.currentTarget as HTMLButtonElement
+                    setPreviewDeal(deal)
+                  }}
                   onOpenDealRoom={
-                    onOpenDealRoom
-                      ? () => onOpenDealRoom(deal)
-                      : undefined
+                    onOpenDealRoom ? () => onOpenDealRoom(deal) : undefined
                   }
                 />
               ))}
             </div>
-          </div>
-        )
+          ) : (
+            <DataTable
+              columns={sellerColumns}
+              data={pagedData}
+              rowKey={(d) => d.id}
+              onRowClick={(deal) => {
+                triggerRef.current = null
+                setPreviewDeal(deal)
+              }}
+              emptyMessage="No listings match your filters."
+              defaultSort={{ key: 'name', direction: 'asc' }}
+            />
+          )}
+          <DataTableFooter
+            totalCount={totalCount}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            onPageChange={setPage}
+          />
+        </>
       ) : searchQuery.trim() || hasFilters ? (
         <SellerListingsEmpty variant="no-results" />
       ) : null}
-
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
-        <span className="text-xs text-muted-foreground">
-          Showing 1–{filteredDeals.length} of {filteredDeals.length}
-        </span>
-        <div className="flex items-center gap-1">
-          {[1, 2, 3].map((page) => (
-            <button
-              key={page}
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-md text-xs transition-colors',
-                page === 1
-                  ? 'bg-mode-sell text-white font-medium'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              {page}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Deal Preview Modal */}
       <DealPreviewModal
