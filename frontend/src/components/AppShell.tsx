@@ -344,9 +344,9 @@ export default function AppShell({
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div ref={shellRef} className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
+    <div ref={shellRef} className="flex h-screen w-screen flex-col overflow-hidden bg-main text-foreground">
       {/* ═══ TOP BAR ═══ */}
-      <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-background px-3">
+      <header className="flex h-14 min-h-[56px] items-center justify-between bg-main px-3">
         {/* Left cluster */}
         <div className="flex items-center gap-1">
           <span className="px-2 text-base font-bold tracking-tight text-foreground">NextLevel</span>
@@ -405,6 +405,7 @@ export default function AppShell({
           <UserMenu
             initials={userInitials}
             name={userName}
+            avatarUrl="https://i.pravatar.cc/64?u=marcus-webb"
             onProfileClick={() => onProfileClick?.()}
             onSettingsClick={() => onSettingsClick?.()}
             onSignOut={() => onSignOut?.()}
@@ -424,6 +425,11 @@ export default function AppShell({
           accent={config.accent}
           accentBg={config.accentBg}
           accentBorder={config.accentBorder}
+          header={
+            <div className="px-3 py-3 text-sm font-semibold text-foreground">
+              {config.label}
+            </div>
+          }
           contentClassName="relative flex overflow-hidden transition-[flex,opacity] duration-300 ease-in-out"
           contentStyle={{
             flex: chatFullscreen ? '0 0 0px' : '1 1 0%',

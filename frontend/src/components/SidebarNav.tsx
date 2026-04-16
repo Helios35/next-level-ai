@@ -97,7 +97,7 @@ export default function SidebarNav({
       {/* ═══ SIDEBAR NAV ═══ */}
       <nav
         style={{ width: sidebarW }}
-        className="hidden sm:flex flex-col border-r border-border bg-background transition-[width] duration-200 ease-in-out"
+        className="hidden sm:flex flex-col m-2 rounded-xl border border-border bg-background shadow-md transition-[width] duration-200 ease-in-out"
       >
         {/* Optional header — only visible when expanded */}
         {header && sidebarOpen && (

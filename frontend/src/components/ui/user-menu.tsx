@@ -13,6 +13,8 @@ interface UserMenuProps {
   onSignOut: () => void
   /** Hide the name text — avatar-only trigger (use on narrow shells) */
   compact?: boolean
+  /** Optional avatar image URL — falls back to initials when omitted */
+  avatarUrl?: string
 }
 
 const popupClasses =
@@ -28,15 +30,20 @@ export function UserMenu({
   onSettingsClick,
   onSignOut,
   compact = false,
+  avatarUrl,
 }: UserMenuProps) {
   return (
     <Menu.Root>
       <Menu.Trigger
-        className="flex items-center gap-2 rounded-full p-0.5 pr-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-muted data-popup-open:text-foreground"
+        className="flex items-center gap-2 rounded-full bg-muted p-1 pr-2.5 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-muted/80 data-popup-open:text-foreground"
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-semibold text-white">
-          {initials}
-        </div>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="h-8 w-8 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-600 text-sm font-semibold text-white">
+            {initials}
+          </div>
+        )}
         {!compact && <span className="hidden sm:inline">{name}</span>}
       </Menu.Trigger>
 
