@@ -91,21 +91,27 @@ export function ExpandableTabs({
         }
 
         const Icon = tab.icon;
+        const isSelected = selected === index;
         return (
           <motion.button
             key={tab.title}
             variants={buttonVariants}
             initial={false}
             animate="animate"
-            custom={selected === index}
+            custom={isSelected}
             onClick={() => handleSelect(index)}
             transition={transition}
             className={cn(
               "relative flex items-center rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-300",
-              selected === index
-                ? cn("bg-muted", activeColor)
+              isSelected
+                ? cn("border border-transparent shadow-sm", activeColor)
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
+            style={isSelected ? {
+              backgroundImage: 'linear-gradient(var(--color-muted), var(--color-muted)), linear-gradient(to bottom, hsl(0 0% 30%), hsl(0 0% 12%))',
+              backgroundOrigin: 'padding-box, border-box',
+              backgroundClip: 'padding-box, border-box',
+            } : undefined}
           >
             <Icon size={20} />
             <AnimatePresence initial={false}>

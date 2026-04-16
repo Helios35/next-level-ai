@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User as UserIcon, BarChart3, Briefcase, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react'
+import { User as UserIcon, Briefcase, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { User } from '@shared/types/user'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { SectionCard } from '@/components/ui/section-card'
@@ -195,16 +195,6 @@ export default function Profile({ user }: ProfileProps) {
               </div>
             )}
           </SectionCard>
-
-          {showBuyer && (
-            <SectionCard icon={BarChart3} title="Buyer Activity" iconClassName="text-mode-buy">
-              <StatTileGrid className="grid-cols-3">
-                <StatTile value={2} label="Deal Rooms Accessed" />
-                <StatTile value={1} label="Offers Made" />
-                <StatTile value={0} label="Deals Won" />
-              </StatTileGrid>
-            </SectionCard>
-          )}
 
           {showSeller && (
             <SectionCard icon={Briefcase} title="Seller Activity">

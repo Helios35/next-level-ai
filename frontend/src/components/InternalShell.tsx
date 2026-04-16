@@ -63,9 +63,9 @@ export default function InternalShell({
     .slice(0, 2)
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-main text-foreground">
       {/* ═══ TOP BAR ═══ */}
-      <header className="flex h-14 min-h-[56px] items-center justify-between border-b border-border bg-background px-4">
+      <header className="flex h-14 min-h-[56px] items-center justify-between bg-main px-4">
         {/* Left cluster — wordmark + back/forward */}
         <div className="flex items-center gap-1">
           <span className="text-base font-bold tracking-tight text-foreground">
@@ -110,6 +110,7 @@ export default function InternalShell({
           <UserMenu
             initials={initials}
             name={userName}
+            avatarUrl="https://i.pravatar.cc/64?u=internal-user"
             onProfileClick={onProfileClick}
             onSettingsClick={onSettingsClick}
             onSignOut={onSignOut}

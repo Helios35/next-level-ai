@@ -89,96 +89,89 @@ export default function StrategyCard({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-card shadow-sm p-5 transition-colors hover:border-mode-strategy/30',
+        'flex flex-col rounded-lg border border-border bg-background shadow-sm p-5 transition-colors hover:border-mode-strategy/30',
         className,
       )}
     >
-      {/* Header — icon, name, asset type, status badge */}
-      <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-mode-strategy/10">
-          <AssetIcon size={16} className="text-mode-strategy" />
-        </div>
-        <div className="flex flex-1 flex-col min-w-0">
-          <div className="flex items-start justify-between gap-2">
+      {/* Header — icon + name + geography (left), status badge (right) */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <AssetIcon size={16} />
+          </div>
+          <div className="flex flex-col min-w-0">
             <h3 className="text-sm font-semibold text-foreground leading-snug truncate">
               {strategy.name}
             </h3>
-            <span
-              className={cn(
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0',
-                badge.classes,
-              )}
-            >
-              {badge.label}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">{assetTypeLabel}</span>
-            <span className="inline-flex items-center rounded-full bg-mode-strategy/10 px-2 py-0.5 text-xs font-medium text-mode-strategy">
-              {subtypeLabel}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Labeled metadata fields */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="flex items-start gap-2">
-          <DollarSign size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Price Range</p>
-            <p className="text-sm font-medium text-foreground truncate">
-              {formatDealSize(dealSizeMin, dealSizeMax)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-2">
-          <MapPin size={12} className="mt-0.5 shrink-0 text-muted-foreground" />
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Geography</p>
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground truncate">
+              <MapPin size={10} className="shrink-0" />
               {geography.split(',')[0]}
             </p>
           </div>
         </div>
+        <span
+          className={cn(
+            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0',
+            badge.classes,
+          )}
+        >
+          {badge.label}
+        </span>
       </div>
 
-      {/* Match count + last updated */}
-      <div className="mt-4 flex items-end justify-between">
-        <div>
-          <span className="text-2xl font-bold text-mode-strategy">{strategy.matchCount}</span>
-          <span className="ml-1.5 text-xs text-muted-foreground">matches</span>
+      {/* Metadata bar — subtype | price range | asset type */}
+      <div className="mt-4 flex items-center gap-3 sm:gap-4 rounded-lg border border-border bg-muted/30 px-3 sm:px-4 py-2.5 text-xs text-muted-foreground">
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0">
+          <AssetIcon size={12} className="shrink-0" />
+          <span className="truncate">{subtypeLabel}</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="h-8 w-px bg-border shrink-0" />
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0">
+          <DollarSign size={12} className="shrink-0" />
+          <span className="truncate">{formatDealSize(dealSizeMin, dealSizeMax)}</span>
+        </div>
+        <div className="h-8 w-px bg-border shrink-0" />
+        <div className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 min-w-0">
+          <span className="truncate">{assetTypeLabel}</span>
+        </div>
+      </div>
+
+      {/* Metrics row — match count + deal rooms + timestamp */}
+      <div className="mt-5 flex items-end justify-between">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <span className="text-lg font-bold text-mode-strategy">{strategy.matchCount}</span>
+          <span className="text-xs text-muted-foreground">matches</span>
+          {strategy.activeDealRoomCount > 0 && (
+            <>
+              <span className="text-xs text-muted-foreground">·</span>
+              <button
+                onClick={onViewDealRooms}
+                className="flex items-center gap-1 text-xs font-medium text-mode-strategy hover:underline transition-colors"
+              >
+                <DoorOpen size={11} className="shrink-0" />
+                {strategy.activeDealRoomCount} active deal room{strategy.activeDealRoomCount !== 1 ? 's' : ''}
+              </button>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
           <Clock size={12} />
           <span>{formatRelativeTime(strategy.updatedAt)}</span>
         </div>
       </div>
 
-      {/* Active deal rooms */}
-      {strategy.activeDealRoomCount > 0 && (
-        <button
-          onClick={onViewDealRooms}
-          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-mode-strategy hover:underline transition-colors"
-        >
-          <DoorOpen size={12} />
-          <span>{strategy.activeDealRoomCount} active deal room{strategy.activeDealRoomCount !== 1 ? 's' : ''}</span>
-          <span className="text-muted-foreground">— View Deal Rooms</span>
-        </button>
-      )}
-
-      {/* Actions */}
+      {/* Action buttons */}
       <div className="mt-5 flex gap-2">
         <button
           onClick={onEdit}
-          className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+          className="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
         >
           Edit
         </button>
         {strategy.status === 'broadcasting' && (
           <button
             onClick={onPause}
-            className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            className="flex-1 rounded-lg bg-mode-strategy px-3 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
           >
             Pause
           </button>
@@ -186,7 +179,7 @@ export default function StrategyCard({
         {strategy.status === 'paused' && (
           <button
             onClick={onResume}
-            className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+            className="flex-1 rounded-lg bg-mode-strategy px-3 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
           >
             Resume
           </button>

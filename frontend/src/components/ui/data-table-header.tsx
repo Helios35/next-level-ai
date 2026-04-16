@@ -58,10 +58,17 @@ export function DataTableHeader({
   const showFilterButton = !!onOpenFilters
   const hasFilters = filterCount > 0
 
+  // When there's no title, we're in toolbar mode — actions inline with the
+  // search/filter cluster on a single row. When there's a title, actions go
+  // on the title row (canonical AdminStaff-style layout).
+  const toolbarMode = !title && !subtitle
+  const titleRowActions = !toolbarMode ? actions : null
+  const toolbarActions = toolbarMode ? actions : null
+
   return (
     <div className={cn('mb-4 flex flex-col gap-4', className)}>
-      {/* Row 1: title + actions — only rendered if title or actions provided */}
-      {(title || actions) && (
+      {/* Row 1: title + actions — only rendered if title or title-row actions provided */}
+      {(title || titleRowActions) && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           {title && (
             <div className="min-w-0">
@@ -71,12 +78,12 @@ export function DataTableHeader({
               )}
             </div>
           )}
-          {actions && <div className="shrink-0 sm:ml-auto">{actions}</div>}
+          {titleRowActions && <div className="shrink-0 sm:ml-auto">{titleRowActions}</div>}
         </div>
       )}
 
-      {/* Row 2: tabs + search + filter button (only rendered if any piece is present) */}
-      {(tabs || showSearch || showFilterButton) && (
+      {/* Row 2: tabs + search + filter button + toolbar actions (only rendered if any piece is present) */}
+      {(tabs || showSearch || showFilterButton || toolbarActions) && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Left: tabs (if provided) */}
           {tabs && tabs.length > 0 && activeTab !== undefined && onTabChange && (
@@ -91,8 +98,8 @@ export function DataTableHeader({
             </Tabs>
           )}
 
-          {/* Right: search + filter button */}
-          {(showSearch || showFilterButton) && (
+          {/* Right: search + filter button + toolbar actions */}
+          {(showSearch || showFilterButton || toolbarActions) && (
             <div className="flex items-center gap-2 sm:ml-auto">
               {showSearch && (
                 <div className="relative flex-1 sm:flex-none sm:w-64">
@@ -129,6 +136,7 @@ export function DataTableHeader({
                   )}
                 </button>
               )}
+              {toolbarActions && <div className="shrink-0">{toolbarActions}</div>}
             </div>
           )}
         </div>

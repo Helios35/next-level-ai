@@ -79,7 +79,7 @@ export default function DealCard({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg border border-border bg-muted/30 shadow-sm p-5 transition-colors',
+        'flex flex-col rounded-lg border border-border bg-background shadow-sm p-5 transition-colors',
         isBuy ? 'hover:border-mode-buy/30' : 'hover:border-mode-sell/30',
         className,
       )}

@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { X, Building2, Home, MapPin, DollarSign, HardHat, Users } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { Breadcrumbs } from '@/components/ui/breadcrumbs'
+import { StatTile, StatTileGrid } from '@/components/ui/stat-tile'
+import { DataTable } from '@/components/ui/data-table'
+import { DataTableHeader } from '@/components/ui/data-table-header'
+import { DataTableFooter } from '@/components/ui/data-table-footer'
+import type { Column } from '@/components/ui/data-table.types'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
+import { usePagination } from '@/hooks/usePagination'
+import { ASSET_SUBTYPE_LABELS, DEAL_STAGE_LABELS, formatPrice } from '@/utils/dealFormatters'
 import type { DealRoom } from '@shared/types/dealRoom'
 import type { BuyerCtaState } from '@shared/types/buyerStrategy'
 import { MOCK_SELLER_DEAL_ROOMS } from '@/data/mock/dealRooms'
@@ -12,6 +20,7 @@ import BuyerEmptyState from '@/components/BuyerEmptyState'
 import QualificationModal from '@/components/QualificationModal'
 import StrategyPromptModal from '@/components/StrategyPromptModal'
 import QualificationNudgeBanner from '@/components/QualificationNudgeBanner'
+import MatchScoreRing from '@/components/MatchScoreRing'
 import FilterModal, {
   type FilterState,
   EMPTY_FILTERS,
@@ -82,6 +91,15 @@ const BUYER_DEAL_MAP: Record<string, { buyerCtaState: BuyerCtaState; matchScore:
   dr_006: { buyerCtaState: 'access_pending', matchScore: 61 },
 }
 
+// Mirrors BUYER_CTA_MAP in DealCard.tsx — keep in sync
+const BUYER_CTA_LABEL: Record<BuyerCtaState, { label: string; enabled: boolean }> = {
+  coming_soon: { label: 'Indicate Interest', enabled: true },
+  request_access: { label: 'Request Access', enabled: true },
+  access_pending: { label: 'Access Pending', enabled: false },
+  wait_queue: { label: 'Wait Queue', enabled: false },
+  enter_deal_room: { label: 'Enter Deal Room', enabled: true },
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getChipLabel(value: string | number): string {
@@ -122,6 +140,10 @@ function matchesFilters(deal: DealRoom, filters: FilterState): boolean {
   return true
 }
 
+function priceSortKey(deal: DealRoom): number {
+  return deal.shared.exactPrice ?? deal.shared.priceRange?.min ?? 0
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 interface YourDealsProps {
@@ -129,6 +151,7 @@ interface YourDealsProps {
 }
 
 export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<FilterState>(EMPTY_FILTERS)
@@ -167,6 +190,168 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
     })
     .sort((a, b) => (BUYER_DEAL_MAP[b.id]?.matchScore ?? 0) - (BUYER_DEAL_MAP[a.id]?.matchScore ?? 0))
 
+  const { pagedData, totalCount, pageSize, currentPage, setPage } = usePagination(
+    filteredDeals,
+    { pageSize: 12, resetKey: `${searchQuery}|${JSON.stringify(activeFilters)}` },
+  )
+
+  function handleCtaClick(deal: DealRoom, effectiveState: BuyerCtaState | undefined) {
+    if (!effectiveState) return
+    if (effectiveState === 'enter_deal_room') {
+      onOpenDealRoom(deal.id)
+    } else if (effectiveState === 'request_access') {
+      if (!mockUser.qualificationComplete) {
+        setPendingAccessDealId(deal.id)
+        setQualModalOpen(true)
+      } else {
+        setRequestedDealIds((prev) => new Set(prev).add(deal.id))
+      }
+    } else if (effectiveState === 'coming_soon') {
+      // Optimistic "Indicate Interest" — no state change needed beyond visual
+    }
+  }
+
+  // ── Buyer columns ───────────────────────────────────────────────────────
+  const buyerColumns: Column<DealRoom>[] = [
+    {
+      key: 'name',
+      label: 'Deal',
+      sortable: true,
+      sortAccessor: (row) => row.name,
+      width: '260px',
+      render: (row) => {
+        const AssetIcon = row.assetSubType === 'sfr_portfolio' ? Home : Building2
+        return (
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+              <AssetIcon size={16} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold text-foreground leading-snug truncate">
+                {row.name}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                <MapPin size={10} className="shrink-0" />
+                {row.shared.geography.msa.split(',')[0]}
+              </span>
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      key: 'matchScore',
+      label: 'Match',
+      sortable: true,
+      sortAccessor: (row) => BUYER_DEAL_MAP[row.id]?.matchScore ?? 0,
+      align: 'center',
+      render: (row) => {
+        const score = BUYER_DEAL_MAP[row.id]?.matchScore ?? 0
+        return <MatchScoreRing score={score} size={36} colorMode="buy" />
+      },
+    },
+    {
+      key: 'assetSubType',
+      label: 'Asset Type',
+      sortable: true,
+      sortAccessor: (row) => ASSET_SUBTYPE_LABELS[row.assetSubType],
+      hideBelow: 'sm',
+      render: (row) => (
+        <span className="inline-flex items-center gap-1">
+          <Building2 size={12} className="shrink-0" />
+          {ASSET_SUBTYPE_LABELS[row.assetSubType]}
+        </span>
+      ),
+    },
+    {
+      key: 'price',
+      label: 'Price',
+      sortable: true,
+      sortAccessor: priceSortKey,
+      align: 'right',
+      hideBelow: 'sm',
+      render: (row) => {
+        const ctaState = BUYER_DEAL_MAP[row.id]?.buyerCtaState
+        const effective = requestedDealIds.has(row.id) ? 'access_pending' : ctaState
+        const blurred = effective !== 'enter_deal_room'
+        return (
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <DollarSign size={12} className="shrink-0" />
+            <span className={blurred ? 'blur-sm select-none pointer-events-none' : ''}>
+              {formatPrice(row)}
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      key: 'dealStage',
+      label: 'Dev Stage',
+      sortable: true,
+      sortAccessor: (row) => DEAL_STAGE_LABELS[row.shared.dealStage],
+      hideBelow: 'md',
+      render: (row) => (
+        <span className="inline-flex items-center gap-1">
+          <HardHat size={12} className="shrink-0" />
+          {DEAL_STAGE_LABELS[row.shared.dealStage]}
+        </span>
+      ),
+    },
+    {
+      key: 'seats',
+      label: 'Seats',
+      sortable: true,
+      sortAccessor: (row) => SEATED_COUNT_MAP[row.id] ?? 0,
+      align: 'center',
+      hideBelow: 'md',
+      render: (row) => {
+        const seated = SEATED_COUNT_MAP[row.id] ?? 0
+        return (
+          <span className="inline-flex items-center gap-1">
+            <Users size={13} className="shrink-0 text-muted-foreground" />
+            <span className="font-semibold text-foreground">
+              {seated}/3
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      key: 'cta',
+      label: '',
+      align: 'right',
+      render: (row) => {
+        const ctaState = BUYER_DEAL_MAP[row.id]?.buyerCtaState
+        const effective: BuyerCtaState | undefined = requestedDealIds.has(row.id)
+          ? 'access_pending'
+          : ctaState
+        if (!effective) return null
+        const cfg = BUYER_CTA_LABEL[effective]
+        const isPrimary = effective === 'enter_deal_room'
+        return (
+          <button
+            type="button"
+            disabled={!cfg.enabled}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCtaClick(row, effective)
+            }}
+            className={cn(
+              'rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-opacity',
+              isPrimary
+                ? 'bg-mode-buy text-white hover:opacity-90'
+                : cfg.enabled
+                  ? 'border border-border text-foreground hover:bg-muted'
+                  : 'border border-border text-muted-foreground cursor-not-allowed opacity-60',
+            )}
+          >
+            {cfg.label}
+          </button>
+        )
+      },
+    },
+  ]
+
   function removeChip(key: keyof FilterState, value: string | number) {
     if (key === 'priceRange') {
       setActiveFilters((prev) => ({ ...prev, priceRange: null }))
@@ -185,10 +370,17 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
   return (
     <div className="px-4 sm:px-6 py-5 space-y-5 max-w-[1600px] mx-auto min-w-0">
       <Breadcrumbs items={[{ label: 'Buy' }, { label: 'Your Deals' }]} />
-      {/* Page heading */}
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold text-foreground">Your Deals</h1>
-        <span className="text-sm text-muted-foreground">{filteredDeals.length} matches</span>
+      {/* Page heading + stats */}
+      <div className="space-y-4">
+        <div className="flex items-baseline justify-between">
+          <h1 className="text-xl font-semibold text-foreground">Your Deals</h1>
+          <span className="text-sm text-muted-foreground">{filteredDeals.length} matches</span>
+        </div>
+        <StatTileGrid className="grid-cols-3">
+          <StatTile value={2} label="Deal Rooms Accessed" />
+          <StatTile value={1} label="Offers Made" />
+          <StatTile value={0} label="Deals Won" />
+        </StatTileGrid>
       </div>
 
       {/* Qualification nudge banner */}
@@ -204,36 +396,15 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
           />
         )}
 
-      {/* Search + filter bar */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 sm:flex-none sm:w-64">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search deals..."
-            className="w-full rounded-lg border border-border bg-main py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-mode-buy/50 transition-colors"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button
-          onClick={() => setIsFilterOpen(true)}
-          className={cn(
-            'flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors',
-            hasFilters
-              ? 'border-mode-buy/50 text-mode-buy bg-mode-buy/5'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <SlidersHorizontal size={15} />
-          Filters
-          {hasFilters && (
-            <span className="ml-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-mode-buy text-[10px] font-semibold text-white">
-              {chips.length}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Toolbar: search + filters + view toggle */}
+      <DataTableHeader
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search deals..."
+        filterCount={chips.length}
+        onOpenFilters={() => setIsFilterOpen(true)}
+        actions={<ViewToggle value={viewMode} onChange={setViewMode} />}
+      />
 
       {/* Filter chips */}
       {hasFilters && (
@@ -261,7 +432,7 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
         </div>
       )}
 
-      {/* Deal card grid */}
+      {/* Content */}
       {!mockUser.hasStrategy ? (
         <BuyerEmptyState
           variant="no-strategy"
@@ -269,38 +440,60 @@ export default function YourDeals({ onOpenDealRoom }: YourDealsProps) {
           onCTA={() => setStrategyModalOpen(true)}
         />
       ) : filteredDeals.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filteredDeals.map((deal) => {
-            const buyerInfo = BUYER_DEAL_MAP[deal.id]
-            const effectiveCtaState: BuyerCtaState | undefined = requestedDealIds.has(deal.id)
-              ? 'access_pending'
-              : buyerInfo?.buyerCtaState
-            return (
-              <DealCard
-                key={deal.id}
-                deal={deal}
-                mode="buy"
-                buyerCtaState={effectiveCtaState}
-                matchScore={buyerInfo?.matchScore}
-                seatedBuyerCount={SEATED_COUNT_MAP[deal.id] ?? 0}
-                maxSeats={3}
-                onViewDetails={(e) => {
-                  triggerRef.current = e.currentTarget as HTMLButtonElement
-                  setPreviewDeal(deal)
-                }}
-                onOpenDealRoom={() => onOpenDealRoom(deal.id)}
-                onRequestAccess={() => {
-                  if (!mockUser.qualificationComplete) {
-                    setPendingAccessDealId(deal.id)
-                    setQualModalOpen(true)
-                  } else {
-                    setRequestedDealIds((prev) => new Set(prev).add(deal.id))
-                  }
-                }}
-              />
-            )
-          })}
-        </div>
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {pagedData.map((deal) => {
+                const buyerInfo = BUYER_DEAL_MAP[deal.id]
+                const effectiveCtaState: BuyerCtaState | undefined = requestedDealIds.has(deal.id)
+                  ? 'access_pending'
+                  : buyerInfo?.buyerCtaState
+                return (
+                  <DealCard
+                    key={deal.id}
+                    deal={deal}
+                    mode="buy"
+                    buyerCtaState={effectiveCtaState}
+                    matchScore={buyerInfo?.matchScore}
+                    seatedBuyerCount={SEATED_COUNT_MAP[deal.id] ?? 0}
+                    maxSeats={3}
+                    onViewDetails={(e) => {
+                      triggerRef.current = e.currentTarget as HTMLButtonElement
+                      setPreviewDeal(deal)
+                    }}
+                    onOpenDealRoom={() => onOpenDealRoom(deal.id)}
+                    onRequestAccess={() => {
+                      if (!mockUser.qualificationComplete) {
+                        setPendingAccessDealId(deal.id)
+                        setQualModalOpen(true)
+                      } else {
+                        setRequestedDealIds((prev) => new Set(prev).add(deal.id))
+                      }
+                    }}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <DataTable
+              columns={buyerColumns}
+              data={pagedData}
+              rowKey={(d) => d.id}
+              onRowClick={(deal) => {
+                triggerRef.current = null
+                setPreviewDeal(deal)
+              }}
+              emptyMessage="No deals match your filters."
+              defaultSort={{ key: 'matchScore', direction: 'desc' }}
+            />
+          )}
+          <DataTableFooter
+            totalCount={totalCount}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            onPageChange={setPage}
+          />
+        </>
       ) : searchQuery.trim() || hasFilters ? (
         <BuyerEmptyState variant="no-results" onCTA={clearAllFilters} />
       ) : null}
