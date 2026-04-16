@@ -33,7 +33,9 @@ import {
   User,
   Info,
   X,
+  Wallet,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from '@/components/ui/item'
 import { ExpandableTabs } from '@/components/ui/expandable-tabs'
 import { DotGrid } from '@/components/ui/dot-grid'
@@ -167,6 +169,48 @@ export interface ChatContext {
   onChannelChange?: (channel: 'ai' | 'specialist') => void
   unreadSpecialist?: boolean
   unreadAi?: boolean
+}
+
+// ── Credits button (expandable icon → label on hover) ────────────────────
+
+const creditsTransition = { delay: 0.1, type: 'spring' as const, bounce: 0, duration: 0.6 }
+
+function CreditsButton({ onClick }: { onClick?: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <motion.button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      initial={false}
+      animate={{
+        gap: hovered ? '.5rem' : 0,
+        paddingLeft: hovered ? '1rem' : '.5rem',
+        paddingRight: hovered ? '1rem' : '.5rem',
+      }}
+      transition={creditsTransition}
+      className={cn(
+        'relative flex items-center rounded-xl py-2 text-sm font-medium text-amber-500 transition-colors duration-300',
+        hovered ? 'bg-muted' : 'hover:bg-muted',
+      )}
+    >
+      <Wallet size={20} />
+      <AnimatePresence initial={false}>
+        {hovered && (
+          <motion.span
+            key="credits-label"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 'auto', opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={creditsTransition}
+            className="overflow-hidden whitespace-nowrap"
+          >
+            400 Credits
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.button>
+  )
 }
 
 interface AppShellProps {
@@ -393,15 +437,7 @@ export default function AppShell({
           >
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button
-            onClick={onCreditsClick}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-amber-500/20 text-amber-500">
-              <span className="text-[10px] font-bold">C</span>
-            </div>
-            <span className="hidden sm:inline">400 Credits</span>
-          </button>
+          <CreditsButton onClick={onCreditsClick} />
           <UserMenu
             initials={userInitials}
             name={userName}
